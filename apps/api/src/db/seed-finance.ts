@@ -1,6 +1,7 @@
 /**
  * Demo history for the finance dashboard: ~12 months of jobs, invoices, payments and
- * expenses across all seven branches, plus FX rates to the consolidation currency.
+ * expenses for every branch, plus FX rates to the consolidation currency. Branches are
+ * seeded independently, so an entity added later gets its own history on the next run.
  *
  * Deterministic (fixed PRNG seed) so repeated runs and screenshots stay comparable.
  * ASSUMPTION: figures are invented for demonstration; they are not GSI's real numbers.
@@ -13,7 +14,7 @@ import { seedChecklist } from '../operations/checklist-seed';
 
 // Indicative mid-market rates to EUR (ASSUMPTION: manual reference data, see fx-rates API).
 const RATES: Record<string, number> = {
-  EUR: 1, TRY: 0.0235, RON: 0.201, UAH: 0.0221, UZS: 0.0000722, KZT: 0.00175, AED: 0.2334,
+  EUR: 1, TRY: 0.0235, RON: 0.201, UAH: 0.0221, UZS: 0.0000722, KZT: 0.00175, AED: 0.2334, RUB: 0.0104,
 };
 
 // Per-branch profile: monthly job volume, average invoice in local currency, cost ratio.
@@ -25,6 +26,7 @@ const PROFILE: Record<string, { jobs: number; avgInvoice: number; costRatio: num
   KZ: { jobs: 7, avgInvoice: 420000, costRatio: 0.61, vat: 12 },
   AE: { jobs: 8, avgInvoice: 3600, costRatio: 0.55, vat: 5 },
   IT: { jobs: 6, avgInvoice: 900, costRatio: 0.68, vat: 22 },
+  RU: { jobs: 10, avgInvoice: 95000, costRatio: 0.63, vat: 20 },
 };
 
 const EXPENSE_MIX: { category: string; share: number; supplier: string }[] = [
@@ -48,6 +50,7 @@ const LOCATIONS: Record<string, string[]> = {
   KZ: ['Astana elevator #3', 'Aktau sea port'],
   AE: ['Port of Ras Al Khaimah', 'Jebel Ali, Dubai'],
   IT: ['Port of Ravenna, Berth 22', 'Port of Venice'],
+  RU: ['Новороссийск, причал 14', 'Порт Тамань', 'Ростов-на-Дону, элеватор'],
 };
 
 /** Deterministic PRNG (mulberry32) so the demo data is identical on every run. */
@@ -68,11 +71,6 @@ export async function seedFinance(client: ClientBase): Promise<void> {
   const tx = wrapClient(client);
   const base = config.consolidationCurrency;
 
-  const already = await tx.one('SELECT 1 FROM invoices LIMIT 1');
-  if (already) {
-    console.log('finance demo data already present, skipping');
-    return;
-  }
 
   const today = new Date();
   const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 11, 1));
@@ -114,6 +112,8 @@ export async function seedFinance(client: ClientBase): Promise<void> {
 
   for (const branch of branches) {
     const profile = PROFILE[branch.code];
+    // Per-branch check: a branch added later (e.g. RU) still gets its history on the next run.
+    if (await tx.one('SELECT 1 FROM invoices WHERE branch_id = $1 LIMIT 1', [branch.id])) continue;
     const clients = clientsByBranch.get(branch.id) ?? [];
     if (!profile || !clients.length) continue;
 

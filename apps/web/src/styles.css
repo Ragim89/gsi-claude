@@ -234,3 +234,72 @@ td.negative { color: var(--gsi-color-danger); }
   .branch-switch select { width: auto; }
   .branch-pin { margin: 0; padding: 0; }
 }
+
+/* ---- Branch card ------------------------------------------------------------------- */
+.branch-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--gsi-space-4);
+  align-items: stretch;
+}
+.branch-hero__photo {
+  position: relative;
+  border-radius: var(--gsi-radius-lg);
+  overflow: hidden;
+  min-height: 220px;
+  background: var(--gsi-color-primary);
+  border: 1px solid var(--gsi-color-border);
+}
+.branch-hero__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.branch-hero__placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gsi-space-2);
+  background: linear-gradient(140deg, var(--gsi-color-primary), var(--gsi-color-primary-hover));
+  color: var(--gsi-color-on-primary);
+}
+.branch-hero__flag { font-size: 56px; line-height: 1; }
+.branch-hero__code {
+  font-size: 22px; letter-spacing: 0.18em; font-weight: var(--gsi-font-weight-bold);
+  color: var(--gsi-color-accent);
+}
+.branch-hero__upload {
+  position: absolute; inset-block-end: 10px; inset-inline-end: 10px;
+  background: rgba(255, 255, 255, 0.92); color: var(--gsi-color-primary);
+  border: 0; border-radius: var(--gsi-radius-md); padding: 6px 10px;
+  font-family: inherit; font-size: var(--gsi-font-size-xs); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.branch-hero__upload:hover { background: var(--gsi-color-surface); }
+.branch-hero__head {
+  background: var(--gsi-color-surface);
+  border: 1px solid var(--gsi-color-border);
+  border-radius: var(--gsi-radius-lg);
+  box-shadow: var(--gsi-shadow-card);
+  padding: var(--gsi-space-4);
+  display: flex; flex-direction: column; gap: var(--gsi-space-3);
+}
+.branch-head { display: flex; gap: var(--gsi-space-4); align-items: center; }
+.branch-head__avatar {
+  position: relative; width: 84px; height: 84px; flex: none;
+  border-radius: 50%; overflow: hidden; background: var(--gsi-color-background);
+  border: 2px solid var(--gsi-color-accent);
+  display: grid; place-items: center;
+  font-size: 26px; font-weight: var(--gsi-font-weight-bold); color: var(--gsi-color-primary);
+}
+.branch-head__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.branch-head__upload {
+  position: absolute; inset-block-end: 0; inset-inline-end: 0;
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--gsi-color-surface);
+  background: var(--gsi-color-primary); color: var(--gsi-color-on-primary);
+  cursor: pointer; font-size: 12px; line-height: 1; display: grid; place-items: center;
+}
+.branch-head__label { font-size: var(--gsi-font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--gsi-color-text-muted); }
+.branch-head__name { font-size: var(--gsi-font-size-xl); font-weight: var(--gsi-font-weight-bold); color: var(--gsi-color-primary); line-height: 1.2; }
+.branch-head__title { color: var(--gsi-color-text-muted); font-size: var(--gsi-font-size-sm); }
+.branch-head__mail { font-size: var(--gsi-font-size-sm); }
+.branch-hero__about { margin: 0; color: var(--gsi-color-text-muted); font-size: var(--gsi-font-size-sm); }
+
+@media (max-width: 900px) {
+  .branch-hero { grid-template-columns: 1fr; }
+  .branch-hero__photo { min-height: 160px; }
+}

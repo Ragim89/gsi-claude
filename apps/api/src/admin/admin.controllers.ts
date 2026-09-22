@@ -5,107 +5,10 @@ import { AuthUser, HQ_ROLES, Role, ROLES } from '@gsi/shared-types';
 import { CurrentUser, Roles } from '../common/decorators';
 import { DbService } from '../db/db.service';
 import { buildSet } from '../common/sql';
-import { config } from '../config';
-
-const BRANCH_COLUMNS = `
-  id, code, country, city, currency, locale, ui_locales AS "uiLocales", timezone,
-  legal_name AS "legalName", address, phone, email, accreditation, is_hq AS "isHq",
-  letterhead_template_id AS "letterheadTemplateId"`;
 
 const USER_COLUMNS = `
   u.id, u.branch_id AS "branchId", b.code AS "branchCode", u.email, u.full_name AS "fullName",
   u.role, u.locale, u.is_active AS "isActive"`;
-
-@Controller('branches')
-export class BranchesController {
-  constructor(private readonly db: DbService) {}
-
-  /** RLS: branch users see their own branch, HQ sees all. */
-  @Get()
-  list(@CurrentUser() user: AuthUser) {
-    return this.db.tx(user, (tx) => tx.many(`SELECT ${BRANCH_COLUMNS} FROM branches ORDER BY is_hq DESC, code`));
-  }
-
-  /**
-   * Branch-by-branch comparison for HQ: the same metrics per entity, side by side
-   * ("каждую точку отдельно" — but also all of them against each other).
-   */
-  @Get('comparison/summary')
-  @Roles('cfo', 'admin', 'finance_controller', 'supervisor')
-  comparison(@CurrentUser() user: AuthUser, @Query('from') from?: string, @Query('to') to?: string) {
-    const period = {
-      from: from ?? defaultFrom(),
-      to: to ?? new Date().toISOString().slice(0, 10),
-    };
-    return this.db.tx(user, async (tx) => {
-      const rows = await tx.many(
-        `SELECT b.id AS "branchId", b.code, b.country, b.city, b.currency, b.is_hq AS "isHq",
-                COALESCE(-SUM(a.amount_base) FILTER (WHERE a.account_group = 'revenue'
-                         AND a.entry_date BETWEEN $1::date AND $2::date), 0)::float8 AS "revenueBase",
-                COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'expense'
-                         AND a.entry_date BETWEEN $1::date AND $2::date), 0)::float8 AS "expenseBase",
-                COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'receivable'), 0)::float8 AS "receivableBase",
-                (SELECT count(*) FROM inspection_jobs j WHERE j.branch_id = b.id
-                   AND j.created_at::date BETWEEN $1::date AND $2::date)::int AS "jobCount",
-                (SELECT count(*) FROM reports r WHERE r.branch_id = b.id
-                   AND r.created_at::date BETWEEN $1::date AND $2::date)::int AS "reportCount",
-                (SELECT count(*) FROM users u WHERE u.branch_id = b.id AND u.role = 'inspector' AND u.is_active)::int
-                  AS "inspectorCount",
-                (SELECT avg(EXTRACT(EPOCH FROM (r.created_at - j.created_at)) / 86400)
-                   FROM reports r JOIN inspection_jobs j ON j.id = r.job_id
-                  WHERE r.branch_id = b.id AND r.created_at::date BETWEEN $1::date AND $2::date)::float8
-                  AS "avgCycleDays",
-                (SELECT COALESCE(SUM((i.amount_total - i.amount_paid)
-                          * fx_rate_on(i.currency, $3, i.issue_date)), 0)
-                   FROM invoices i WHERE i.branch_id = b.id
-                     AND i.status IN ('issued', 'partially_paid') AND i.due_date < current_date)::float8
-                  AS "overdueBase"
-         FROM branches b
-         LEFT JOIN finance_daily_agg a ON a.branch_id = b.id
-         GROUP BY b.id, b.code, b.country, b.city, b.currency, b.is_hq
-         ORDER BY "revenueBase" DESC, b.code`,
-        [period.from, period.to, config.consolidationCurrency],
-      );
-      return { baseCurrency: config.consolidationCurrency, period, branches: rows };
-    });
-  }
-
-  /** Branch card: requisites plus its people, clients and workload at a glance. */
-  @Get(':id')
-  get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.db.tx(user, async (tx) => {
-      const branch = await tx.one(`SELECT ${BRANCH_COLUMNS} FROM branches WHERE id = $1`, [id]);
-      if (!branch) throw new NotFoundException('Branch not found');
-      const [team, stats] = await Promise.all([
-        tx.many(
-          `SELECT id, full_name AS "fullName", role, email, is_active AS "isActive"
-           FROM users WHERE branch_id = $1 ORDER BY role, full_name`,
-          [id],
-        ),
-        tx.one(
-          `SELECT
-             (SELECT count(*) FROM clients WHERE branch_id = $1)::int AS "clientCount",
-             (SELECT count(*) FROM inspection_jobs WHERE branch_id = $1)::int AS "jobCount",
-             (SELECT count(*) FROM inspection_jobs WHERE branch_id = $1
-                AND status NOT IN ('approved', 'cancelled'))::int AS "openJobCount",
-             (SELECT count(*) FROM reports WHERE branch_id = $1)::int AS "reportCount",
-             (SELECT count(*) FROM users WHERE branch_id = $1 AND is_active)::int AS "activeUserCount"`,
-          [id],
-        ),
-      ]);
-      return { ...branch, team, stats };
-    });
-  }
-
-}
-
-/** Default comparison window: the last 12 calendar months. */
-function defaultFrom(): string {
-  const d = new Date();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() - 11);
-  return d.toISOString().slice(0, 10);
-}
 
 class CreateUserDto {
   @IsEmail()

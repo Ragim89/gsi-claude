@@ -69,6 +69,11 @@
     "requisites": "Requisites", "legalName": "Legal name", "currency": "Accounting currency", "timezone": "Time zone",
     "locale": "Locale", "accreditation": "Accreditation", "template": "Letterhead template", "team": "Team",
     "noTeam": "No users yet", "activeUsers": "active users", "openJobs": "{{count}} open",
+    "head": "Head of branch", "headShort": "Head", "headUnset": "Not appointed", "changePhoto": "Office photo",
+    "changeHeadPhoto": "Change portrait", "legalRequisites": "Legal requisites", "legalForm": "Legal form",
+    "registrationNo": "Registration no.", "taxId": "Tax ID", "vatNumber": "VAT number", "established": "Established",
+    "bank": "Bank details", "bankName": "Bank", "bankAccount": "Account / IBAN", "bankSwift": "SWIFT / BIC",
+    "bankHint": "These details print on invoices once confirmed by GSI.", "operational": "Operations", "website": "Website",
     "editHint": "Branch requisites are maintained in the database; an admin screen for them is planned."
   },
   "dashboard": {

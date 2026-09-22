@@ -69,6 +69,11 @@
     "requisites": "Реквизиты", "legalName": "Юридическое название", "currency": "Валюта учёта", "timezone": "Часовой пояс",
     "locale": "Локаль", "accreditation": "Аккредитация", "template": "Шаблон бланка", "team": "Сотрудники",
     "noTeam": "Сотрудников пока нет", "activeUsers": "активных сотрудников", "openJobs": "в работе: {{count}}",
+    "head": "Руководитель филиала", "headShort": "Руководитель", "headUnset": "Не назначен", "changePhoto": "Фото офиса",
+    "changeHeadPhoto": "Заменить фото", "legalRequisites": "Юридические реквизиты", "legalForm": "Организационная форма",
+    "registrationNo": "Регистрационный номер", "taxId": "Налоговый номер", "vatNumber": "Номер НДС", "established": "Год основания",
+    "bank": "Банковские реквизиты", "bankName": "Банк", "bankAccount": "Счёт / IBAN", "bankSwift": "SWIFT / БИК",
+    "bankHint": "После подтверждения GSI эти реквизиты будут печататься в счетах.", "operational": "Операционные данные", "website": "Сайт",
     "editHint": "Реквизиты филиала пока правятся в базе данных; экран администрирования запланирован."
   },
   "dashboard": {

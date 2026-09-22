@@ -20,6 +20,25 @@ export interface Branch {
   accreditation: string | null;
   isHq: boolean;
   letterheadTemplateId: string;
+  // Profile (migration 003) — requisites, the person heading the entity, photos.
+  legalForm?: string | null;
+  registrationNo?: string | null;
+  taxId?: string | null;
+  vatNumber?: string | null;
+  bankName?: string | null;
+  bankAccount?: string | null;
+  bankSwift?: string | null;
+  website?: string | null;
+  establishedYear?: number | null;
+  description?: string | null;
+  headUserId?: string | null;
+  headTitle?: string | null;
+  headName?: string | null;
+  headEmail?: string | null;
+  headRole?: Role | null;
+  /** Short-lived presigned URLs, generated per request. */
+  headPhotoUrl?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface User {

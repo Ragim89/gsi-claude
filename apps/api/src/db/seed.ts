@@ -26,7 +26,31 @@ const BRANCHES = [
   { code: 'KZ', country: 'KZ', city: 'Astana', currency: 'KZT', locale: 'ru', uiLocales: ['ru', 'kk'], timezone: 'Asia/Almaty', legalName: 'GSI Kazakhstan — legal name TBC', address: 'Astana, Kazakhstan' },
   { code: 'AE', country: 'AE', city: 'Ras Al Khaimah', currency: 'AED', locale: 'en', uiLocales: ['en', 'ar'], timezone: 'Asia/Dubai', legalName: 'GSI FZE — legal name TBC', address: 'Ras Al Khaimah, UAE' },
   { code: 'IT', country: 'IT', city: 'Ravenna', currency: 'EUR', locale: 'it', uiLocales: ['it', 'en'], timezone: 'Europe/Rome', legalName: 'GSI Italy — legal name TBC', address: 'Ravenna, Italia' },
+  // ASSUMPTION: Russia is not among the seven representations in docs/00-overview.md; it was
+  // added on request. Novorossiysk (the main grain export port) is a placeholder city —
+  // change `city`, `legalName` and the requisites once GSI confirms the entity.
+  { code: 'RU', country: 'RU', city: 'Novorossiysk', currency: 'RUB', locale: 'ru', uiLocales: ['ru', 'en'], timezone: 'Europe/Moscow', legalName: 'GSI Russia — legal name TBC', address: 'Novorossiysk, Russia' },
 ];
+
+/**
+ * Requisites shown on the branch card and (later) on printed forms.
+ * ASSUMPTION: every value here is a placeholder pending GSI's real registration, tax and
+ * bank data (docs/07-open-questions.md #2) — hence the "TBC" markers.
+ */
+const BRANCH_PROFILE: Record<string, {
+  legalForm: string; registrationNo: string; taxId: string; vatNumber?: string;
+  bankName: string; bankAccount: string; bankSwift: string; phone: string; email: string;
+  website: string; established: number; headEmail: string; headTitle: string; description: string;
+}> = {
+  TR: { legalForm: 'A.Ş.', registrationNo: 'İstanbul Trade Register TBC', taxId: 'VKN TBC', vatNumber: 'TR-TBC', bankName: 'Bank name TBC', bankAccount: 'TR00 0000 0000 0000 0000 0000 00', bankSwift: 'TBCXTRIS', phone: '+90 216 000 00 00', email: 'istanbul@gsi.example', website: 'https://gsi.example', established: 1997, headEmail: 'supervisor.tr@gsi.local', headTitle: 'Genel Müdür / General Manager', description: 'Head office of the group: inspection, laboratory and fumigation services for the Marmara and Mediterranean ports.' },
+  RO: { legalForm: 'SRL', registrationNo: 'J13/TBC', taxId: 'CUI TBC', vatNumber: 'RO-TBC', bankName: 'Bank name TBC', bankAccount: 'RO00 TBC0 0000 0000 0000 0000', bankSwift: 'TBCXROBU', phone: '+40 241 000 000', email: 'constanta@gsi.example', website: 'https://gsi.example', established: 2004, headEmail: 'supervisor.ro@gsi.local', headTitle: 'Branch Manager', description: 'Constanța office: draft surveys and quality supervision on the Black Sea grain corridor.' },
+  UA: { legalForm: 'LLC', registrationNo: 'EDRPOU TBC', taxId: 'TIN TBC', bankName: 'Bank name TBC', bankAccount: 'UA00 TBC0 0000 0000 0000 0000 0', bankSwift: 'TBCXUAUK', phone: '+380 48 000 0000', email: 'odesa@gsi.example', website: 'https://gsi.example', established: 2006, headEmail: 'supervisor.ua@gsi.local', headTitle: 'Branch Manager', description: 'Odesa office: loading supervision and sampling for grain and oilseed exports.' },
+  UZ: { legalForm: 'LLC', registrationNo: 'Reg. No TBC', taxId: 'INN TBC', bankName: 'Bank name TBC', bankAccount: 'UZ00 TBC0 0000 0000 0000 0000', bankSwift: 'TBCXUZUZ', phone: '+998 71 000 0000', email: 'tashkent@gsi.example', website: 'https://gsi.example', established: 2015, headEmail: 'supervisor.uz@gsi.local', headTitle: 'Branch Manager', description: 'Tashkent office: warehouse and railway shipment supervision in Central Asia.' },
+  KZ: { legalForm: 'TOO', registrationNo: 'BIN TBC', taxId: 'IIN/BIN TBC', bankName: 'Bank name TBC', bankAccount: 'KZ00 TBC0 0000 0000 0000', bankSwift: 'TBCXKZKA', phone: '+7 7172 00 00 00', email: 'astana@gsi.example', website: 'https://gsi.example', established: 2012, headEmail: 'supervisor.kz@gsi.local', headTitle: 'Branch Manager', description: 'Astana office: elevator stock monitoring and grain quality supervision.' },
+  AE: { legalForm: 'FZE', registrationNo: 'RAK FTZ Licence TBC', taxId: 'TRN TBC', bankName: 'Bank name TBC', bankAccount: 'AE00 0000 0000 0000 0000 000', bankSwift: 'TBCXAEAD', phone: '+971 7 000 0000', email: 'rak@gsi.example', website: 'https://gsi.example', established: 2010, headEmail: 'supervisor.ae@gsi.local', headTitle: 'General Manager', description: 'Ras Al Khaimah free-zone entity: cargo supervision and collateral management for the Gulf.' },
+  IT: { legalForm: 'S.p.A.', registrationNo: 'REA TBC', taxId: 'Codice Fiscale TBC', vatNumber: 'IT-TBC', bankName: 'Bank name TBC', bankAccount: 'IT00 T000 0000 0000 0000 0000 000', bankSwift: 'TBCXITRR', phone: '+39 0544 000 000', email: 'ravenna@gsi.example', website: 'https://gsi.example', established: 2008, headEmail: 'supervisor.it@gsi.local', headTitle: 'Branch Manager', description: 'Ravenna office: discharge supervision and cleanliness inspections in the Adriatic.' },
+  RU: { legalForm: 'OOO', registrationNo: 'OGRN TBC', taxId: 'INN TBC', bankName: 'Bank name TBC', bankAccount: '40702810 TBC 0000000000', bankSwift: 'TBCXRUMM', phone: '+7 8617 00 00 00', email: 'novorossiysk@gsi.example', website: 'https://gsi.example', established: 2011, headEmail: 'supervisor.ru@gsi.local', headTitle: 'Branch Manager', description: 'Novorossiysk office: draft surveys and loading supervision in the Azov–Black Sea basin.' },
+};
 
 const USERS = [
   { email: 'admin@gsi.local', name: 'System Administrator', role: 'admin', branch: 'TR', locale: 'en' },
@@ -48,6 +72,8 @@ const USERS = [
   { email: 'inspector.ae@gsi.local', name: 'Rashid Hassan', role: 'inspector', branch: 'AE', locale: 'en' },
   { email: 'supervisor.it@gsi.local', name: 'Marco Bianchi', role: 'supervisor', branch: 'IT', locale: 'en' },
   { email: 'inspector.it@gsi.local', name: 'Giulia Rossi', role: 'inspector', branch: 'IT', locale: 'en' },
+  { email: 'supervisor.ru@gsi.local', name: 'Сергей Волков', role: 'supervisor', branch: 'RU', locale: 'ru' },
+  { email: 'inspector.ru@gsi.local', name: 'Николай Орлов', role: 'inspector', branch: 'RU', locale: 'ru' },
 ];
 
 const CLIENTS = [
@@ -63,6 +89,8 @@ const CLIENTS = [
   { branch: 'AE', name: 'Gulf Commodities FZE', ref: 'FOSFA-0002', country: 'AE', email: 'ops@gulfcomm.example' },
   { branch: 'AE', name: 'Emirates Feed Imports', ref: null, country: 'AE', email: 'imports@emfeed.example' },
   { branch: 'IT', name: 'Adriatica Cereali SpA', ref: 'GAFTA-M-0005', country: 'IT', email: 'ufficio@adriatica.example' },
+  { branch: 'RU', name: 'Новороссийский зерновой терминал', ref: 'GAFTA-M-0006', country: 'RU', email: 'export@nzt.example' },
+  { branch: 'RU', name: 'Кубань Агро Экспорт', ref: null, country: 'RU', email: 'trade@kubanagro.example' },
 ];
 
 export async function seed(): Promise<void> {
@@ -129,6 +157,24 @@ export async function seed(): Promise<void> {
         [tr, clientRow!.id, inspector!.id, supervisor!.id],
       );
       await seedChecklist(tx, job!.id, 'loading_discharge');
+    }
+
+    // Requisites and the head of each entity (idempotent: only fills what is still empty).
+    for (const [code, p] of Object.entries(BRANCH_PROFILE)) {
+      await tx.exec(
+        `UPDATE branches b SET
+           legal_form = COALESCE(b.legal_form, $2), registration_no = COALESCE(b.registration_no, $3),
+           tax_id = COALESCE(b.tax_id, $4), vat_number = COALESCE(b.vat_number, $5),
+           bank_name = COALESCE(b.bank_name, $6), bank_account = COALESCE(b.bank_account, $7),
+           bank_swift = COALESCE(b.bank_swift, $8), phone = COALESCE(b.phone, $9),
+           email = COALESCE(b.email, $10), website = COALESCE(b.website, $11),
+           established_year = COALESCE(b.established_year, $12), description = COALESCE(b.description, $13),
+           head_title = COALESCE(b.head_title, $14),
+           head_user_id = COALESCE(b.head_user_id, (SELECT u.id FROM users u WHERE lower(u.email) = lower($15)))
+         WHERE b.code = $1`,
+        [code, p.legalForm, p.registrationNo, p.taxId, p.vatNumber ?? null, p.bankName, p.bankAccount,
+         p.bankSwift, p.phone, p.email, p.website, p.established, p.description, p.headTitle, p.headEmail],
+      );
     }
 
     // A year of group-wide financial history for the dashboard (jobs, invoices, expenses, FX).
