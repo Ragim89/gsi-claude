@@ -134,3 +134,44 @@ export async function openPdf(path: string) {
     throw err;
   }
 }
+
+/**
+ * Live finance feed (SSE). EventSource cannot send an Authorization header, so the stream is
+ * read from a fetch response instead — the token never goes into the URL. Reconnects on drop.
+ */
+export function subscribeFinance(onEvent: (e: unknown) => void): () => void {
+  const ctrl = new AbortController();
+  void (async () => {
+    while (!ctrl.signal.aborted) {
+      try {
+        const res = await request('/finance/stream', {
+          headers: { Accept: 'text/event-stream' },
+          signal: ctrl.signal,
+        });
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (!ctrl.signal.aborted) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split('\n\n');
+          buffer = chunks.pop() ?? '';
+          for (const chunk of chunks) {
+            const line = chunk.split('\n').find((l) => l.startsWith('data:'));
+            if (!line) continue;
+            try {
+              onEvent(JSON.parse(line.slice(5).trim()));
+            } catch {
+              /* keep-alive or partial frame */
+            }
+          }
+        }
+      } catch {
+        /* dropped connection, token refresh, server restart */
+      }
+      if (!ctrl.signal.aborted) await new Promise((r) => setTimeout(r, 5000));
+    }
+  })();
+  return () => ctrl.abort();
+}

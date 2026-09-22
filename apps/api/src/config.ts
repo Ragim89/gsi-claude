@@ -69,6 +69,11 @@ export const config = {
   get publicWebUrl() {
     return (process.env.PUBLIC_WEB_URL ?? 'http://localhost:8080').replace(/\/$/, '');
   },
+  /**
+   * Group consolidation currency for the finance dashboard.
+   * ASSUMPTION: EUR (docs/01 suggests "EUR или USD"; GSI has not confirmed).
+   */
+  consolidationCurrency: (process.env.CONSOLIDATION_CURRENCY ?? 'EUR').toUpperCase(),
   chromiumPath: process.env.PUPPETEER_EXECUTABLE_PATH,
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB ?? 25) * 1024 * 1024,
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:8080').split(','),

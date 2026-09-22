@@ -6,6 +6,7 @@ import { AdminModule } from './admin/admin.module';
 import { CrmModule } from './crm/crm.module';
 import { OperationsModule } from './operations/operations.module';
 import { DocumentsModule } from './documents/documents.module';
+import { FinanceModule } from './finance/finance.module';
 import { AuthGuard } from './common/auth.guard';
 import { PgExceptionFilter } from './common/pg-exception.filter';
 import { Public } from './common/decorators';
@@ -28,7 +29,7 @@ class HealthController {
  * Lab (LIMS), Finance, HR and Compliance modules plug in here in later milestones.
  */
 @Module({
-  imports: [CoreModule, AuthModule, AdminModule, CrmModule, OperationsModule, DocumentsModule],
+  imports: [CoreModule, AuthModule, AdminModule, CrmModule, OperationsModule, DocumentsModule, FinanceModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

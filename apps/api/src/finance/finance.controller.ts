@@ -1,0 +1,226 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  MessageEvent,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  Sse,
+} from '@nestjs/common';
+import { Type } from 'class-transformer';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+import { map, Observable } from 'rxjs';
+import {
+  AuthUser,
+  EXPENSE_CATEGORIES,
+  ExpenseCategory,
+  HQ_ROLES,
+  INVOICE_STATUSES,
+  InvoiceStatus,
+} from '@gsi/shared-types';
+import { CurrentUser, Roles } from '../common/decorators';
+import { DbService } from '../db/db.service';
+import { config } from '../config';
+import { InvoicesService } from './invoices.service';
+import { ExpensesService } from './expenses.service';
+import { DashboardService } from './dashboard.service';
+import { FinanceEventsService } from './finance-events.service';
+
+class InvoiceLineDto {
+  @IsString() @MinLength(2) @MaxLength(300) description: string;
+  @Type(() => Number) @IsNumber() @IsPositive() quantity: number;
+  @Type(() => Number) @IsNumber() @Min(0) unitPrice: number;
+}
+
+class CreateInvoiceDto {
+  @IsUUID() clientId: string;
+  @IsOptional() @IsUUID() jobId?: string | null;
+  @IsArray() @ArrayMinSize(1) @ArrayMaxSize(50) @ValidateNested({ each: true }) @Type(() => InvoiceLineDto)
+  lines: InvoiceLineDto[];
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(100) taxRate?: number;
+  @IsOptional() @IsDateString() issueDate?: string;
+  @IsOptional() @IsDateString() dueDate?: string | null;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
+}
+
+class PayDto {
+  @Type(() => Number) @IsNumber() @IsPositive() amount: number;
+  @IsOptional() @IsDateString() paidOn?: string;
+}
+
+class InvoiceQueryDto {
+  @IsOptional() @IsIn(INVOICE_STATUSES) status?: InvoiceStatus;
+  @IsOptional() @IsUUID() clientId?: string;
+  @IsOptional() @Type(() => Boolean) @IsBoolean() overdue?: boolean;
+}
+
+class CreateExpenseDto {
+  @IsIn(EXPENSE_CATEGORIES) category: ExpenseCategory;
+  @IsString() @MinLength(2) @MaxLength(300) description: string;
+  @Type(() => Number) @IsNumber() @IsPositive() amount: number;
+  @IsOptional() @IsString() @MaxLength(200) supplier?: string | null;
+  @IsOptional() @IsDateString() expenseDate?: string;
+  @IsOptional() @IsUUID() jobId?: string | null;
+  @IsOptional() @IsUUID() branchId?: string;
+}
+
+class ExpenseQueryDto {
+  @IsOptional() @IsIn(EXPENSE_CATEGORIES) category?: ExpenseCategory;
+  @IsOptional() @IsDateString() from?: string;
+  @IsOptional() @IsDateString() to?: string;
+}
+
+class PeriodDto {
+  @IsOptional() @IsDateString() from?: string;
+  @IsOptional() @IsDateString() to?: string;
+}
+
+class FxRateDto {
+  @IsString() @MinLength(3) @MaxLength(3) currency: string;
+  @Type(() => Number) @IsNumber() @IsPositive() rate: number;
+  @IsOptional() @IsDateString() rateDate?: string;
+}
+
+/** Finance & billing domain (docs/01 modules 6–7, docs/03). */
+@Controller('finance')
+@Roles('finance_controller', 'supervisor', 'cfo', 'admin')
+export class FinanceController {
+  constructor(
+    private readonly invoices: InvoicesService,
+    private readonly expenses: ExpensesService,
+    private readonly dashboard: DashboardService,
+    private readonly events: FinanceEventsService,
+    private readonly db: DbService,
+  ) {}
+
+  // ---- dashboard ---------------------------------------------------------------
+  @Get('dashboard')
+  getDashboard(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
+    return this.dashboard.build(user, q.from, q.to);
+  }
+
+  /**
+   * Server-sent events: one message per posted financial fact, so the dashboard updates
+   * without polling. HQ roles receive the whole group, branch users only their branch.
+   */
+  @Sse('stream')
+  stream(@CurrentUser() user: AuthUser): Observable<MessageEvent> {
+    const scope = HQ_ROLES.includes(user.role) ? null : user.branchId;
+    return this.events.stream(scope).pipe(map((data) => ({ data }) as MessageEvent));
+  }
+
+  // ---- invoices ----------------------------------------------------------------
+  @Get('invoices')
+  listInvoices(@CurrentUser() user: AuthUser, @Query() q: InvoiceQueryDto) {
+    return this.invoices.list(user, q);
+  }
+
+  @Get('invoices/:id')
+  getInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.invoices.get(user, id);
+  }
+
+  @Post('invoices')
+  @Roles('finance_controller', 'admin')
+  createInvoice(@CurrentUser() user: AuthUser, @Body() dto: CreateInvoiceDto) {
+    return this.invoices.create(user, dto);
+  }
+
+  @Post('invoices/:id/issue')
+  @Roles('finance_controller', 'admin')
+  @HttpCode(200)
+  issueInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.invoices.issue(user, id);
+  }
+
+  @Post('invoices/:id/pay')
+  @Roles('finance_controller', 'admin')
+  @HttpCode(200)
+  payInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: PayDto) {
+    return this.invoices.pay(user, id, dto.amount, dto.paidOn);
+  }
+
+  @Post('invoices/:id/cancel')
+  @Roles('finance_controller', 'admin')
+  @HttpCode(200)
+  cancelInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.invoices.cancel(user, id);
+  }
+
+  @Delete('invoices/:id')
+  @Roles('finance_controller', 'admin')
+  @HttpCode(204)
+  async deleteInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    await this.invoices.remove(user, id);
+  }
+
+  // ---- expenses ----------------------------------------------------------------
+  @Get('expenses')
+  listExpenses(@CurrentUser() user: AuthUser, @Query() q: ExpenseQueryDto) {
+    return this.expenses.list(user, q);
+  }
+
+  @Post('expenses')
+  @Roles('finance_controller', 'admin')
+  createExpense(@CurrentUser() user: AuthUser, @Body() dto: CreateExpenseDto) {
+    return this.expenses.create(user, dto);
+  }
+
+  @Delete('expenses/:id')
+  @Roles('finance_controller', 'admin')
+  @HttpCode(204)
+  async deleteExpense(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    await this.expenses.remove(user, id);
+  }
+
+  // ---- fx rates ----------------------------------------------------------------
+  @Get('fx-rates')
+  listRates(@CurrentUser() user: AuthUser) {
+    return this.db.tx(user, (tx) =>
+      tx.many(
+        `SELECT DISTINCT ON (currency) id, currency, base_currency AS "baseCurrency", rate::float8 AS rate,
+                to_char(rate_date, 'YYYY-MM-DD') AS "rateDate"
+         FROM fx_rates WHERE base_currency = $1
+         ORDER BY currency, rate_date DESC`,
+        [config.consolidationCurrency],
+      ),
+    );
+  }
+
+  /** ASSUMPTION: rates are entered manually in MVP-3; a central-bank feed is a later integration. */
+  @Post('fx-rates')
+  @Roles('finance_controller', 'cfo', 'admin')
+  upsertRate(@CurrentUser() user: AuthUser, @Body() dto: FxRateDto) {
+    return this.db.tx(user, (tx) =>
+      tx.one(
+        `INSERT INTO fx_rates (currency, base_currency, rate, rate_date)
+         VALUES (upper($1), $2, $3, COALESCE($4::date, current_date))
+         ON CONFLICT (currency, base_currency, rate_date) DO UPDATE SET rate = EXCLUDED.rate
+         RETURNING id, currency, base_currency AS "baseCurrency", rate::float8 AS rate,
+                   to_char(rate_date, 'YYYY-MM-DD') AS "rateDate"`,
+        [dto.currency, config.consolidationCurrency, dto.rate, dto.rateDate ?? null],
+      ),
+    );
+  }
+}

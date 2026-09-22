@@ -38,6 +38,27 @@ export const tokens = {
     info: '#1F5AA6',
     infoBg: '#E4EDF9',
   },
+  /**
+   * Data-visualisation palette, kept separate from UI colours.
+   * Validated with the dataviz validator against a #FFFFFF chart surface:
+   * categorical trio passes CVD separation (worst adjacent ΔE 11.0 deutan) and the
+   * normal-vision floor (26.6); the sequential ramp is single-hue, monotone in lightness
+   * and clears the light-end contrast floor. `series3` sits below 3:1 against the surface,
+   * so every chart using it also ships a legend, direct labels and a table view.
+   * Re-run the validator if these values change.
+   */
+  viz: {
+    series1: '#1F5AA6', // revenue / primary measure
+    series2: '#C05621', // expense / outflow
+    series3: '#1BAF7A', // profit / inflow
+    seq1: '#9BB6DC',
+    seq2: '#719BD0',
+    seq3: '#4878B8',
+    seq4: '#2A5695',
+    seq5: '#143A70',
+    grid: '#E3E7EC',
+    axis: '#8A93A1',
+  },
   font: {
     // ASSUMPTION: brand typeface unknown ("гротеск без засечек"); neutral grotesque stack.
     // 'Noto Sans' / 'DejaVu Sans' are installed in the API container so Turkish glyphs render in PDFs.

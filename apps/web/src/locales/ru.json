@@ -1,6 +1,9 @@
 {
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
-  "nav": { "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты", "users": "Пользователи", "logout": "Выйти", "language": "Язык" },
+  "nav": {
+    "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
+    "invoices": "Счета", "expenses": "Расходы", "users": "Пользователи", "logout": "Выйти", "language": "Язык"
+  },
   "common": {
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
     "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
@@ -53,6 +56,44 @@
   "users": {
     "title": "Пользователи", "new": "Новый пользователь", "fullName": "ФИО", "email": "Email", "role": "Роль",
     "password": "Начальный пароль", "active": "Активен", "inactive": "Отключён", "deactivate": "Отключить", "activate": "Включить"
+  },
+  "charts": { "showTable": "Таблица", "showChart": "График" },
+  "dashboard": {
+    "groupTitle": "Финансовый дашборд группы", "branchTitle": "Финансы филиала",
+    "period": "{{from}} — {{to}}", "inCurrency": "консолидация в {{currency}}", "live": "обновлений: {{count}}",
+    "periods": { "3m": "Последние 3 месяца", "6m": "Последние 6 месяцев", "12m": "Последние 12 месяцев" },
+    "capitalization": "Капитализация группы", "capitalizationHint": "Деньги + дебиторка",
+    "revenue": "Выручка", "expenses": "Расходы", "profit": "Прибыль", "margin": "маржа {{pct}}%", "margin2": "Маржа",
+    "cash": "Денежные средства", "receivable": "Дебиторка", "overdue": "просрочено: {{amount}}",
+    "pnl": "P&L по месяцам", "pnlSub": "Выручка, расходы и прибыль в валюте консолидации",
+    "cashFlow": "Денежный поток", "cashFlowSub": "Поступления и платежи по месяцам",
+    "inflow": "Поступления", "outflow": "Платежи", "net": "Итого",
+    "revenueByService": "Выручка по услугам", "expensesByCategory": "Расходы по категориям", "topClients": "Ключевые клиенты",
+    "arAging": "Возраст дебиторки", "arAgingSub": "Неоплаченные счета по сроку с даты оплаты", "days": "{{range}} дн.",
+    "bucket": "Интервал", "amount": "Сумма", "invoices": "Счетов", "month": "Месяц", "service": "Услуга", "category": "Категория",
+    "byBranch": "По филиалам", "localRevenue": "Выручка (локальная)", "unassigned": "Без привязки к заявке",
+    "opsKpis": "Операционные показатели", "jobsInPeriod": "Создано заявок", "jobsApproved": "Утверждено заявок",
+    "reportsIssued": "Выпущено отчётов", "avgCycle": "Заявка → отчёт", "days2": "{{days}} дн.",
+    "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}"
+  },
+  "invoices": {
+    "title": "Счета", "new": "Новый счёт", "number": "№ счёта", "issued": "Выставлен", "due": "Срок оплаты",
+    "total": "Сумма", "paid": "Оплачено", "net": "Сумма без НДС", "taxRate": "Ставка НДС, %", "lines": "Позиции",
+    "lineDescription": "Наименование", "qty": "Кол-во", "unitPrice": "Цена", "addLine": "Добавить позицию",
+    "issue": "Выставить", "pay": "Оплата", "payPrompt": "Сумма платежа (остаток: {{amount}})",
+    "cancelConfirm": "Аннулировать счёт? Проводки будут сторнированы.",
+    "overdueDays": "просрочка {{days}} дн.", "empty": "Счетов нет"
+  },
+  "invoiceStatus": {
+    "draft": "Черновик", "issued": "Выставлен", "partially_paid": "Оплачен частично", "paid": "Оплачен", "cancelled": "Аннулирован"
+  },
+  "expenses": {
+    "title": "Расходы", "new": "Новый расход", "category": "Категория", "description": "Описание",
+    "amount": "Сумма", "supplier": "Поставщик", "date": "Дата", "empty": "Расходов нет"
+  },
+  "expenseCategories": {
+    "salary": "Зарплата", "travel": "Командировки", "subcontractor": "Подрядчики", "lab_materials": "Лабораторные материалы",
+    "equipment": "Оборудование", "office": "Офис", "other": "Прочее"
   },
   "verify": {
     "title": "Проверка подлинности отчёта", "valid": "Отчёт подлинный и действителен.",

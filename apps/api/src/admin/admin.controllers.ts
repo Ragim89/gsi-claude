@@ -57,8 +57,9 @@ class UpdateUserDto {
   @IsOptional() @IsString() @MinLength(8) password?: string;
 }
 
-// MVP-1 implements three roles; the others exist in the schema for later modules.
-const MVP1_ROLES: Role[] = ['inspector', 'supervisor', 'admin'];
+// Roles available so far: MVP-1 operations + MVP-3 finance. Lab and client-portal roles
+// are enabled together with their modules.
+const ENABLED_ROLES: Role[] = ['inspector', 'supervisor', 'finance_controller', 'cfo', 'admin'];
 
 @Controller('users')
 export class UsersController {
@@ -82,7 +83,7 @@ export class UsersController {
   @Post()
   @Roles('admin')
   async create(@CurrentUser() user: AuthUser, @Body() dto: CreateUserDto) {
-    if (!MVP1_ROLES.includes(dto.role)) {
+    if (!ENABLED_ROLES.includes(dto.role)) {
       throw new BadRequestException(`Role ${dto.role} is not available yet`);
     }
     const hash = await bcrypt.hash(dto.password, 10);
@@ -99,7 +100,7 @@ export class UsersController {
   @Patch(':id')
   @Roles('admin')
   async update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
-    if (dto.role && !MVP1_ROLES.includes(dto.role)) {
+    if (dto.role && !ENABLED_ROLES.includes(dto.role)) {
       throw new BadRequestException(`Role ${dto.role} is not available yet`);
     }
     if (id === user.id && (dto.isActive === false || (dto.role && !HQ_ROLES.includes(dto.role)))) {

@@ -10,6 +10,12 @@ import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailPage } from './pages/ClientDetailPage';
 import { UsersPage } from './pages/UsersPage';
 import { VerifyPage } from './pages/VerifyPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { InvoicesPage } from './pages/InvoicesPage';
+import { ExpensesPage } from './pages/ExpensesPage';
+
+/** Roles allowed into the finance area (mirrors app_sees_finance() in the database). */
+const FINANCE: Role[] = ['finance_controller', 'supervisor', 'cfo', 'admin'];
 
 function RequireAuth({ roles, children }: { roles?: Role[]; children: JSX.Element }) {
   const { user } = useAuth();
@@ -17,6 +23,13 @@ function RequireAuth({ roles, children }: { roles?: Role[]; children: JSX.Elemen
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/jobs" replace />;
   return children;
+}
+
+/** Finance roles land on the dashboard; operations roles on their job list. */
+function HomeRedirect() {
+  const { user } = useAuth();
+  const finance = user && ['cfo', 'finance_controller'].includes(user.role);
+  return <Navigate to={finance ? '/finance' : '/jobs'} replace />;
 }
 
 export function App() {
@@ -31,7 +44,10 @@ export function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<Navigate to="/jobs" replace />} />
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/finance" element={<RequireAuth roles={FINANCE}><DashboardPage /></RequireAuth>} />
+        <Route path="/finance/invoices" element={<RequireAuth roles={FINANCE}><InvoicesPage /></RequireAuth>} />
+        <Route path="/finance/expenses" element={<RequireAuth roles={FINANCE}><ExpensesPage /></RequireAuth>} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/jobs/new" element={<RequireAuth roles={['supervisor', 'admin']}><JobFormPage /></RequireAuth>} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />

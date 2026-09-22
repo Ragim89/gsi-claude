@@ -59,6 +59,7 @@ services:
       SEED_ON_START: "true"
       SEED_DEMO: "true"
       SEED_PASSWORD: ${SEED_PASSWORD:-ChangeMe123!}
+      SEED_REPORTS: ${SEED_REPORTS:-40}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
       S3_ENDPOINT: http://minio:9000
