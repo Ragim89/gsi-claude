@@ -82,21 +82,23 @@ async function getClient(tx: Tx, id: string) {
 export class ClientsController {
   constructor(private readonly db: DbService) {}
 
+  /** `branchId` lets an HQ user narrow the group view down to one branch. */
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query('search') search?: string) {
+  list(@CurrentUser() user: AuthUser, @Query('search') search?: string, @Query('branchId') branchId?: string) {
     const q = search?.trim() || null;
     return this.db.tx(user, (tx) =>
       tx.many(
         `SELECT ${CLIENT_COLUMNS},
                 (SELECT count(*)::int FROM inspection_jobs j WHERE j.client_id = c.id) AS "jobCount"
          FROM clients c JOIN branches b ON b.id = c.branch_id
-         WHERE $1::text IS NULL
-            OR c.name ILIKE '%' || $1 || '%'
-            OR c.gafta_fosfa_ref ILIKE '%' || $1 || '%'
-            OR c.tax_id ILIKE '%' || $1 || '%'
+         WHERE ($1::text IS NULL
+                OR c.name ILIKE '%' || $1 || '%'
+                OR c.gafta_fosfa_ref ILIKE '%' || $1 || '%'
+                OR c.tax_id ILIKE '%' || $1 || '%')
+           AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
          ORDER BY c.name
          LIMIT 500`,
-        [q],
+        [q, branchId || null],
       ),
     );
   }

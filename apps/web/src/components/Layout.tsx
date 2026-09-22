@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
+import { BranchSwitcher } from '../branch';
 import { LANGUAGES } from '../i18n';
 
 export function Layout() {
@@ -17,6 +18,7 @@ export function Layout() {
           <div className="sidebar__mark">GSI</div>
           <div className="sidebar__tag">{t('app.tagline')}</div>
         </div>
+        <BranchSwitcher />
         <nav>
           {finance && <NavLink to="/finance" end>{t('nav.dashboard')}</NavLink>}
           <NavLink to="/jobs">{hasRole('inspector') ? t('nav.myJobs') : t('nav.jobs')}</NavLink>

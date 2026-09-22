@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, Input, Table } from '@gsi/ui-kit/react';
 import { Client } from '@gsi/shared-types';
 import { api } from '../api';
 import { canManage, useAuth } from '../auth';
+import { flag, useBranch } from '../branch';
 import { ClientForm } from '../components/ClientForm';
 import { ErrorBox, Loading, PageHead } from '../components/common';
 
@@ -17,16 +18,21 @@ export function ClientsPage() {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const { branchId, current } = useBranch();
   const q = search.trim();
+  const params = new URLSearchParams();
+  if (q) params.set('search', q);
+  if (branchId) params.set('branchId', branchId);
   const clients = useQuery({
-    queryKey: ['clients', q],
-    queryFn: () => api.get<Client[]>(`/clients${q ? `?search=${encodeURIComponent(q)}` : ''}`),
+    queryKey: ['clients', q, branchId],
+    queryFn: () => api.get<Client[]>(`/clients?${params}`),
   });
 
   return (
     <div className="stack">
       <PageHead
         title={t('clients.title')}
+        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
         actions={
           canManage(user?.role) &&
           !creating && <Button onClick={() => setCreating(true)}>+ {t('clients.new')}</Button>

@@ -5,6 +5,7 @@ import { Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-k
 import { Branch, EXPENSE_CATEGORIES, Expense, ExpenseCategory } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
+import { flag, useBranch } from '../branch';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 export function ExpensesPage() {
@@ -16,9 +17,13 @@ export function ExpensesPage() {
   const [creating, setCreating] = useState(false);
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
 
+  const { branchId, current } = useBranch();
+  const params = new URLSearchParams();
+  if (category) params.set('category', category);
+  if (branchId) params.set('branchId', branchId);
   const expenses = useQuery({
-    queryKey: ['expenses', category],
-    queryFn: () => api.get<Expense[]>(`/finance/expenses${category ? `?category=${category}` : ''}`),
+    queryKey: ['expenses', category, branchId],
+    queryFn: () => api.get<Expense[]>(`/finance/expenses?${params}`),
   });
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches'), enabled: isHq });
 
@@ -69,6 +74,7 @@ export function ExpensesPage() {
     <div className="stack">
       <PageHead
         title={t('expenses.title')}
+        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
         actions={canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('expenses.new')}</Button>}
       />
 

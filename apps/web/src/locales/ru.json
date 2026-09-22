@@ -58,8 +58,9 @@
     "password": "Начальный пароль", "active": "Активен", "inactive": "Отключён", "deactivate": "Отключить", "activate": "Включить"
   },
   "charts": { "showTable": "Таблица", "showChart": "График" },
+  "branch": { "label": "Филиал", "all": "Все филиалы (группа)" },
   "dashboard": {
-    "groupTitle": "Финансовый дашборд группы", "branchTitle": "Финансы филиала",
+    "groupTitle": "Финансовый дашборд группы", "branchTitle": "Финансы филиала", "branchOf": "Финансы — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "консолидация в {{currency}}", "live": "обновлений: {{count}}",
     "periods": { "3m": "Последние 3 месяца", "6m": "Последние 6 месяцев", "12m": "Последние 12 месяцев" },
     "capitalization": "Капитализация группы", "capitalizationHint": "Деньги + дебиторка",

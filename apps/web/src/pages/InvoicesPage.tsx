@@ -6,6 +6,7 @@ import { Badge, BadgeTone, Button, Card, EmptyState, Field, Input, Select, Table
 import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
+import { flag, useBranch } from '../branch';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 const STATUS_TONE: Record<InvoiceStatus, BadgeTone> = {
@@ -30,10 +31,14 @@ export function InvoicesPage() {
   const [status, setStatus] = useState<InvoiceStatus | ''>('');
   const [creating, setCreating] = useState(false);
 
+  const { branchId, current } = useBranch();
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (branchId) params.set('branchId', branchId);
   const invoices = useQuery({
-    queryKey: ['invoices', status],
-    queryFn: () => api.get<Invoice[]>(`/finance/invoices${status ? `?status=${status}` : ''}`),
+    queryKey: ['invoices', status, branchId],
+    queryFn: () => api.get<Invoice[]>(`/finance/invoices?${params}`),
   });
 
   const act = useMutation({
@@ -52,6 +57,7 @@ export function InvoicesPage() {
     <div className="stack">
       <PageHead
         title={t('invoices.title')}
+        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
         actions={canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('invoices.new')}</Button>}
       />
       {creating && <InvoiceForm onDone={() => setCreating(false)} />}

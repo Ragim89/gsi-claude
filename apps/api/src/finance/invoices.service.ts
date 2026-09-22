@@ -45,16 +45,17 @@ export interface CreateInvoiceInput {
 export class InvoicesService {
   constructor(private readonly db: DbService, private readonly ledger: LedgerService) {}
 
-  list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean }) {
+  list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean; branchId?: string }) {
     return this.db.tx(user, (tx) =>
       tx.many<Invoice>(
         `SELECT ${INVOICE_COLUMNS} FROM ${INVOICE_FROM}
          WHERE ($1::invoice_status IS NULL OR i.status = $1::invoice_status)
            AND ($2::uuid IS NULL OR i.client_id = $2::uuid)
            AND ($3::boolean IS NOT TRUE OR (i.status IN ('issued','partially_paid') AND i.due_date < current_date))
+           AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
          ORDER BY i.issue_date DESC, i.invoice_number DESC
          LIMIT 500`,
-        [f.status ?? null, f.clientId ?? null, f.overdue ?? null],
+        [f.status ?? null, f.clientId ?? null, f.overdue ?? null, f.branchId ?? null],
       ),
     );
   }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeStyle } from '@gsi/ui-kit/react';
 import { ApiError } from './api';
 import { AuthProvider } from './auth';
+import { BranchProvider } from './branch';
 import { App } from './App';
 import './i18n';
 import './styles.css';
@@ -25,7 +26,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+            <BranchProvider>
+              <App />
+            </BranchProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

@@ -29,11 +29,16 @@ const n = (v: unknown): number => (v === null || v === undefined ? 0 : Number(v)
 export class DashboardService {
   constructor(private readonly db: DbService) {}
 
-  async build(user: AuthUser, from?: string, to?: string): Promise<FinanceDashboard> {
+  /**
+   * `branchId` narrows an HQ view to a single legal entity ("каждую точку отдельно").
+   * For branch users it changes nothing — RLS already limits them to their own branch.
+   */
+  async build(user: AuthUser, from?: string, to?: string, branchId?: string): Promise<FinanceDashboard> {
     const base = config.consolidationCurrency;
     const period = {
       from: from ?? defaultFrom(),
       to: to ?? new Date().toISOString().slice(0, 10),
+      branchId: branchId ?? null,
     };
 
     return this.db.tx(user, async (tx) => {
@@ -45,9 +50,9 @@ export class DashboardService {
           this.revenueByService(tx, period, base),
           this.revenueByClient(tx, period, base),
           this.expensesByCategory(tx, period, base),
-          this.arAging(tx, base),
+          this.arAging(tx, base, period.branchId),
           this.kpis(tx, period),
-          this.overdueTotal(tx, base),
+          this.overdueTotal(tx, base, period.branchId),
         ]);
 
       const revenueBase = sum(branches, 'revenueBase');
@@ -58,7 +63,7 @@ export class DashboardService {
 
       return {
         baseCurrency: base,
-        period,
+        period: { from: period.from, to: period.to },
         totals: {
           // ASSUMPTION: "капитализация группы" is reported as net liquid assets
           // (cash + receivables). Fixed assets and equity arrive with the accounting
@@ -100,9 +105,10 @@ export class DashboardService {
                 WHERE j.branch_id = b.id AND j.created_at::date BETWEEN $1::date AND $2::date)::int AS "jobCount"
        FROM branches b
        LEFT JOIN finance_daily_agg a ON a.branch_id = b.id
+       WHERE ($3::uuid IS NULL OR b.id = $3::uuid)
        GROUP BY b.id, b.code, b.country, b.city, b.currency
        ORDER BY "revenueBase" DESC, b.code`,
-      [p.from, p.to],
+      [p.from, p.to, p.branchId],
     );
     return rows.map((r) => ({
       branchId: String(r.branchId),
@@ -132,9 +138,10 @@ export class DashboardService {
               COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'expense'), 0)::float8 AS "expenseBase"
        FROM months
        LEFT JOIN finance_daily_agg a ON date_trunc('month', a.entry_date)::date = months.m_start
+                                    AND ($3::uuid IS NULL OR a.branch_id = $3::uuid)
        GROUP BY months.m_start
        ORDER BY months.m_start`,
-      [p.from, p.to],
+      [p.from, p.to, p.branchId],
     );
     return rows.map((r) => ({
       month: String(r.month),
@@ -156,9 +163,10 @@ export class DashboardService {
        FROM months
        LEFT JOIN ledger_entries l
               ON date_trunc('month', l.entry_date)::date = months.m_start AND l.account_group = 'cash'
+             AND ($3::uuid IS NULL OR l.branch_id = $3::uuid)
        GROUP BY months.m_start
        ORDER BY months.m_start`,
-      [p.from, p.to],
+      [p.from, p.to, p.branchId],
     );
     return rows.map((r) => ({
       month: String(r.month),
@@ -176,8 +184,9 @@ export class DashboardService {
        FROM invoices i LEFT JOIN inspection_jobs j ON j.id = i.job_id
        WHERE i.status IN ('issued', 'partially_paid', 'paid')
          AND i.issue_date BETWEEN $1::date AND $2::date
+         AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
        GROUP BY 1 ORDER BY amount DESC`,
-      [p.from, p.to, base],
+      [p.from, p.to, base, p.branchId],
     );
   }
 
@@ -188,8 +197,9 @@ export class DashboardService {
        FROM invoices i JOIN clients c ON c.id = i.client_id
        WHERE i.status IN ('issued', 'partially_paid', 'paid')
          AND i.issue_date BETWEEN $1::date AND $2::date
+         AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
        GROUP BY 1 ORDER BY amount DESC LIMIT 8`,
-      [p.from, p.to, base],
+      [p.from, p.to, base, p.branchId],
     );
   }
 
@@ -199,8 +209,9 @@ export class DashboardService {
       `SELECT e.category::text AS key, SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount
        FROM expenses e
        WHERE e.expense_date BETWEEN $1::date AND $2::date
+         AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
        GROUP BY 1 ORDER BY amount DESC`,
-      [p.from, p.to, base],
+      [p.from, p.to, base, p.branchId],
     );
   }
 
@@ -214,7 +225,7 @@ export class DashboardService {
     }));
   }
 
-  private async arAging(tx: Tx, base: string): Promise<ArAgingBucket[]> {
+  private async arAging(tx: Tx, base: string, branchId: string | null): Promise<ArAgingBucket[]> {
     const rows = await tx.many<{ bucket: string; amount: number; cnt: number }>(
       `SELECT CASE
                 WHEN current_date - COALESCE(due_date, issue_date) <= 30 THEN '0-30'
@@ -225,8 +236,9 @@ export class DashboardService {
               count(*)::int AS cnt
        FROM invoices
        WHERE status IN ('issued', 'partially_paid')
+         AND ($2::uuid IS NULL OR branch_id = $2::uuid)
        GROUP BY 1`,
-      [base],
+      [base, branchId],
     );
     const order: ArAgingBucket['bucket'][] = ['0-30', '31-60', '61-90', '90+'];
     return order.map((bucket) => {
@@ -235,11 +247,12 @@ export class DashboardService {
     });
   }
 
-  private async overdueTotal(tx: Tx, base: string): Promise<number> {
+  private async overdueTotal(tx: Tx, base: string, branchId: string | null): Promise<number> {
     const row = await tx.one<{ amount: number }>(
       `SELECT COALESCE(SUM((amount_total - amount_paid) * fx_rate_on(currency, $1, issue_date)), 0)::float8 AS amount
-       FROM invoices WHERE status IN ('issued', 'partially_paid') AND due_date < current_date`,
-      [base],
+       FROM invoices WHERE status IN ('issued', 'partially_paid') AND due_date < current_date
+         AND ($2::uuid IS NULL OR branch_id = $2::uuid)`,
+      [base, branchId],
     );
     return round2(n(row?.amount));
   }
@@ -248,15 +261,20 @@ export class DashboardService {
   private async kpis(tx: Tx, p: Period): Promise<OperationalKpis> {
     const row = await tx.one<Record<string, unknown>>(
       `SELECT
-         (SELECT count(*) FROM inspection_jobs WHERE created_at::date BETWEEN $1::date AND $2::date)::int AS jobs,
+         (SELECT count(*) FROM inspection_jobs WHERE created_at::date BETWEEN $1::date AND $2::date
+            AND ($3::uuid IS NULL OR branch_id = $3::uuid))::int AS jobs,
          (SELECT count(*) FROM inspection_jobs WHERE status = 'approved'
-            AND approved_at::date BETWEEN $1::date AND $2::date)::int AS approved,
-         (SELECT count(*) FROM reports WHERE created_at::date BETWEEN $1::date AND $2::date)::int AS reports,
-         (SELECT count(*) FROM users WHERE role = 'inspector' AND is_active)::int AS inspectors,
+            AND approved_at::date BETWEEN $1::date AND $2::date
+            AND ($3::uuid IS NULL OR branch_id = $3::uuid))::int AS approved,
+         (SELECT count(*) FROM reports WHERE created_at::date BETWEEN $1::date AND $2::date
+            AND ($3::uuid IS NULL OR branch_id = $3::uuid))::int AS reports,
+         (SELECT count(*) FROM users WHERE role = 'inspector' AND is_active
+            AND ($3::uuid IS NULL OR branch_id = $3::uuid))::int AS inspectors,
          (SELECT avg(EXTRACT(EPOCH FROM (r.created_at - j.created_at)) / 86400)
             FROM reports r JOIN inspection_jobs j ON j.id = r.job_id
-           WHERE r.created_at::date BETWEEN $1::date AND $2::date)::float8 AS avg_days`,
-      [p.from, p.to],
+           WHERE r.created_at::date BETWEEN $1::date AND $2::date
+             AND ($3::uuid IS NULL OR r.branch_id = $3::uuid))::float8 AS avg_days`,
+      [p.from, p.to, p.branchId],
     );
     const jobs = n(row?.jobs);
     const inspectors = n(row?.inspectors);
@@ -274,6 +292,8 @@ export class DashboardService {
 interface Period {
   from: string;
   to: string;
+  /** null = whole group (or whatever RLS allows). */
+  branchId: string | null;
 }
 
 function sum<T extends Record<K, number>, K extends keyof T>(rows: T[], key: K): number {

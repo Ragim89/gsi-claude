@@ -92,15 +92,16 @@ export class ReportsService {
     });
   }
 
-  list(user: AuthUser, f: { clientId?: string; jobId?: string }) {
+  list(user: AuthUser, f: { clientId?: string; jobId?: string; branchId?: string }) {
     return this.db.tx(user, (tx) =>
       tx.many<Report>(
         `SELECT ${REPORT_COLUMNS} FROM ${REPORT_FROM}
          WHERE ($1::uuid IS NULL OR j.client_id = $1::uuid)
            AND ($2::uuid IS NULL OR r.job_id = $2::uuid)
+           AND ($3::uuid IS NULL OR r.branch_id = $3::uuid)
          ORDER BY r.created_at DESC
          LIMIT 1000`,
-        [f.clientId ?? null, f.jobId ?? null],
+        [f.clientId ?? null, f.jobId ?? null, f.branchId ?? null],
       ),
     );
   }

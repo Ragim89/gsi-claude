@@ -192,3 +192,45 @@ td.negative { color: var(--gsi-color-danger); }
   .chart-grid { grid-template-columns: 1fr; }
   .invoice-line { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- Branch / country switcher ----------------------------------------------------- */
+.branch-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-inline: var(--gsi-space-3);
+  margin-block-end: var(--gsi-space-4);
+}
+.branch-switch__label {
+  font-size: var(--gsi-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  padding-inline-start: var(--gsi-space-3);
+}
+.branch-switch select {
+  width: 100%;
+  background: var(--gsi-color-primary-hover);
+  color: var(--gsi-color-on-primary);
+  border: 1px solid transparent;
+  border-radius: var(--gsi-radius-md);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: var(--gsi-font-size-sm);
+  cursor: pointer;
+}
+.branch-switch select:hover { border-color: var(--gsi-color-accent); }
+.branch-switch select option { color: var(--gsi-color-text); background: var(--gsi-color-surface); }
+.branch-pin {
+  padding-inline: var(--gsi-space-5);
+  margin-block-end: var(--gsi-space-4);
+  font-size: var(--gsi-font-size-sm);
+  color: var(--gsi-color-accent);
+}
+
+@media (max-width: 900px) {
+  .branch-switch { margin: 0; padding: 0; flex-direction: row; align-items: center; gap: var(--gsi-space-2); }
+  .branch-switch__label { display: none; }
+  .branch-switch select { width: auto; }
+  .branch-pin { margin: 0; padding: 0; }
+}

@@ -11,6 +11,8 @@ export interface JobFilters {
   clientId?: string;
   inspectorId?: string;
   search?: string;
+  /** HQ users can narrow the group view to one branch; RLS still bounds everyone else. */
+  branchId?: string;
 }
 
 export interface CreateJobInput {
@@ -41,9 +43,10 @@ export class JobsService {
            AND ($3::uuid IS NULL OR j.assigned_inspector_id = $3::uuid)
            AND ($4::text IS NULL OR j.job_number ILIKE '%' || $4 || '%' OR c.name ILIKE '%' || $4 || '%'
                 OR j.vessel_or_object ILIKE '%' || $4 || '%' OR j.location ILIKE '%' || $4 || '%')
+           AND ($5::uuid IS NULL OR j.branch_id = $5::uuid)
          ORDER BY COALESCE(j.scheduled_at, j.created_at) DESC
          LIMIT 500`,
-        [f.status ?? null, f.clientId ?? null, f.inspectorId ?? null, f.search?.trim() || null],
+        [f.status ?? null, f.clientId ?? null, f.inspectorId ?? null, f.search?.trim() || null, f.branchId ?? null],
       ),
     );
   }

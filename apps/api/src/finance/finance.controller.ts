@@ -73,6 +73,7 @@ class InvoiceQueryDto {
   @IsOptional() @IsIn(INVOICE_STATUSES) status?: InvoiceStatus;
   @IsOptional() @IsUUID() clientId?: string;
   @IsOptional() @Type(() => Boolean) @IsBoolean() overdue?: boolean;
+  @IsOptional() @IsUUID() branchId?: string;
 }
 
 class CreateExpenseDto {
@@ -89,11 +90,13 @@ class ExpenseQueryDto {
   @IsOptional() @IsIn(EXPENSE_CATEGORIES) category?: ExpenseCategory;
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
+  @IsOptional() @IsUUID() branchId?: string;
 }
 
 class PeriodDto {
   @IsOptional() @IsDateString() from?: string;
   @IsOptional() @IsDateString() to?: string;
+  @IsOptional() @IsUUID() branchId?: string;
 }
 
 class FxRateDto {
@@ -117,7 +120,7 @@ export class FinanceController {
   // ---- dashboard ---------------------------------------------------------------
   @Get('dashboard')
   getDashboard(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
-    return this.dashboard.build(user, q.from, q.to);
+    return this.dashboard.build(user, q.from, q.to, q.branchId);
   }
 
   /**

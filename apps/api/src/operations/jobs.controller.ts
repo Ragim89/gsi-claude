@@ -55,6 +55,7 @@ class JobQueryDto {
   @IsOptional() @IsUUID() clientId?: string;
   @IsOptional() @IsUUID() inspectorId?: string;
   @IsOptional() @IsString() search?: string;
+  @IsOptional() @IsUUID() branchId?: string;
 }
 
 class UpdateItemDto {

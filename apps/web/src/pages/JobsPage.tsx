@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, Input, Select, Table } from '@gsi/ui-kit/reac
 import { InspectionJob, JOB_STATUSES, JobStatus } from '@gsi/shared-types';
 import { api } from '../api';
 import { canManage, useAuth } from '../auth';
+import { flag, useBranch } from '../branch';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
 export function JobsPage() {
@@ -17,12 +18,14 @@ export function JobsPage() {
   const [status, setStatus] = useState<JobStatus | ''>('');
   const [search, setSearch] = useState('');
 
+  const { branchId, current } = useBranch();
   const params = new URLSearchParams();
   if (status) params.set('status', status);
   if (search.trim()) params.set('search', search.trim());
+  if (branchId) params.set('branchId', branchId);
 
   const jobs = useQuery({
-    queryKey: ['jobs', status, search.trim()],
+    queryKey: ['jobs', status, search.trim(), branchId],
     queryFn: () => api.get<InspectionJob[]>(`/jobs?${params}`),
   });
 
@@ -32,6 +35,7 @@ export function JobsPage() {
     <>
       <PageHead
         title={isInspector ? t('jobs.myTitle') : t('jobs.title')}
+        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
         actions={
           canManage(user?.role) && (
             <Button onClick={() => navigate('/jobs/new')}>+ {t('jobs.new')}</Button>

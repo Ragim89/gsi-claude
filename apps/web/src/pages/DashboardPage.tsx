@@ -6,6 +6,7 @@ import { Badge, Card, Select, Table } from '@gsi/ui-kit/react';
 import { FinanceDashboard, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shared-types';
 import { api, subscribeFinance } from '../api';
 import { useAuth } from '../auth';
+import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, FlowColumns, LineChart, StatTile } from '../components/charts';
 import { ErrorBox, Loading, PageHead } from '../components/common';
 
@@ -30,12 +31,14 @@ export function DashboardPage() {
   const [period, setPeriod] = useState('12m');
   const [live, setLive] = useState<{ at: string; count: number } | null>(null);
 
+  const { branchId, current } = useBranch();
   const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
   const from = fromDate(months);
 
   const q = useQuery({
-    queryKey: ['dashboard', from],
-    queryFn: () => api.get<FinanceDashboard>(`/finance/dashboard?from=${from}`),
+    queryKey: ['dashboard', from, branchId],
+    queryFn: () =>
+      api.get<FinanceDashboard>(`/finance/dashboard?from=${from}${branchId ? `&branchId=${branchId}` : ''}`),
   });
 
   // Event-driven refresh: the API pushes a message whenever a posting lands (no polling).
@@ -61,7 +64,13 @@ export function DashboardPage() {
   return (
     <div className="stack">
       <PageHead
-        title={isHq ? t('dashboard.groupTitle') : t('dashboard.branchTitle')}
+        title={
+          branchId && current
+            ? `${flag(current.country)} ${t('dashboard.branchOf', { branch: `${current.code} — ${current.city}` })}`
+            : isHq
+              ? t('dashboard.groupTitle')
+              : t('dashboard.branchTitle')
+        }
         sub={
           <>
             {t('dashboard.period', { from: d.period.from, to: d.period.to })} · {t('dashboard.inCurrency', { currency: d.baseCurrency })}

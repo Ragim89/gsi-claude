@@ -30,16 +30,17 @@ export interface CreateExpenseInput {
 export class ExpensesService {
   constructor(private readonly db: DbService, private readonly ledger: LedgerService) {}
 
-  list(user: AuthUser, f: { category?: ExpenseCategory; from?: string; to?: string }) {
+  list(user: AuthUser, f: { category?: ExpenseCategory; from?: string; to?: string; branchId?: string }) {
     return this.db.tx(user, (tx) =>
       tx.many<Expense>(
         `SELECT ${EXPENSE_COLUMNS} FROM ${EXPENSE_FROM}
          WHERE ($1::expense_category IS NULL OR e.category = $1::expense_category)
            AND ($2::date IS NULL OR e.expense_date >= $2::date)
            AND ($3::date IS NULL OR e.expense_date <= $3::date)
+           AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
          ORDER BY e.expense_date DESC, e.created_at DESC
          LIMIT 500`,
-        [f.category ?? null, f.from ?? null, f.to ?? null],
+        [f.category ?? null, f.from ?? null, f.to ?? null, f.branchId ?? null],
       ),
     );
   }

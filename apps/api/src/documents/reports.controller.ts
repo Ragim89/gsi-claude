@@ -7,6 +7,7 @@ import { ReportsService } from './reports.service';
 class ReportQueryDto {
   @IsOptional() @IsUUID() clientId?: string;
   @IsOptional() @IsUUID() jobId?: string;
+  @IsOptional() @IsUUID() branchId?: string;
 }
 
 @Controller('reports')
