@@ -1,0 +1,24 @@
+{
+  "name": "gsi-erp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "GSI (General Survey Inspection) ERP — modular monolith monorepo",
+  "workspaces": [
+    "packages/shared-types",
+    "packages/ui-kit",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "build:packages": "npm run build -w @gsi/shared-types -w @gsi/ui-kit",
+    "build": "npm run build:packages && npm run build -w @gsi/api -w @gsi/web",
+    "dev:api": "npm run dev -w @gsi/api",
+    "dev:web": "npm run dev -w @gsi/web",
+    "db:migrate": "npm run db:migrate -w @gsi/api",
+    "db:seed": "npm run db:seed -w @gsi/api",
+    "typecheck": "npm run build:packages && npm run typecheck -w @gsi/api -w @gsi/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
+  "nav": { "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients", "users": "Users", "logout": "Sign out", "language": "Language" },
+  "common": {
+    "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
+    "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
+    "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch"
+  },
+  "roles": {
+    "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
+    "finance_controller": "Finance controller", "cfo": "CFO / HQ", "client": "Client", "admin": "Administrator"
+  },
+  "status": {
+    "new": "New", "assigned": "Assigned", "in_progress": "In progress", "under_review": "Under review",
+    "approved": "Approved", "cancelled": "Cancelled"
+  },
+  "result": { "ok": "OK", "deviation": "Deviation", "na": "N/A" },
+  "login": {
+    "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in",
+    "demoHint": "Demo accounts: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — password ChangeMe123!"
+  },
+  "jobs": {
+    "title": "Inspection jobs", "myTitle": "My jobs", "new": "New job", "number": "Job no.", "client": "Client",
+    "type": "Service", "location": "Place of inspection", "scheduled": "Scheduled", "inspector": "Inspector",
+    "status": "Status", "empty": "No jobs found", "vessel": "Vessel / object", "commodity": "Commodity",
+    "quantity": "Quantity", "instructions": "Instructions", "unassigned": "Unassigned", "selectClient": "Select client…",
+    "selectType": "Select service…", "editTitle": "Edit job {{number}}"
+  },
+  "job": {
+    "details": "Details", "assign": "Assign", "selectInspector": "Select inspector…", "start": "Start inspection",
+    "submit": "Submit for review", "submitConfirm": "Submit the checklist for supervisor review? You will not be able to change it afterwards.",
+    "return": "Return for rework", "returnPrompt": "Comment for the inspector (what must be fixed):",
+    "approve": "Approve & issue report", "approveConfirm": "Approve this job and issue the PDF report on the branch letterhead?",
+    "cancel": "Cancel job", "cancelConfirm": "Cancel this job?", "previewPdf": "Preview PDF (draft)",
+    "reviewComment": "Supervisor comment", "reports": "Reports", "approvedIssued": "Approved — report {{number}} issued",
+    "noReports": "No report issued yet"
+  },
+  "checklist": {
+    "title": "Field checklist", "progress": "{{done}} of {{total}} checked", "value": "Value / reading",
+    "notes": "Notes", "addPhoto": "Add photo", "uploading": "Uploading…", "deletePhoto": "Delete photo",
+    "readOnly": "Read-only: the job is {{status}}", "empty": "No checklist items", "saving": "Saving…", "saved": "Saved"
+  },
+  "clients": {
+    "title": "Clients", "new": "New client", "name": "Name", "gafta": "GAFTA / FOSFA ref.", "taxId": "Tax ID",
+    "country": "Country (ISO-2)", "address": "Address", "contactName": "Contact person", "contactEmail": "Contact email",
+    "contactPhone": "Contact phone", "notes": "Notes", "jobs": "Jobs", "empty": "No clients found",
+    "reports": "Reports", "noReports": "No reports yet", "info": "Client details"
+  },
+  "reports": {
+    "number": "Report no.", "version": "Rev.", "issued": "Issued", "approvedBy": "Approved by",
+    "download": "Download PDF", "job": "Job", "service": "Service"
+  },
+  "users": {
+    "title": "Users", "new": "New user", "fullName": "Full name", "email": "Email", "role": "Role",
+    "password": "Initial password", "active": "Active", "inactive": "Inactive", "deactivate": "Deactivate", "activate": "Activate"
+  },
+  "verify": {
+    "title": "Report verification", "valid": "This report is authentic and valid.",
+    "invalid": "No valid report matches this code.", "revoked": "This report has been revoked."
+  }
+}

@@ -1,0 +1,75 @@
+function env(name: string, fallback?: string): string {
+  const v = process.env[name] ?? fallback;
+  if (v === undefined || v === '') throw new Error(`Missing required environment variable ${name}`);
+  return v;
+}
+
+const isProd = process.env.NODE_ENV === 'production';
+
+/** '15m' / '7d' / '3600' → seconds. */
+function ttlSeconds(v: string): number {
+  const m = /^(\d+)\s*([smhd]?)$/.exec(v.trim());
+  if (!m) throw new Error(`Invalid TTL "${v}"`);
+  const mult = { '': 1, s: 1, m: 60, h: 3600, d: 86400 }[m[2] as '' | 's' | 'm' | 'h' | 'd'];
+  return Number(m[1]) * mult;
+}
+
+function secret(name: string): string {
+  // Dev fallbacks keep `npm run dev` friction-free; production must set real secrets.
+  return isProd ? env(name) : env(name, `dev-only-${name.toLowerCase()}`);
+}
+
+export const config = {
+  get port() {
+    return Number(process.env.PORT ?? 3000);
+  },
+  /** Connection as the non-owner `gsi_app` role — subject to Row-Level Security. */
+  get databaseUrl() {
+    return env('DATABASE_URL', 'postgres://gsi_app:gsi_app@localhost:5432/gsi');
+  },
+  /** Owner / superuser connection — migrations and seeds only. */
+  get databaseOwnerUrl() {
+    return env('DATABASE_OWNER_URL', 'postgres://gsi:gsi@localhost:5432/gsi');
+  },
+  get appDbPassword() {
+    return env('APP_DB_PASSWORD', 'gsi_app');
+  },
+  jwt: {
+    get accessSecret() {
+      return secret('JWT_ACCESS_SECRET');
+    },
+    get refreshSecret() {
+      return secret('JWT_REFRESH_SECRET');
+    },
+    accessTtlSeconds: ttlSeconds(process.env.JWT_ACCESS_TTL ?? '15m'),
+    refreshTtlSeconds: ttlSeconds(process.env.JWT_REFRESH_TTL ?? '7d'),
+  },
+  s3: {
+    get endpoint() {
+      return env('S3_ENDPOINT', 'http://localhost:9000');
+    },
+    /** Endpoint used when presigning URLs for browsers (differs from the in-cluster one in docker). */
+    get publicEndpoint() {
+      return process.env.S3_PUBLIC_ENDPOINT || this.endpoint;
+    },
+    region: process.env.S3_REGION ?? 'us-east-1',
+    get accessKey() {
+      return env('S3_ACCESS_KEY', 'minioadmin');
+    },
+    get secretKey() {
+      return env('S3_SECRET_KEY', 'minioadmin');
+    },
+    get bucket() {
+      return env('S3_BUCKET', 'gsi-media');
+    },
+    forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true',
+    presignTtlSeconds: Number(process.env.S3_PRESIGN_TTL ?? 900),
+  },
+  /** Base URL of the web app; used for the QR verification link printed on reports. */
+  get publicWebUrl() {
+    return (process.env.PUBLIC_WEB_URL ?? 'http://localhost:8080').replace(/\/$/, '');
+  },
+  chromiumPath: process.env.PUPPETEER_EXECUTABLE_PATH,
+  maxUploadBytes: Number(process.env.MAX_UPLOAD_MB ?? 25) * 1024 * 1024,
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:8080').split(','),
+};

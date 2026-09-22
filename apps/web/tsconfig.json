@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "isolatedModules": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@gsi/ui-kit/react": ["../../packages/ui-kit/src/react/index.tsx"],
+      "@gsi/ui-kit": ["../../packages/ui-kit/src/index.ts"],
+      "@gsi/shared-types": ["../../packages/shared-types/src/index.ts"]
+    }
+  },
+  "include": ["src", "../../packages/ui-kit/src", "../../packages/shared-types/src"]
+}

@@ -1,0 +1,61 @@
+{
+  "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
+  "nav": { "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты", "users": "Пользователи", "logout": "Выйти", "language": "Язык" },
+  "common": {
+    "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
+    "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
+    "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал"
+  },
+  "roles": {
+    "inspector": "Инспектор", "lab_technician": "Лаборант", "supervisor": "Супервайзер",
+    "finance_controller": "Финконтролёр", "cfo": "CFO / HQ", "client": "Клиент", "admin": "Администратор"
+  },
+  "status": {
+    "new": "Новая", "assigned": "Назначена", "in_progress": "В работе", "under_review": "На проверке",
+    "approved": "Утверждена", "cancelled": "Отменена"
+  },
+  "result": { "ok": "Норма", "deviation": "Отклонение", "na": "Н/П" },
+  "login": {
+    "title": "Вход", "email": "Email", "password": "Пароль", "submit": "Войти",
+    "demoHint": "Демо-учётки: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — пароль ChangeMe123!"
+  },
+  "jobs": {
+    "title": "Заявки на инспекцию", "myTitle": "Мои задания", "new": "Новая заявка", "number": "№ заявки", "client": "Клиент",
+    "type": "Услуга", "location": "Место инспекции", "scheduled": "Запланировано", "inspector": "Инспектор",
+    "status": "Статус", "empty": "Заявок не найдено", "vessel": "Судно / объект", "commodity": "Товар",
+    "quantity": "Количество", "instructions": "Инструкции", "unassigned": "Не назначен", "selectClient": "Выберите клиента…",
+    "selectType": "Выберите услугу…", "editTitle": "Изменить заявку {{number}}"
+  },
+  "job": {
+    "details": "Детали", "assign": "Назначить", "selectInspector": "Выберите инспектора…", "start": "Начать инспекцию",
+    "submit": "Отправить на проверку", "submitConfirm": "Отправить чек-лист на проверку супервайзеру? После этого изменить его будет нельзя.",
+    "return": "Вернуть на доработку", "returnPrompt": "Комментарий для инспектора (что исправить):",
+    "approve": "Утвердить и выпустить отчёт", "approveConfirm": "Утвердить заявку и выпустить PDF-отчёт на бланке филиала?",
+    "cancel": "Отменить заявку", "cancelConfirm": "Отменить заявку?", "previewPdf": "Предпросмотр PDF (черновик)",
+    "reviewComment": "Комментарий супервайзера", "reports": "Отчёты", "approvedIssued": "Утверждено — выпущен отчёт {{number}}",
+    "noReports": "Отчёт ещё не выпущен"
+  },
+  "checklist": {
+    "title": "Полевой чек-лист", "progress": "Проверено {{done}} из {{total}}", "value": "Значение / замер",
+    "notes": "Примечания", "addPhoto": "Добавить фото", "uploading": "Загрузка…", "deletePhoto": "Удалить фото",
+    "readOnly": "Только чтение: заявка в статусе «{{status}}»", "empty": "Нет пунктов чек-листа", "saving": "Сохранение…", "saved": "Сохранено"
+  },
+  "clients": {
+    "title": "Контрагенты", "new": "Новый клиент", "name": "Название", "gafta": "Номер GAFTA / FOSFA", "taxId": "ИНН / Tax ID",
+    "country": "Страна (ISO-2)", "address": "Адрес", "contactName": "Контактное лицо", "contactEmail": "Email контакта",
+    "contactPhone": "Телефон контакта", "notes": "Примечания", "jobs": "Заявки", "empty": "Клиентов не найдено",
+    "reports": "Отчёты", "noReports": "Отчётов пока нет", "info": "Карточка клиента"
+  },
+  "reports": {
+    "number": "№ отчёта", "version": "Ред.", "issued": "Выпущен", "approvedBy": "Утвердил",
+    "download": "Скачать PDF", "job": "Заявка", "service": "Услуга"
+  },
+  "users": {
+    "title": "Пользователи", "new": "Новый пользователь", "fullName": "ФИО", "email": "Email", "role": "Роль",
+    "password": "Начальный пароль", "active": "Активен", "inactive": "Отключён", "deactivate": "Отключить", "activate": "Включить"
+  },
+  "verify": {
+    "title": "Проверка подлинности отчёта", "valid": "Отчёт подлинный и действителен.",
+    "invalid": "Действительный отчёт с таким кодом не найден.", "revoked": "Отчёт отозван."
+  }
+}

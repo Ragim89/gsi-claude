@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  // Only the framework-agnostic part (tokens) is compiled for Node consumers.
+  // React components are consumed as TS source by apps/web through a Vite alias.
+  "include": ["src/index.ts", "src/tokens.ts"]
+}

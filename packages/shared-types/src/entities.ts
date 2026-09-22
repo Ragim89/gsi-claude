@@ -1,0 +1,156 @@
+import type { ChecklistResult, JobStatus, MediaType, ReportStatus, Role, ServiceType } from './enums';
+import type { LocalizedText, ChecklistInputKind } from './checklist-templates';
+
+/** ISO-8601 timestamp string as returned by the API. */
+export type Timestamp = string;
+
+export interface Branch {
+  id: string;
+  code: string;
+  country: string;
+  city: string;
+  currency: string;
+  locale: string;
+  uiLocales: string[];
+  timezone: string;
+  legalName: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  accreditation: string | null;
+  isHq: boolean;
+  letterheadTemplateId: string;
+}
+
+export interface User {
+  id: string;
+  branchId: string;
+  branchCode?: string;
+  email: string;
+  fullName: string;
+  role: Role;
+  locale: string;
+  isActive: boolean;
+}
+
+/** Authenticated principal carried in the access token. */
+export interface AuthUser {
+  id: string;
+  branchId: string;
+  role: Role;
+  email: string;
+  fullName: string;
+  locale: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+}
+
+export interface Client {
+  id: string;
+  branchId: string;
+  branchCode?: string;
+  name: string;
+  gaftaFosfaRef: string | null;
+  taxId: string | null;
+  country: string | null;
+  address: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  notes: string | null;
+  jobCount?: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface InspectionJob {
+  id: string;
+  branchId: string;
+  branchCode?: string;
+  jobNumber: string;
+  clientId: string;
+  clientName?: string;
+  type: ServiceType;
+  status: JobStatus;
+  assignedInspectorId: string | null;
+  assignedInspectorName?: string | null;
+  location: string;
+  vesselOrObject: string | null;
+  commodity: string | null;
+  quantity: string | null;
+  scheduledAt: Timestamp | null;
+  instructions: string | null;
+  reviewComment: string | null;
+  submittedAt: Timestamp | null;
+  approvedAt: Timestamp | null;
+  approvedBy: string | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface MediaAttachment {
+  id: string;
+  jobId: string;
+  checklistItemId: string | null;
+  type: MediaType;
+  mimeType: string;
+  sizeBytes: number;
+  sha256: string;
+  originalName: string | null;
+  gpsLat: number | null;
+  gpsLng: number | null;
+  gpsAccuracyM: number | null;
+  takenAt: Timestamp | null;
+  createdAt: Timestamp;
+  /** Short-lived presigned URLs, generated per request. */
+  url?: string;
+  previewUrl?: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  jobId: string;
+  itemKey: string;
+  label: LocalizedText;
+  inputKind: ChecklistInputKind;
+  sortOrder: number;
+  result: ChecklistResult | null;
+  value: string | null;
+  notes: string | null;
+  updatedAt: Timestamp;
+  media: MediaAttachment[];
+}
+
+export interface Report {
+  id: string;
+  branchId: string;
+  jobId: string;
+  jobNumber?: string;
+  clientId?: string;
+  clientName?: string;
+  serviceType?: ServiceType;
+  reportNumber: string;
+  version: number;
+  status: ReportStatus;
+  templateId: string;
+  approvedBy: string | null;
+  approvedByName?: string | null;
+  approvedAt: Timestamp | null;
+  verificationToken: string;
+  createdAt: Timestamp;
+}
+
+export interface ReportVerification {
+  valid: boolean;
+  reportNumber?: string;
+  status?: ReportStatus;
+  issuedAt?: Timestamp;
+  branch?: string;
+  jobNumber?: string;
+  serviceType?: ServiceType;
+  clientName?: string;
+}
