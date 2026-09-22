@@ -21,6 +21,7 @@ export function Layout() {
         <BranchSwitcher />
         <nav>
           {finance && <NavLink to="/finance" end>{t('nav.dashboard')}</NavLink>}
+          {finance && <NavLink to="/branches">{t('nav.branches')}</NavLink>}
           <NavLink to="/jobs">{hasRole('inspector') ? t('nav.myJobs') : t('nav.jobs')}</NavLink>
           <NavLink to="/clients">{t('nav.clients')}</NavLink>
           {finance && (

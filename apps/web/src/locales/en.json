@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
-    "invoices": "Invoices", "expenses": "Expenses", "users": "Users", "logout": "Sign out", "language": "Language"
+    "invoices": "Invoices", "expenses": "Expenses", "branches": "Branches", "users": "Users", "logout": "Sign out", "language": "Language"
   },
   "common": {
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
@@ -59,6 +59,18 @@
   },
   "charts": { "showTable": "Table", "showChart": "Chart" },
   "branch": { "label": "Branch", "all": "All branches (group)" },
+  "branches": {
+    "title": "Branch comparison", "entities": "Legal entities", "entitiesHint": "in the group",
+    "bestMargin": "Best margin", "revenueCompare": "Revenue by branch", "revenueCompareSub": "Consolidated, for the period",
+    "profitCompare": "Profit by branch", "profitCompareSub": "Revenue minus expenses, with margin",
+    "perInspector": "Revenue per inspector", "perInspectorSub": "Workload efficiency", "perInspectorShort": "Per inspector",
+    "inspectorsShort": "insp.", "overdueCompare": "Overdue receivables", "overdueCompareSub": "Where collection lags",
+    "table": "All branches", "sortBy": "Sort by", "focus": "Filter everything by this branch", "active": "Active filter",
+    "requisites": "Requisites", "legalName": "Legal name", "currency": "Accounting currency", "timezone": "Time zone",
+    "locale": "Locale", "accreditation": "Accreditation", "template": "Letterhead template", "team": "Team",
+    "noTeam": "No users yet", "activeUsers": "active users", "openJobs": "{{count}} open",
+    "editHint": "Branch requisites are maintained in the database; an admin screen for them is planned."
+  },
   "dashboard": {
     "groupTitle": "Group finance dashboard", "branchTitle": "Branch finance dashboard", "branchOf": "Finance — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "consolidated in {{currency}}", "live": "live · {{count}} updates",
@@ -91,7 +103,7 @@
     "toChase": "Chase these first", "amountDue": "Outstanding", "overdueBy": "Overdue by",
     "register": "Invoice register", "onlyOverdue": "Overdue only", "dueDate": "Due date",
     "cancelInvoice": "Cancel invoice", "details": "Details", "paidAt": "Paid at", "currency": "Currency",
-    "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by"
+    "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by", "downloadPdf": "Invoice PDF"
   },
   "invoiceStatus": {
     "draft": "Draft", "issued": "Issued", "partially_paid": "Partially paid", "paid": "Paid", "cancelled": "Cancelled"

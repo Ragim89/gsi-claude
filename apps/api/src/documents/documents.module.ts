@@ -7,6 +7,6 @@ import { PdfService } from './pdf.service';
 @Module({
   controllers: [ReportsController, JobReportPreviewController, PublicVerifyController],
   providers: [ReportsService, PdfService],
-  exports: [ReportsService],
+  exports: [ReportsService, PdfService],
 })
 export class DocumentsModule {}

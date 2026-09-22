@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Sse,
+  StreamableFile,
 } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
@@ -46,6 +47,7 @@ import { InvoicesService } from './invoices.service';
 import { ExpensesService } from './expenses.service';
 import { DashboardService } from './dashboard.service';
 import { FinanceEventsService } from './finance-events.service';
+import { InvoicePdfService } from './invoice-pdf.service';
 
 class InvoiceLineDto {
   @IsString() @MinLength(2) @MaxLength(300) description: string;
@@ -114,6 +116,7 @@ export class FinanceController {
     private readonly expenses: ExpensesService,
     private readonly dashboard: DashboardService,
     private readonly events: FinanceEventsService,
+    private readonly invoicePdf_: InvoicePdfService,
     private readonly db: DbService,
   ) {}
 
@@ -153,6 +156,13 @@ export class FinanceController {
   @Get('invoices/:id/payments')
   invoicePayments(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.invoices.payments(user, id);
+  }
+
+  /** Printable invoice on the branch letterhead. */
+  @Get('invoices/:id/pdf')
+  async invoicePdf(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    const { pdf, filename } = await this.invoicePdf_.render(user, id);
+    return new StreamableFile(pdf, { type: 'application/pdf', disposition: `attachment; filename="${filename}"` });
   }
 
   @Post('invoices')

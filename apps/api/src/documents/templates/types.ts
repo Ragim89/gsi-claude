@@ -1,4 +1,12 @@
-import type { Branch, ChecklistInputKind, ChecklistResult, InspectionJob, LocalizedText } from '@gsi/shared-types';
+import type {
+  Branch,
+  ChecklistInputKind,
+  ChecklistResult,
+  InspectionJob,
+  Invoice,
+  InvoiceLine,
+  LocalizedText,
+} from '@gsi/shared-types';
 
 export interface ReportPhoto {
   src: string; // data: URI
@@ -41,4 +49,11 @@ export interface ReportTemplate {
   id: string;
   html(data: ReportTemplateData): string;
   footer(data: ReportTemplateData): string;
+}
+
+export interface InvoiceTemplateData {
+  branch: Branch;
+  client: { name: string; address: string | null; taxId: string | null; gaftaFosfaRef: string | null };
+  invoice: Invoice;
+  lines: InvoiceLine[];
 }

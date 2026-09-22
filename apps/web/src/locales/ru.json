@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
-    "invoices": "Счета", "expenses": "Расходы", "users": "Пользователи", "logout": "Выйти", "language": "Язык"
+    "invoices": "Счета", "expenses": "Расходы", "branches": "Филиалы", "users": "Пользователи", "logout": "Выйти", "language": "Язык"
   },
   "common": {
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
@@ -59,6 +59,18 @@
   },
   "charts": { "showTable": "Таблица", "showChart": "График" },
   "branch": { "label": "Филиал", "all": "Все филиалы (группа)" },
+  "branches": {
+    "title": "Сравнение филиалов", "entities": "Юридических лиц", "entitiesHint": "в группе",
+    "bestMargin": "Лучшая маржа", "revenueCompare": "Выручка по филиалам", "revenueCompareSub": "Консолидация за период",
+    "profitCompare": "Прибыль по филиалам", "profitCompareSub": "Выручка минус расходы, с маржой",
+    "perInspector": "Выручка на инспектора", "perInspectorSub": "Эффективность загрузки", "perInspectorShort": "На инспектора",
+    "inspectorsShort": "инсп.", "overdueCompare": "Просроченная дебиторка", "overdueCompareSub": "Где хуже собираемость",
+    "table": "Все филиалы", "sortBy": "Сортировка", "focus": "Фильтровать всё по этому филиалу", "active": "Активный фильтр",
+    "requisites": "Реквизиты", "legalName": "Юридическое название", "currency": "Валюта учёта", "timezone": "Часовой пояс",
+    "locale": "Локаль", "accreditation": "Аккредитация", "template": "Шаблон бланка", "team": "Сотрудники",
+    "noTeam": "Сотрудников пока нет", "activeUsers": "активных сотрудников", "openJobs": "в работе: {{count}}",
+    "editHint": "Реквизиты филиала пока правятся в базе данных; экран администрирования запланирован."
+  },
   "dashboard": {
     "groupTitle": "Финансовый дашборд группы", "branchTitle": "Финансы филиала", "branchOf": "Финансы — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "консолидация в {{currency}}", "live": "обновлений: {{count}}",
@@ -92,7 +104,7 @@
     "toChase": "Кому напомнить об оплате", "amountDue": "К оплате", "overdueBy": "Просрочка",
     "register": "Журнал счетов", "onlyOverdue": "Только просроченные", "dueDate": "Срок оплаты",
     "cancelInvoice": "Аннулировать счёт", "details": "Реквизиты", "paidAt": "Оплачен", "currency": "Валюта",
-    "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл"
+    "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл", "downloadPdf": "Счёт в PDF"
   },
   "invoiceStatus": {
     "draft": "Черновик", "issued": "Выставлен", "partially_paid": "Оплачен частично", "paid": "Оплачен", "cancelled": "Аннулирован"

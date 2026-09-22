@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
 import { Invoice, InvoicePayment } from '@gsi/shared-types';
-import { api } from '../api';
+import { api, downloadFile } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 import { INVOICE_TONE } from './InvoicesPage';
@@ -17,6 +18,9 @@ export function InvoiceDetailPage() {
   const navigate = useNavigate();
   const fmt = useFormatDate();
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+
+  const [printing, setPrinting] = useState(false);
+  const [printError, setPrintError] = useState<unknown>(null);
 
   const invoice = useQuery({ queryKey: ['invoice', id], queryFn: () => api.get<Invoice>(`/finance/invoices/${id}`) });
   const payments = useQuery({
@@ -44,6 +48,18 @@ export function InvoiceDetailPage() {
       navigate('/finance/invoices');
     },
   });
+
+  async function print() {
+    setPrinting(true);
+    setPrintError(null);
+    try {
+      await downloadFile(`/finance/invoices/${id}/pdf`, `${invoice.data?.invoiceNumber ?? 'invoice'}.pdf`);
+    } catch (err) {
+      setPrintError(err);
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   if (invoice.isLoading) return <Loading />;
   if (!invoice.data) return <ErrorBox error={invoice.error} />;
@@ -78,9 +94,13 @@ export function InvoiceDetailPage() {
           </>
         }
         actions={
-          canWrite && (
-            <>
-              {inv.status === 'draft' && (
+          <>
+            <Button variant="secondary" loading={printing} onClick={print}>
+              ⤓ {t('invoices.downloadPdf')}
+            </Button>
+            {canWrite && (
+              <>
+                {inv.status === 'draft' && (
                 <Button loading={act.isPending} onClick={() => act.mutate({ action: 'issue' })}>
                   {t('invoices.issue')}
                 </Button>
@@ -111,12 +131,13 @@ export function InvoiceDetailPage() {
                 <Button variant="danger" loading={remove.isPending} onClick={() => window.confirm(t('common.confirmDelete')) && remove.mutate()}>
                   {t('common.delete')}
                 </Button>
-              )}
-            </>
-          )
+                )}
+              </>
+            )}
+          </>
         }
       />
-      <ErrorBox error={act.error ?? remove.error} />
+      <ErrorBox error={act.error ?? remove.error ?? printError} />
 
       <div className="two-col">
         <Card title={t('invoices.lines')}>
