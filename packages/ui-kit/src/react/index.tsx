@@ -142,3 +142,5 @@ export function Segmented<T extends string>({
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(' ');
 }
+
+export { Logo, LogoLockup } from './logo';

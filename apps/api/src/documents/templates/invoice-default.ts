@@ -1,5 +1,6 @@
 import { localize, SERVICE_TYPE_LABELS } from '@gsi/shared-types';
 import { tokens, toCssVariables } from '@gsi/ui-kit';
+import { logoDataUri } from './brand';
 import type { InvoiceTemplateData } from './types';
 
 /**
@@ -80,17 +81,15 @@ body {
 }
 .tr { display: block; }
 .en { display: block; color: var(--gsi-color-text-muted); font-size: 0.85em; }
-.letterhead {
-  display: flex; justify-content: space-between; align-items: stretch;
-  background: var(--gsi-color-primary); color: var(--gsi-color-on-primary);
-  border-radius: var(--gsi-radius-md); overflow: hidden;
+/* Letterhead: the official wordmark on white, as on the company's own stationery. */
+.letterhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.letterhead .brand img { height: 58px; }
+.brand-sub { font-size: 8pt; color: var(--gsi-color-text-muted); margin-top: 4px; }
+.letterhead .contacts { text-align: right; font-size: 7.5pt; color: var(--gsi-color-text-muted); max-width: 45%; }
+.accent-rule {
+  height: 3px; margin: 10px 0 16px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gsi-color-primary), var(--gsi-color-accent));
 }
-.letterhead .brand { padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
-.wordmark { font-size: 26pt; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.08em; color: var(--gsi-color-accent); line-height: 1; }
-.brand-name { font-size: 10.5pt; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.04em; text-transform: uppercase; }
-.brand-sub { font-size: 8pt; opacity: 0.85; margin-top: 2px; }
-.letterhead .contacts { padding: 14px 18px; text-align: right; font-size: 7.5pt; opacity: 0.9; max-width: 45%; }
-.accent-rule { height: 4px; background: var(--gsi-color-accent); margin: 6px 0 16px; border-radius: 2px; }
 
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 18px; }
 h1 { margin: 0; font-size: 19pt; color: var(--gsi-color-primary); letter-spacing: 0.02em; }
@@ -151,15 +150,12 @@ ${watermark ? `<div class="watermark">${esc(watermark[0])} / ${esc(watermark[1])
 
 <header class="letterhead">
   <div class="brand">
-    <div class="wordmark">GSI</div>
-    <div>
-      <div class="brand-name">General Survey Inspection</div>
-      <div class="brand-sub">${esc(d.branch.legalName)}</div>
-    </div>
+    <img src="${logoDataUri('logo-wordmark.png')}" alt="General Survey Inspection Co." />
+    <div class="brand-sub">${esc(d.branch.legalName)}</div>
   </div>
   <div class="contacts">
     ${esc(d.branch.address)}<br />
-    ${[d.branch.phone, d.branch.email].filter(Boolean).map(esc).join(' · ')}
+    ${[d.branch.phone, d.branch.email, d.branch.website].filter(Boolean).map(esc).join(' · ')}
   </div>
 </header>
 <div class="accent-rule"></div>

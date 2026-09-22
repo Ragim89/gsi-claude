@@ -1,5 +1,6 @@
 import { localize, SERVICE_TYPE_LABELS } from '@gsi/shared-types';
 import { tokens, toCssVariables } from '@gsi/ui-kit';
+import { logoDataUri } from './brand';
 import type { ReportTemplate, ReportTemplateData } from './types';
 
 /**
@@ -14,7 +15,8 @@ import type { ReportTemplate, ReportTemplateData } from './types';
  * limitation, authorised signature, QR for third-party verification. Labels are bilingual
  * Turkish / English (branch UI locales: tr, en).
  *
- * ASSUMPTION: no vector logo yet — a text wordmark stands in until the SVG logo is provided.
+ * The official logo files (packages/ui-kit/src/assets) are printed on the letterhead.
+ * ASSUMPTION: only raster logos were supplied; an SVG version would print sharper.
  */
 
 const T = {
@@ -104,20 +106,15 @@ body {
 .tr { display: block; }
 .en { display: block; color: var(--gsi-color-text-muted); font-size: 0.85em; font-weight: var(--gsi-font-weight-regular); }
 
-.letterhead {
-  display: flex; justify-content: space-between; align-items: stretch;
-  background: var(--gsi-color-primary); color: var(--gsi-color-on-primary);
-  border-radius: var(--gsi-radius-md); overflow: hidden;
+/* Letterhead: the official wordmark on white, as on the company's own stationery. */
+.letterhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.letterhead .brand img { height: 58px; }
+.brand-sub { font-size: 8pt; color: var(--gsi-color-text-muted); margin-top: 4px; }
+.letterhead .contacts { text-align: right; font-size: 7.5pt; color: var(--gsi-color-text-muted); max-width: 45%; }
+.accent-rule {
+  height: 3px; margin: 10px 0 14px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--gsi-color-primary), var(--gsi-color-accent));
 }
-.letterhead .brand { padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
-.wordmark {
-  font-size: 26pt; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.08em;
-  color: var(--gsi-color-accent); line-height: 1;
-}
-.brand-name { font-size: 10.5pt; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.04em; text-transform: uppercase; }
-.brand-sub { font-size: 8pt; opacity: 0.85; margin-top: 2px; }
-.letterhead .contacts { padding: 14px 18px; text-align: right; font-size: 7.5pt; opacity: 0.9; max-width: 45%; }
-.accent-rule { height: 4px; background: var(--gsi-color-accent); margin: 6px 0 14px; border-radius: 2px; }
 .accreditation { font-size: 7.5pt; color: var(--gsi-color-text-muted); margin-bottom: 12px; }
 
 .title-block { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
@@ -227,15 +224,12 @@ ${d.draft ? `<div class="watermark">${esc(T.draft[0])} / ${esc(T.draft[1])}</div
 
 <header class="letterhead">
   <div class="brand">
-    <div class="wordmark">GSI</div>
-    <div>
-      <div class="brand-name">General Survey Inspection</div>
-      <div class="brand-sub">${esc(b.legalName)}</div>
-    </div>
+    <img src="${logoDataUri('logo-wordmark.png')}" alt="General Survey Inspection Co." />
+    <div class="brand-sub">${esc(b.legalName)}</div>
   </div>
   <div class="contacts">
     ${esc(b.address)}<br />
-    ${[b.phone, b.email].filter(Boolean).map(esc).join(' · ')}
+    ${[b.phone, b.email, b.website].filter(Boolean).map(esc).join(' · ')}
   </div>
 </header>
 <div class="accent-rule"></div>

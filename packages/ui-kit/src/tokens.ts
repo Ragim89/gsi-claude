@@ -6,36 +6,39 @@
  *
  * Nothing else in the codebase may hard-code brand colours; use var(--gsi-…) instead.
  *
- * ASSUMPTION: HEX values are reconstructed from the public website (docs/00-overview.md) and are
- * pending the official GSI brand guideline (docs/07-open-questions.md #1). When the brandbook
- * arrives, only this file needs to change.
+ * Colours are sampled from the official logo files in ./assets (globe icon and the
+ * "General Survey Inspection Co." wordmark): the globe's deep blue #105098, the wordmark's
+ * mid blue #5888C0 and its light tint #D0E0F0, with black type.
+ * The earlier navy/gold guess from the website reconstruction is gone.
  */
 export const tokens = {
   color: {
-    // Primary (navy): #0B1F3A – #132C52
-    primary: '#0B1F3A',
-    primaryHover: '#132C52',
+    // Brand blue — the globe (#105098), with a darker shade for depth and hover.
+    primary: '#105098',
+    primaryHover: '#0C3E76',
+    primaryDeep: '#0A3260',
     onPrimary: '#FFFFFF',
-    // Accent (amber / gold): #C89B3C – #D4A94A
-    accent: '#C89B3C',
-    accentLight: '#D4A94A',
-    onAccent: '#0B1F3A',
-    // Neutrals
+    // Secondary brand blue — the wordmark's globe and rule (#5888C0) and its light tint.
+    accent: '#5888C0',
+    accentLight: '#80A8D0',
+    accentSoft: '#D0E0F0',
+    onAccent: '#FFFFFF',
+    // Neutrals — the wordmark's type is black; the UI softens it slightly for long reading.
     surface: '#FFFFFF',
-    background: '#F4F5F7',
-    text: '#1D2430',
-    // ASSUMPTION: the tokens below are not in the brief; derived neutrals / semantic colours
-    // chosen to sit with the navy + gold palette. Replace from the brandbook.
-    textMuted: '#5B6475',
-    border: '#D9DDE3',
-    borderStrong: '#B8BFC9',
+    background: '#F3F6FA',
+    text: '#14181F',
+    // ASSUMPTION: muted/semantic colours are not defined by the logo; these are derived to sit
+    // with the brand blues while keeping status colours distinguishable.
+    textMuted: '#5A6474',
+    border: '#D8DFE8',
+    borderStrong: '#B4BFCD',
     success: '#1E7A4C',
     successBg: '#E3F3EA',
     warning: '#9A6A00',
     warningBg: '#FBF1D9',
     danger: '#B42318',
     dangerBg: '#FDE8E6',
-    info: '#1F5AA6',
+    info: '#105098',
     infoBg: '#E4EDF9',
   },
   /**
@@ -48,7 +51,7 @@ export const tokens = {
    * Re-run the validator if these values change.
    */
   viz: {
-    series1: '#1F5AA6', // revenue / primary measure
+    series1: '#105098', // brand blue — revenue / primary measure
     series2: '#C05621', // expense / outflow
     series3: '#1BAF7A', // profit / inflow
     seq1: '#9BB6DC',
@@ -60,7 +63,8 @@ export const tokens = {
     axis: '#8A93A1',
   },
   font: {
-    // ASSUMPTION: brand typeface unknown ("гротеск без засечек"); neutral grotesque stack.
+    // ASSUMPTION: the wordmark is set in a bold italic grotesque; the exact typeface is not
+    // supplied, so the UI uses a neutral grotesque stack and only the logo carries the lettering.
     // 'Noto Sans' / 'DejaVu Sans' are installed in the API container so Turkish glyphs render in PDFs.
     family: "'Inter', 'Noto Sans', 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif",
     familyMono: "'JetBrains Mono', 'Consolas', 'DejaVu Sans Mono', monospace",

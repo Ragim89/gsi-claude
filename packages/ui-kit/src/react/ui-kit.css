@@ -157,3 +157,23 @@
 .gsi-segmented__opt--danger.is-active { background: var(--gsi-color-danger-bg); color: var(--gsi-color-danger); }
 .gsi-segmented__opt--neutral.is-active { background: var(--gsi-color-background); color: var(--gsi-color-text-muted); }
 .gsi-segmented__opt--info.is-active { background: var(--gsi-color-info-bg); color: var(--gsi-color-info); }
+
+/* Logo lockup for dark surfaces: the official globe mark + white lettering
+   (the supplied wordmark file is black, so it is only used on light backgrounds). */
+.gsi-lockup { display: flex; align-items: center; gap: 10px; }
+.gsi-lockup__globe { flex: none; border-radius: 50%; background: var(--gsi-color-surface); }
+.gsi-lockup__text { display: flex; flex-direction: column; line-height: 1.05; }
+.gsi-lockup__name {
+  font-weight: var(--gsi-font-weight-bold);
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--gsi-color-on-primary);
+}
+.gsi-lockup__sub {
+  font-style: italic;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gsi-color-accent-soft);
+}

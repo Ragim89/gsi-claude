@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Field, Input } from '@gsi/ui-kit/react';
+import { Button, Card, Field, Input, Logo } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
 import { ErrorBox } from '../components/common';
 
@@ -36,8 +36,7 @@ export function LoginPage() {
     <div className="login">
       <div className="login__panel">
         <div className="login__brand">
-          <div className="sidebar__mark">GSI</div>
-          <div className="sidebar__tag">{t('app.tagline')}</div>
+          <Logo variant="wordmark" height={54} />
         </div>
         <Card title={t('login.title')}>
           <form className="stack" onSubmit={onSubmit}>

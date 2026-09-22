@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Alert, Card } from '@gsi/ui-kit/react';
+import { Alert, Card, Logo } from '@gsi/ui-kit/react';
 import { ReportVerification } from '@gsi/shared-types';
 import { api } from '../api';
 import { Loading, useFormatDate, useServiceLabel } from '../components/common';
@@ -22,8 +22,7 @@ export function VerifyPage() {
     <div className="login">
       <div className="login__panel" style={{ maxWidth: 480 }}>
         <div className="login__brand">
-          <div className="sidebar__mark">GSI</div>
-          <div className="sidebar__tag">{t('app.tagline')}</div>
+          <Logo variant="wordmark" height={48} />
         </div>
         <Card title={t('verify.title')}>
           {q.isLoading ? (

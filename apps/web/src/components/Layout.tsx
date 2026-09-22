@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@gsi/ui-kit/react';
+import { Button, LogoLockup } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
 import { BranchSwitcher } from '../branch';
 import { LANGUAGES } from '../i18n';
@@ -15,8 +15,7 @@ export function Layout() {
     <div className="shell">
       <aside className="sidebar">
         <div className="sidebar__brand">
-          <div className="sidebar__mark">GSI</div>
-          <div className="sidebar__tag">{t('app.tagline')}</div>
+          <LogoLockup />
         </div>
         <BranchSwitcher />
         <nav>
