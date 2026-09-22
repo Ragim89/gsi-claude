@@ -16,12 +16,17 @@ export async function seedReports(app: INestApplicationContext, limit: number): 
   const db = app.get(DbService);
   const reports = app.get(ReportsService);
 
+  // Without a security context RLS hides every user row, so look the seed admin up through
+  // the SECURITY DEFINER function that login uses.
   const admin = await db.tx(null, (tx) =>
-    tx.one<{ id: string; branch_id: string }>(
-      `SELECT id, branch_id FROM users WHERE role = 'admin' ORDER BY created_at LIMIT 1`,
-    ),
+    tx.one<{ id: string; branch_id: string }>(`SELECT id, branch_id FROM auth_find_user($1, NULL)`, [
+      process.env.SEED_ADMIN_EMAIL ?? 'admin@gsi.local',
+    ]),
   );
-  if (!admin) return;
+  if (!admin) {
+    logger.warn('seed admin not found; skipping demo reports');
+    return;
+  }
   const user: AuthUser = {
     id: admin.id,
     branchId: admin.branch_id,

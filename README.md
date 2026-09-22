@@ -2,7 +2,10 @@
 
 ERP platform for **General Survey Inspection (GSI)**, an international inspection company. Specification: [`docs/`](docs/) (00–07).
 
-This branch implements **MVP-1** ([docs/06-roadmap.md](docs/06-roadmap.md)): clients, inspection jobs, a field checklist with photos, a PDF report on the Türkiye letterhead, basic roles, and authentication.
+This branch implements:
+
+- **MVP-1** ([docs/06-roadmap.md](docs/06-roadmap.md)): clients, inspection jobs, a field checklist with photos, a PDF report on the Türkiye letterhead, basic roles, and authentication.
+- **MVP-3 finance** ([docs/03-finance-dashboard.md](docs/03-finance-dashboard.md)): invoices, expenses, a double-entry ledger, multi-currency consolidation across all seven entities, and a live group dashboard.
 
 ## Repository layout
 
@@ -39,6 +42,8 @@ On start, the API runs migrations and seeds demo data: 7 branches, users, 3 clie
 | Demo account | Role | Branch |
 |---|---|---|
 | `admin@gsi.local` | admin (HQ, sees all branches) | TR |
+| `cfo@gsi.local` | CFO (HQ, group dashboard) | TR |
+| `finance.tr@gsi.local` | finance controller (invoices, expenses) | TR |
 | `supervisor.tr@gsi.local` | supervisor | TR |
 | `inspector.tr@gsi.local` | inspector (has the demo job) | TR |
 | `inspector2.tr@gsi.local` | inspector | TR |
