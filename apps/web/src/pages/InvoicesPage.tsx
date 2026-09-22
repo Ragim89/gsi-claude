@@ -1,15 +1,16 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, BadgeTone, Button, Card, EmptyState, Field, Input, Select, Table, TextArea } from '@gsi/ui-kit/react';
-import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus } from '@gsi/shared-types';
+import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus, InvoiceSummary } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
+import { BarList, ChartFrame, LineChart, StatTile } from '../components/charts';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
-const STATUS_TONE: Record<InvoiceStatus, BadgeTone> = {
+export const INVOICE_TONE: Record<InvoiceStatus, BadgeTone> = {
   draft: 'neutral',
   issued: 'info',
   partially_paid: 'warning',
@@ -17,64 +18,322 @@ const STATUS_TONE: Record<InvoiceStatus, BadgeTone> = {
   cancelled: 'danger',
 };
 
+const PERIODS = [
+  { key: '3m', months: 3 },
+  { key: '6m', months: 6 },
+  { key: '12m', months: 12 },
+];
+
+function periodFrom(months: number): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - (months - 1));
+  return d.toISOString().slice(0, 10);
+}
+
 interface LineDraft {
   description: string;
   quantity: string;
   unitPrice: string;
 }
 
+/** Client billing: collection analytics first, the register below. */
 export function InvoicesPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const { branchId, current } = useBranch();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const fmt = useFormatDate();
+  const [period, setPeriod] = useState('12m');
   const [status, setStatus] = useState<InvoiceStatus | ''>('');
+  const [onlyOverdue, setOnlyOverdue] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const { branchId, current } = useBranch();
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
-  const params = new URLSearchParams();
-  if (status) params.set('status', status);
-  if (branchId) params.set('branchId', branchId);
-  const invoices = useQuery({
-    queryKey: ['invoices', status, branchId],
-    queryFn: () => api.get<Invoice[]>(`/finance/invoices?${params}`),
+  const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
+  const from = periodFrom(months);
+  const branchQs = branchId ? `&branchId=${branchId}` : '';
+
+  const summary = useQuery({
+    queryKey: ['invoice-summary', from, branchId],
+    queryFn: () => api.get<InvoiceSummary>(`/finance/invoices-summary?from=${from}${branchQs}`),
   });
+  const invoices = useQuery({
+    queryKey: ['invoices', status, onlyOverdue, branchId],
+    queryFn: () =>
+      api.get<Invoice[]>(
+        `/finance/invoices?${status ? `status=${status}&` : ''}${onlyOverdue ? 'overdue=true&' : ''}${branchId ? `branchId=${branchId}` : ''}`,
+      ),
+  });
+
+  const s = summary.data;
+  const base = useMemo(() => {
+    const currency = s?.baseCurrency ?? 'EUR';
+    return (v: number) =>
+      new Intl.NumberFormat(i18n.language, { style: 'currency', currency, maximumFractionDigits: 0 }).format(v);
+  }, [s?.baseCurrency, i18n.language]);
+  const local = (v: number, currency: string) =>
+    new Intl.NumberFormat(i18n.language, { style: 'currency', currency, maximumFractionDigits: 2 }).format(v);
 
   const act = useMutation({
     mutationFn: ({ id, action, body }: { id: string; action: string; body?: unknown }) =>
       api.post<Invoice>(`/finance/invoices/${id}/${action}`, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] });
+      qc.invalidateQueries({ queryKey: ['invoice-summary'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
-
-  const money = (v: number, currency: string) =>
-    new Intl.NumberFormat(i18n.language, { style: 'currency', currency, maximumFractionDigits: 2 }).format(v);
 
   return (
     <div className="stack">
       <PageHead
         title={t('invoices.title')}
-        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
-        actions={canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('invoices.new')}</Button>}
+        sub={
+          <>
+            {branchId && current ? `${flag(current.country)} ${current.code} — ${current.city} · ` : ''}
+            {s ? `${t('dashboard.period', { from: s.period.from, to: s.period.to })} · ${t('dashboard.inCurrency', { currency: s.baseCurrency })}` : ''}
+          </>
+        }
+        actions={
+          <>
+            <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 170 }}>
+              {PERIODS.map((p) => (
+                <option key={p.key} value={p.key}>
+                  {t(`dashboard.periods.${p.key}`)}
+                </option>
+              ))}
+            </Select>
+            {canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('invoices.new')}</Button>}
+          </>
+        }
       />
+
+      <ErrorBox error={summary.error ?? act.error} />
+
+      {summary.isLoading || !s ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="kpi-row">
+            <StatTile
+              label={t('invoices.issuedTotal')}
+              value={base(s.totals.issuedBase)}
+              hint={t('invoices.invoiceCount', { count: s.totals.invoiceCount })}
+            />
+            <StatTile label={t('invoices.collected')} value={base(s.totals.collectedBase)} tone="positive" />
+            <StatTile
+              label={t('invoices.collectionRate')}
+              value={s.totals.collectionRatePct === null ? '—' : `${s.totals.collectionRatePct}%`}
+              hint={s.totals.avgDaysToPay !== null ? t('invoices.avgDaysToPay', { days: s.totals.avgDaysToPay }) : undefined}
+            />
+            <StatTile label={t('invoices.outstanding')} value={base(s.totals.outstandingBase)} />
+            <StatTile
+              label={t('invoices.overdue')}
+              value={base(s.totals.overdueBase)}
+              tone={s.totals.overdueBase > 0 ? 'negative' : undefined}
+              hint={s.totals.draftCount > 0 ? t('invoices.drafts', { count: s.totals.draftCount }) : undefined}
+            />
+          </div>
+
+          <div className="chart-grid">
+            <ChartFrame
+              title={t('invoices.issuedVsCollected')}
+              subtitle={t('invoices.issuedVsCollectedSub')}
+              legend={[
+                { label: t('invoices.issuedShort'), color: 'var(--gsi-viz-series1)' },
+                { label: t('invoices.collectedShort'), color: 'var(--gsi-viz-series3)' },
+              ]}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('dashboard.month')}</th>
+                      <th>{t('invoices.issuedShort')}</th>
+                      <th>{t('invoices.collectedShort')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.monthly.map((m) => (
+                      <tr key={m.month}>
+                        <td>{m.month}</td>
+                        <td>{base(m.issuedBase)}</td>
+                        <td>{base(m.collectedBase)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <LineChart
+                labels={s.monthly.map((m) => m.month)}
+                format={base}
+                series={[
+                  { key: 'issued', label: t('invoices.issuedShort'), color: 'var(--gsi-viz-series1)', values: s.monthly.map((m) => m.issuedBase) },
+                  { key: 'collected', label: t('invoices.collectedShort'), color: 'var(--gsi-viz-series3)', values: s.monthly.map((m) => m.collectedBase) },
+                ]}
+              />
+            </ChartFrame>
+
+            <ChartFrame
+              title={t('dashboard.arAging')}
+              subtitle={t('dashboard.arAgingSub')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('dashboard.bucket')}</th>
+                      <th>{t('expenses.amount')}</th>
+                      <th>{t('dashboard.invoices')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.aging.map((b) => (
+                      <tr key={b.bucket}>
+                        <td>{b.bucket}</td>
+                        <td>{base(b.amountBase)}</td>
+                        <td>{b.invoiceCount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <BarList
+                rows={s.aging.map((b) => ({
+                  key: b.bucket,
+                  label: `${t('dashboard.days', { range: b.bucket })} · ${b.invoiceCount}`,
+                  value: b.amountBase,
+                }))}
+                format={base}
+                ramp={['var(--gsi-viz-seq1)', 'var(--gsi-viz-seq2)', 'var(--gsi-viz-seq4)', 'var(--gsi-viz-seq5)']}
+              />
+            </ChartFrame>
+
+            <ChartFrame
+              title={t('invoices.byClient')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('jobs.client')}</th>
+                      <th>{t('expenses.amount')}</th>
+                      <th>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.byClient.map((c) => (
+                      <tr key={c.clientId}>
+                        <td>{c.key}</td>
+                        <td>{base(c.amountBase)}</td>
+                        <td>{c.share}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <BarList
+                rows={s.byClient.map((c) => ({ key: c.clientId, label: `${c.key} · ${c.share}%`, value: c.amountBase }))}
+                format={base}
+              />
+            </ChartFrame>
+
+            <ChartFrame
+              title={t('invoices.byStatus')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('jobs.status')}</th>
+                      <th>{t('expenses.amount')}</th>
+                      <th>{t('dashboard.invoices')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.byStatus.map((r) => (
+                      <tr key={r.status}>
+                        <td>{t(`invoiceStatus.${r.status}`)}</td>
+                        <td>{base(r.amountBase)}</td>
+                        <td>{r.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <BarList
+                rows={s.byStatus.map((r) => ({
+                  key: r.status,
+                  label: `${t(`invoiceStatus.${r.status}`)} · ${r.count}`,
+                  value: r.amountBase,
+                }))}
+                format={base}
+              />
+            </ChartFrame>
+          </div>
+
+          {s.topOverdue.length > 0 && (
+            <Card title={t('invoices.toChase')} actions={<Badge tone="danger">{base(s.totals.overdueBase)}</Badge>}>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>{t('invoices.number')}</th>
+                    <th>{t('jobs.client')}</th>
+                    <th>{t('invoices.amountDue')}</th>
+                    <th>{t('invoices.overdueBy')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {s.topOverdue.map((o) => (
+                    <tr key={o.id} className="link-row" onClick={() => navigate(`/finance/invoices/${o.id}`)}>
+                      <td className="mono">
+                        <Link to={`/finance/invoices/${o.id}`} onClick={(e) => e.stopPropagation()}>
+                          {o.invoiceNumber}
+                        </Link>
+                      </td>
+                      <td>{o.clientName}</td>
+                      <td>
+                        {local(o.amountDue, o.currency)} <span className="muted">· {base(o.amountDueBase)}</span>
+                      </td>
+                      <td>
+                        <Badge tone={o.daysOverdue > 60 ? 'danger' : 'warning'}>
+                          {t('invoices.overdueDays', { days: o.daysOverdue })}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </Card>
+          )}
+        </>
+      )}
+
       {creating && <InvoiceForm onDone={() => setCreating(false)} />}
 
-      <div className="filters" style={{ marginBottom: 0 }}>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus | '')}>
-          <option value="">{t('jobs.status')}: {t('common.all')}</option>
-          {INVOICE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {t(`invoiceStatus.${s}`)}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      <Card>
-        <ErrorBox error={invoices.error ?? act.error} />
+      <Card
+        title={t('invoices.register')}
+        actions={
+          <>
+            <Button size="sm" variant={onlyOverdue ? 'primary' : 'secondary'} onClick={() => setOnlyOverdue((v) => !v)}>
+              {t('invoices.onlyOverdue')}
+            </Button>
+            <Select value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus | '')} style={{ width: 200 }}>
+              <option value="">
+                {t('jobs.status')}: {t('common.all')}
+              </option>
+              {INVOICE_STATUSES.map((st) => (
+                <option key={st} value={st}>
+                  {t(`invoiceStatus.${st}`)}
+                </option>
+              ))}
+            </Select>
+          </>
+        }
+      >
+        <ErrorBox error={invoices.error} />
         {invoices.isLoading ? (
           <Loading />
         ) : !invoices.data?.length ? (
@@ -84,10 +343,10 @@ export function InvoicesPage() {
             <thead>
               <tr>
                 <th>{t('invoices.number')}</th>
+                {!branchId && <th>{t('common.branch')}</th>}
                 <th>{t('jobs.client')}</th>
-                <th>{t('reports.job')}</th>
                 <th>{t('invoices.issued')}</th>
-                <th>{t('invoices.due')}</th>
+                <th>{t('invoices.dueDate')}</th>
                 <th>{t('invoices.total')}</th>
                 <th>{t('invoices.paid')}</th>
                 <th>{t('jobs.status')}</th>
@@ -96,26 +355,31 @@ export function InvoicesPage() {
             </thead>
             <tbody>
               {invoices.data.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="mono">{inv.invoiceNumber}</td>
-                  <td>
-                    <Link to={`/clients/${inv.clientId}`}>{inv.clientName}</Link>
+                <tr key={inv.id} className="link-row" onClick={() => navigate(`/finance/invoices/${inv.id}`)}>
+                  <td className="mono">
+                    <Link to={`/finance/invoices/${inv.id}`} onClick={(e) => e.stopPropagation()}>
+                      {inv.invoiceNumber}
+                    </Link>
                   </td>
-                  <td className="mono">{inv.jobId ? <Link to={`/jobs/${inv.jobId}`}>{inv.jobNumber}</Link> : '—'}</td>
+                  {!branchId && <td>{inv.branchCode}</td>}
+                  <td>{inv.clientName}</td>
                   <td>{fmt(inv.issueDate, false)}</td>
-                  <td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
                     {fmt(inv.dueDate, false)}
                     {inv.daysOverdue && inv.daysOverdue > 0 ? (
-                      <> <Badge tone="danger">{t('invoices.overdueDays', { days: inv.daysOverdue })}</Badge></>
+                      <>
+                        {' '}
+                        <Badge tone="danger">{t('invoices.overdueDays', { days: inv.daysOverdue })}</Badge>
+                      </>
                     ) : null}
                   </td>
-                  <td>{money(inv.amountTotal, inv.currency)}</td>
-                  <td>{money(inv.amountPaid, inv.currency)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{local(inv.amountTotal, inv.currency)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{local(inv.amountPaid, inv.currency)}</td>
                   <td>
-                    <Badge tone={STATUS_TONE[inv.status]}>{t(`invoiceStatus.${inv.status}`)}</Badge>
+                    <Badge tone={INVOICE_TONE[inv.status]}>{t(`invoiceStatus.${inv.status}`)}</Badge>
                   </td>
                   {canWrite && (
-                    <td style={{ textAlign: 'end', whiteSpace: 'nowrap' }}>
+                    <td style={{ textAlign: 'end', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                       {inv.status === 'draft' && (
                         <Button size="sm" disabled={act.isPending} onClick={() => act.mutate({ id: inv.id, action: 'issue' })}>
                           {t('invoices.issue')}
@@ -136,16 +400,6 @@ export function InvoicesPage() {
                           {t('invoices.pay')}
                         </Button>
                       )}
-                      {inv.status !== 'paid' && inv.status !== 'cancelled' && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={act.isPending}
-                          onClick={() => window.confirm(t('invoices.cancelConfirm')) && act.mutate({ id: inv.id, action: 'cancel' })}
-                        >
-                          {t('common.cancel')}
-                        </Button>
-                      )}
                     </td>
                   )}
                 </tr>
@@ -161,13 +415,14 @@ export function InvoicesPage() {
 function InvoiceForm({ onDone }: { onDone(): void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [clientId, setClientId] = useState('');
   const [taxRate, setTaxRate] = useState('20');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([{ description: '', quantity: '1', unitPrice: '' }]);
 
-  const clients = useQuery({ queryKey: ['clients', ''], queryFn: () => api.get<Client[]>('/clients') });
+  const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Client[]>('/clients') });
 
   const create = useMutation({
     mutationFn: () =>
@@ -180,15 +435,16 @@ function InvoiceForm({ onDone }: { onDone(): void }) {
           .filter((l) => l.description.trim() && Number(l.unitPrice) > 0)
           .map((l) => ({ description: l.description.trim(), quantity: Number(l.quantity) || 1, unitPrice: Number(l.unitPrice) })),
       }),
-    onSuccess: () => {
+    onSuccess: (inv) => {
       qc.invalidateQueries({ queryKey: ['invoices'] });
+      qc.invalidateQueries({ queryKey: ['invoice-summary'] });
       onDone();
+      navigate(`/finance/invoices/${inv.id}`);
     },
   });
 
   const setLine = (i: number, patch: Partial<LineDraft>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
-
   const total = lines.reduce((s, l) => s + (Number(l.quantity) || 0) * (Number(l.unitPrice) || 0), 0);
 
   function onSubmit(e: FormEvent) {
@@ -214,7 +470,7 @@ function InvoiceForm({ onDone }: { onDone(): void }) {
           <Field label={t('invoices.taxRate')}>
             <Input type="number" min={0} max={100} step="0.5" value={taxRate} onChange={(e) => setTaxRate(e.target.value)} />
           </Field>
-          <Field label={t('invoices.due')}>
+          <Field label={t('invoices.dueDate')}>
             <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </Field>
         </div>
@@ -231,12 +487,7 @@ function InvoiceForm({ onDone }: { onDone(): void }) {
             <Field label={t('invoices.unitPrice')}>
               <Input type="number" min="0" step="0.01" value={l.unitPrice} onChange={(e) => setLine(i, { unitPrice: e.target.value })} />
             </Field>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((_, idx) => idx !== i) : ls))}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((_, idx) => idx !== i) : ls))}>
               ✕
             </Button>
           </div>

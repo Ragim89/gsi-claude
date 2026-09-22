@@ -1,7 +1,17 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { AuthUser, HQ_ROLES, Invoice, InvoiceLine, InvoiceStatus } from '@gsi/shared-types';
+import {
+  ArAgingBucket,
+  AuthUser,
+  HQ_ROLES,
+  Invoice,
+  InvoiceLine,
+  InvoicePayment,
+  InvoiceStatus,
+  InvoiceSummary,
+} from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { LedgerService } from './ledger.service';
+import { config } from '../config';
 
 const INVOICE_COLUMNS = `
   i.id, i.branch_id AS "branchId", b.code AS "branchCode", i.client_id AS "clientId", c.name AS "clientName",
@@ -62,6 +72,181 @@ export class InvoicesService {
 
   get(user: AuthUser, id: string) {
     return this.db.tx(user, (tx) => this.load(tx, id));
+  }
+
+  /**
+   * Analytics for the invoices page: what was invoiced, what came in, what is still owed and
+   * who to chase. Consolidated at the fx rate of each document's date; RLS and the branch
+   * filter scope it exactly like the list.
+   */
+  summary(user: AuthUser, f: { from?: string; to?: string; branchId?: string }): Promise<InvoiceSummary> {
+    const base = config.consolidationCurrency;
+    const from = f.from ?? defaultFrom();
+    const to = f.to ?? today();
+    const branchId = f.branchId ?? null;
+    const p = [from, to, base, branchId];
+
+    return this.db.tx(user, async (tx) => {
+      const [totals, collected, outstanding, monthly, byStatus, byClient, aging, topOverdue] = await Promise.all([
+        tx.one<{ issued: number; cnt: number; drafts: number; avg_days: number | null }>(
+          `SELECT COALESCE(SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))
+                    FILTER (WHERE i.status <> 'draft' AND i.status <> 'cancelled'), 0)::float8 AS issued,
+                  count(*) FILTER (WHERE i.status <> 'draft' AND i.status <> 'cancelled')::int AS cnt,
+                  count(*) FILTER (WHERE i.status = 'draft')::int AS drafts,
+                  avg(i.paid_at::date - i.issue_date) FILTER (WHERE i.status = 'paid')::float8 AS avg_days
+           FROM invoices i
+           WHERE i.issue_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)`,
+          p,
+        ),
+        // Cash actually received in the period, from the payment postings.
+        tx.one<{ amount: number }>(
+          `SELECT COALESCE(SUM(l.amount_base), 0)::float8 AS amount
+           FROM ledger_entries l
+           WHERE l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
+             AND l.entry_date BETWEEN $1::date AND $2::date AND ($3::uuid IS NULL OR l.branch_id = $3::uuid)`,
+          [from, to, branchId],
+        ),
+        tx.one<{ outstanding: number; overdue: number }>(
+          `SELECT COALESCE(SUM((i.amount_total - i.amount_paid) * fx_rate_on(i.currency, $1, i.issue_date)), 0)::float8 AS outstanding,
+                  COALESCE(SUM((i.amount_total - i.amount_paid) * fx_rate_on(i.currency, $1, i.issue_date))
+                    FILTER (WHERE i.due_date < current_date), 0)::float8 AS overdue
+           FROM invoices i
+           WHERE i.status IN ('issued', 'partially_paid') AND ($2::uuid IS NULL OR i.branch_id = $2::uuid)`,
+          [base, branchId],
+        ),
+        tx.many<{ month: string; issued: number; collected: number }>(
+          `WITH months AS (
+             SELECT date_trunc('month', m)::date AS m_start
+             FROM generate_series(date_trunc('month', $1::date), date_trunc('month', $2::date), interval '1 month') m
+           )
+           SELECT to_char(months.m_start, 'YYYY-MM') AS month,
+                  COALESCE((SELECT SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))
+                            FROM invoices i
+                            WHERE date_trunc('month', i.issue_date)::date = months.m_start
+                              AND i.status <> 'draft' AND i.status <> 'cancelled'
+                              AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)), 0)::float8 AS issued,
+                  COALESCE((SELECT SUM(l.amount_base) FROM ledger_entries l
+                            WHERE date_trunc('month', l.entry_date)::date = months.m_start
+                              AND l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
+                              AND ($4::uuid IS NULL OR l.branch_id = $4::uuid)), 0)::float8 AS collected
+           FROM months ORDER BY months.m_start`,
+          p,
+        ),
+        tx.many<{ status: InvoiceStatus; cnt: number; amount: number }>(
+          `SELECT i.status, count(*)::int AS cnt,
+                  SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))::float8 AS amount
+           FROM invoices i
+           WHERE i.issue_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+           GROUP BY i.status`,
+          p,
+        ),
+        tx.many<{ client_id: string; key: string; amount: number }>(
+          `SELECT c.id AS client_id, c.name AS key,
+                  SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))::float8 AS amount
+           FROM invoices i JOIN clients c ON c.id = i.client_id
+           WHERE i.issue_date BETWEEN $1::date AND $2::date
+             AND i.status <> 'draft' AND i.status <> 'cancelled'
+             AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+           GROUP BY c.id, c.name ORDER BY amount DESC LIMIT 8`,
+          p,
+        ),
+        tx.many<{ bucket: string; amount: number; cnt: number }>(
+          `SELECT CASE
+                    WHEN current_date - COALESCE(due_date, issue_date) <= 30 THEN '0-30'
+                    WHEN current_date - COALESCE(due_date, issue_date) <= 60 THEN '31-60'
+                    WHEN current_date - COALESCE(due_date, issue_date) <= 90 THEN '61-90'
+                    ELSE '90+' END AS bucket,
+                  SUM((amount_total - amount_paid) * fx_rate_on(currency, $1, issue_date))::float8 AS amount,
+                  count(*)::int AS cnt
+           FROM invoices
+           WHERE status IN ('issued', 'partially_paid') AND ($2::uuid IS NULL OR branch_id = $2::uuid)
+           GROUP BY 1`,
+          [base, branchId],
+        ),
+        tx.many<{
+          id: string; invoice_number: string; client_name: string; due: number; currency: string;
+          due_base: number; days: number;
+        }>(
+          `SELECT i.id, i.invoice_number, c.name AS client_name,
+                  (i.amount_total - i.amount_paid)::float8 AS due, i.currency,
+                  ((i.amount_total - i.amount_paid) * fx_rate_on(i.currency, $1, i.issue_date))::float8 AS due_base,
+                  (current_date - i.due_date)::int AS days
+           FROM invoices i JOIN clients c ON c.id = i.client_id
+           WHERE i.status IN ('issued', 'partially_paid') AND i.due_date < current_date
+             AND ($2::uuid IS NULL OR i.branch_id = $2::uuid)
+           ORDER BY due_base DESC LIMIT 8`,
+          [base, branchId],
+        ),
+      ]);
+
+      const issuedBase = round2(n(totals?.issued));
+      const collectedBase = round2(n(collected?.amount));
+      const count = n(totals?.cnt);
+      const statusTotal = byStatus.reduce((s, r) => s + n(r.amount), 0);
+      const clientTotal = byClient.reduce((s, r) => s + n(r.amount), 0);
+      const order: ArAgingBucket['bucket'][] = ['0-30', '31-60', '61-90', '90+'];
+
+      return {
+        baseCurrency: base,
+        period: { from, to },
+        totals: {
+          issuedBase,
+          collectedBase,
+          outstandingBase: round2(n(outstanding?.outstanding)),
+          overdueBase: round2(n(outstanding?.overdue)),
+          invoiceCount: count,
+          avgInvoiceBase: count > 0 ? round2(issuedBase / count) : 0,
+          collectionRatePct: issuedBase > 0 ? round2((collectedBase / issuedBase) * 100) : null,
+          avgDaysToPay: totals?.avg_days === null || totals?.avg_days === undefined ? null : round2(n(totals.avg_days)),
+          draftCount: n(totals?.drafts),
+        },
+        monthly: monthly.map((m) => ({
+          month: m.month,
+          issuedBase: round2(n(m.issued)),
+          collectedBase: round2(n(m.collected)),
+        })),
+        byStatus: byStatus.map((r) => ({
+          status: r.status,
+          count: n(r.cnt),
+          amountBase: round2(n(r.amount)),
+          share: statusTotal > 0 ? round2((n(r.amount) / statusTotal) * 100) : 0,
+        })),
+        byClient: byClient.map((r) => ({
+          key: r.key,
+          clientId: r.client_id,
+          amountBase: round2(n(r.amount)),
+          share: clientTotal > 0 ? round2((n(r.amount) / clientTotal) * 100) : 0,
+        })),
+        aging: order.map((bucket) => {
+          const row = aging.find((a) => a.bucket === bucket);
+          return { bucket, amountBase: round2(n(row?.amount)), invoiceCount: n(row?.cnt) };
+        }),
+        topOverdue: topOverdue.map((r) => ({
+          id: r.id,
+          invoiceNumber: r.invoice_number,
+          clientName: r.client_name,
+          amountDue: round2(n(r.due)),
+          currency: r.currency,
+          amountDueBase: round2(n(r.due_base)),
+          daysOverdue: n(r.days),
+        })),
+      };
+    });
+  }
+
+  /** Payment history of one invoice, reconstructed from its ledger postings. */
+  payments(user: AuthUser, id: string): Promise<InvoicePayment[]> {
+    return this.db.tx(user, (tx) =>
+      tx.many<InvoicePayment>(
+        `SELECT to_char(l.entry_date, 'YYYY-MM-DD') AS date, l.debit::float8 AS amount, l.currency,
+                l.amount_base::float8 AS "amountBase", u.full_name AS "registeredBy"
+         FROM ledger_entries l
+         LEFT JOIN users u ON u.id = l.created_by
+         WHERE l.source_type = 'payment' AND l.source_id = $1 AND l.account_group = 'cash' AND l.debit > 0
+         ORDER BY l.entry_date, l.created_at`,
+        [id],
+      ),
+    );
   }
 
   private async load(tx: Tx, id: string): Promise<Invoice> {
@@ -214,3 +399,15 @@ export function today(): string {
 }
 
 export const isHq = (user: AuthUser) => HQ_ROLES.includes(user.role);
+
+function n(v: unknown): number {
+  return v === null || v === undefined ? 0 : Number(v);
+}
+
+/** Default analytics window: the last 12 calendar months. */
+function defaultFrom(): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - 11);
+  return d.toISOString().slice(0, 10);
+}

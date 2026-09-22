@@ -139,9 +139,20 @@ export class FinanceController {
     return this.invoices.list(user, q);
   }
 
+  /** Aggregates behind the invoices page (invoiced, collected, outstanding, who to chase). */
+  @Get('invoices-summary')
+  invoiceSummary(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
+    return this.invoices.summary(user, q);
+  }
+
   @Get('invoices/:id')
   getInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.invoices.get(user, id);
+  }
+
+  @Get('invoices/:id/payments')
+  invoicePayments(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.invoices.payments(user, id);
   }
 
   @Post('invoices')

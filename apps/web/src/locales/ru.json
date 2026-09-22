@@ -83,7 +83,16 @@
     "lineDescription": "Наименование", "qty": "Кол-во", "unitPrice": "Цена", "addLine": "Добавить позицию",
     "issue": "Выставить", "pay": "Оплата", "payPrompt": "Сумма платежа (остаток: {{amount}})",
     "cancelConfirm": "Аннулировать счёт? Проводки будут сторнированы.",
-    "overdueDays": "просрочка {{days}} дн.", "empty": "Счетов нет"
+    "overdueDays": "просрочка {{days}} дн.", "empty": "Счетов нет",
+    "issuedTotal": "Выставлено", "collected": "Поступило", "collectionRate": "Собираемость",
+    "outstanding": "Не оплачено", "overdue": "Просрочено", "invoiceCount": "счетов: {{count}}",
+    "avgDaysToPay": "оплата в среднем за {{days}} дн.", "drafts": "черновиков: {{count}}",
+    "issuedVsCollected": "Выставлено и оплачено", "issuedVsCollectedSub": "По месяцам, в валюте консолидации",
+    "issuedShort": "Выставлено", "collectedShort": "Поступило", "byClient": "По клиентам", "byStatus": "По статусам",
+    "toChase": "Кому напомнить об оплате", "amountDue": "К оплате", "overdueBy": "Просрочка",
+    "register": "Журнал счетов", "onlyOverdue": "Только просроченные", "dueDate": "Срок оплаты",
+    "cancelInvoice": "Аннулировать счёт", "details": "Реквизиты", "paidAt": "Оплачен", "currency": "Валюта",
+    "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл"
   },
   "invoiceStatus": {
     "draft": "Черновик", "issued": "Выставлен", "partially_paid": "Оплачен частично", "paid": "Оплачен", "cancelled": "Аннулирован"

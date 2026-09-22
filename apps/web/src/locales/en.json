@@ -82,7 +82,16 @@
     "lineDescription": "Description", "qty": "Qty", "unitPrice": "Unit price", "addLine": "Add line",
     "issue": "Issue", "pay": "Payment", "payPrompt": "Payment amount (outstanding: {{amount}})",
     "cancelConfirm": "Cancel this invoice? Ledger postings will be reversed.",
-    "overdueDays": "{{days}} d overdue", "empty": "No invoices"
+    "overdueDays": "{{days}} d overdue", "empty": "No invoices",
+    "issuedTotal": "Invoiced", "collected": "Collected", "collectionRate": "Collection rate",
+    "outstanding": "Outstanding", "overdue": "Overdue", "invoiceCount": "{{count}} invoices",
+    "avgDaysToPay": "paid in {{days}} days on average", "drafts": "{{count}} drafts",
+    "issuedVsCollected": "Invoiced vs collected", "issuedVsCollectedSub": "By month, consolidated",
+    "issuedShort": "Invoiced", "collectedShort": "Collected", "byClient": "By client", "byStatus": "By status",
+    "toChase": "Chase these first", "amountDue": "Outstanding", "overdueBy": "Overdue by",
+    "register": "Invoice register", "onlyOverdue": "Overdue only", "dueDate": "Due date",
+    "cancelInvoice": "Cancel invoice", "details": "Details", "paidAt": "Paid at", "currency": "Currency",
+    "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by"
   },
   "invoiceStatus": {
     "draft": "Draft", "issued": "Issued", "partially_paid": "Partially paid", "paid": "Paid", "cancelled": "Cancelled"

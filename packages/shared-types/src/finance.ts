@@ -77,6 +77,51 @@ export interface Expense {
   createdAt: Timestamp;
 }
 
+/** A payment registered against an invoice, reconstructed from the ledger. */
+export interface InvoicePayment {
+  date: string;
+  amount: number;
+  currency: string;
+  amountBase: number;
+  registeredBy: string | null;
+}
+
+/** Analytics behind the invoices page — all *Base amounts in the consolidation currency. */
+export interface InvoiceSummary {
+  baseCurrency: string;
+  period: { from: string; to: string };
+  totals: {
+    /** Invoiced in the period (issued, excluding drafts and cancelled). */
+    issuedBase: number;
+    /** Cash actually received in the period. */
+    collectedBase: number;
+    /** Still unpaid right now, whatever the period. */
+    outstandingBase: number;
+    overdueBase: number;
+    invoiceCount: number;
+    avgInvoiceBase: number;
+    /** Collected ÷ issued, in percent. */
+    collectionRatePct: number | null;
+    /** Average calendar days from issue to full payment. */
+    avgDaysToPay: number | null;
+    draftCount: number;
+  };
+  monthly: { month: string; issuedBase: number; collectedBase: number }[];
+  byStatus: { status: InvoiceStatus; count: number; amountBase: number; share: number }[];
+  byClient: (BreakdownSlice & { clientId: string })[];
+  aging: ArAgingBucket[];
+  /** The invoices to chase first. */
+  topOverdue: {
+    id: string;
+    invoiceNumber: string;
+    clientName: string;
+    amountDue: number;
+    currency: string;
+    amountDueBase: number;
+    daysOverdue: number;
+  }[];
+}
+
 /** Analytics behind the expenses page — all *Base amounts in the consolidation currency. */
 export interface ExpenseSummary {
   baseCurrency: string;
