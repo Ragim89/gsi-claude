@@ -184,6 +184,12 @@ export class FinanceController {
     return this.expenses.list(user, q);
   }
 
+  /** Aggregates behind the expenses page (totals, trend, mix by category / branch / supplier). */
+  @Get('expenses-summary')
+  expenseSummary(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
+    return this.expenses.summary(user, q);
+  }
+
   @Post('expenses')
   @Roles('finance_controller', 'admin')
   createExpense(@CurrentUser() user: AuthUser, @Body() dto: CreateExpenseDto) {

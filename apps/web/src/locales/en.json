@@ -89,7 +89,13 @@
   },
   "expenses": {
     "title": "Expenses", "new": "New expense", "category": "Category", "description": "Description",
-    "amount": "Amount", "supplier": "Supplier", "date": "Date", "empty": "No expenses"
+    "amount": "Amount", "supplier": "Supplier", "date": "Date", "empty": "No expenses",
+    "total": "Total expenses", "perMonth": "Per month, average", "costRatio": "Cost ratio",
+    "ofRevenue": "of revenue {{amount}}", "topCategory": "Largest category", "avgExpense": "Average expense",
+    "records": "{{count}} records", "monthly": "Expenses by month", "monthlySub": "Consolidated, by expense date",
+    "categorySub": "Share of total costs", "byBranch": "By branch", "byBranchSub": "Where the group spends",
+    "topSuppliers": "Top suppliers", "largest": "Largest single expense", "register": "Expense register",
+    "count": "Records", "localHint": "In the branch currency", "deleteConfirm": "Delete this expense? Its ledger postings will be reversed."
   },
   "expenseCategories": {
     "salary": "Payroll", "travel": "Travel", "subcontractor": "Subcontractors", "lab_materials": "Lab materials",

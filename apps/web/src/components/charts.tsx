@@ -331,6 +331,96 @@ export function FlowColumns({
   );
 }
 
+/**
+ * One measure over time. Single series, so no legend — the title names it; the extreme
+ * month is direct-labelled and the rest live in the tooltip and the table view.
+ */
+export function Columns({
+  labels,
+  values,
+  format,
+  color = 'var(--gsi-viz-seq4)',
+  height = 220,
+}: {
+  labels: string[];
+  values: number[];
+  format: (v: number) => string;
+  color?: string;
+  height?: number;
+}) {
+  const { setTip, node } = useTooltip();
+  const [hover, setHover] = useState<number | null>(null);
+  const w = 720;
+  const pad = { top: 22, right: 16, bottom: 26, left: 56 };
+  const innerW = w - pad.left - pad.right;
+  const innerH = height - pad.top - pad.bottom;
+  const ticks = niceTicks(0, Math.max(1, ...values), 3);
+  const top = ticks[ticks.length - 1];
+  const scaleY = (v: number) => pad.top + innerH - (v / top) * innerH;
+  const band = innerW / Math.max(1, labels.length);
+  const barW = Math.min(24, band * 0.6); // ≤24px marks, the band's leftover stays as air
+  const peak = values.indexOf(Math.max(...values));
+
+  return (
+    <div className="chart-wrap">
+      <svg viewBox={`0 0 ${w} ${height}`} className="chart-svg" role="img">
+        {ticks.map((tv) => (
+          <g key={tv}>
+            <line x1={pad.left} x2={w - pad.right} y1={scaleY(tv)} y2={scaleY(tv)} className="chart-grid" />
+            <text x={pad.left - 8} y={scaleY(tv) + 4} className="chart-axis-text" textAnchor="end">
+              {compact(tv)}
+            </text>
+          </g>
+        ))}
+        {labels.map((l, i) => {
+          const cx = pad.left + band * i + band / 2;
+          const h = Math.max(1, innerH - (scaleY(values[i]) - pad.top));
+          return (
+            <g
+              key={l}
+              onMouseEnter={() => {
+                setHover(i);
+                setTip({
+                  x: (cx / w) * 100,
+                  y: (scaleY(values[i]) / height) * 100,
+                  title: l,
+                  rows: [{ label: '', value: format(values[i]) }],
+                });
+              }}
+              onMouseLeave={() => {
+                setHover(null);
+                setTip(null);
+              }}
+            >
+              <rect x={pad.left + band * i} y={pad.top} width={band} height={innerH} fill="transparent" />
+              <rect
+                x={cx - barW / 2}
+                y={scaleY(values[i])}
+                width={barW}
+                height={h}
+                rx={4}
+                fill={color}
+                opacity={hover === null || hover === i ? 1 : 0.55}
+              />
+              {i === peak ? (
+                <text x={cx} y={scaleY(values[i]) - 6} className="chart-value-text" textAnchor="middle">
+                  {compact(values[i])}
+                </text>
+              ) : null}
+              {i % Math.ceil(labels.length / 6) === 0 || i === labels.length - 1 ? (
+                <text x={cx} y={height - 6} className="chart-axis-text" textAnchor="middle">
+                  {l.slice(2)}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+      {node}
+    </div>
+  );
+}
+
 /** Headline number with an optional secondary line — not a one-bar chart. */
 export function StatTile({
   label,

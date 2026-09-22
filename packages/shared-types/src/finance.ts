@@ -77,6 +77,27 @@ export interface Expense {
   createdAt: Timestamp;
 }
 
+/** Analytics behind the expenses page — all *Base amounts in the consolidation currency. */
+export interface ExpenseSummary {
+  baseCurrency: string;
+  period: { from: string; to: string };
+  totals: {
+    amountBase: number;
+    count: number;
+    avgPerMonthBase: number;
+    avgPerExpenseBase: number;
+    /** Expenses as a share of revenue in the same period, or null when there is no revenue. */
+    costRatioPct: number | null;
+    revenueBase: number;
+  };
+  monthly: { month: string; amountBase: number }[];
+  byCategory: (BreakdownSlice & { key: ExpenseCategory | string; count: number })[];
+  byBranch: (BreakdownSlice & { branchId: string; code: string; country: string; currency: string })[];
+  bySupplier: BreakdownSlice[];
+  /** Largest single expense in the period, for the "where did it go" question. */
+  largest: { id: string; description: string; category: ExpenseCategory; amountBase: number; date: string } | null;
+}
+
 export interface FxRate {
   id: string;
   currency: string;

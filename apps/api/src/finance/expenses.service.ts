@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AuthUser, Expense, ExpenseCategory, HQ_ROLES } from '@gsi/shared-types';
+import { AuthUser, Expense, ExpenseCategory, ExpenseSummary, HQ_ROLES } from '@gsi/shared-types';
 import { DbService } from '../db/db.service';
 import { LedgerService } from './ledger.service';
-import { today } from './invoices.service';
+import { round2, today } from './invoices.service';
+import { config } from '../config';
 
 const EXPENSE_COLUMNS = `
   e.id, e.branch_id AS "branchId", b.code AS "branchCode", e.category, e.description, e.supplier,
@@ -43,6 +44,135 @@ export class ExpensesService {
         [f.category ?? null, f.from ?? null, f.to ?? null, f.branchId ?? null],
       ),
     );
+  }
+
+  /**
+   * Analytics for the expenses page: totals, monthly trend, mix by category / branch / supplier
+   * and the cost ratio against revenue of the same period. Everything is converted to the
+   * consolidation currency at the rate of the expense date, and scoped by RLS + the branch filter.
+   */
+  summary(user: AuthUser, f: { from?: string; to?: string; branchId?: string }): Promise<ExpenseSummary> {
+    const base = config.consolidationCurrency;
+    const from = f.from ?? defaultFrom();
+    const to = f.to ?? today();
+    const branchId = f.branchId ?? null;
+    const params = [from, to, base, branchId];
+
+    return this.db.tx(user, async (tx) => {
+      const [totals, monthly, byCategory, byBranch, bySupplier, largest, revenue] = await Promise.all([
+        tx.one<{ amount: number; cnt: number }>(
+          `SELECT COALESCE(SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date)), 0)::float8 AS amount,
+                  count(*)::int AS cnt
+           FROM expenses e
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)`,
+          params,
+        ),
+        tx.many<{ month: string; amount: number }>(
+          `WITH months AS (
+             SELECT date_trunc('month', m)::date AS m_start
+             FROM generate_series(date_trunc('month', $1::date), date_trunc('month', $2::date), interval '1 month') m
+           )
+           SELECT to_char(months.m_start, 'YYYY-MM') AS month,
+                  COALESCE(SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date)), 0)::float8 AS amount
+           FROM months
+           LEFT JOIN expenses e ON date_trunc('month', e.expense_date)::date = months.m_start
+                               AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           GROUP BY months.m_start ORDER BY months.m_start`,
+          params,
+        ),
+        tx.many<{ key: string; amount: number; cnt: number }>(
+          `SELECT e.category::text AS key,
+                  SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount,
+                  count(*)::int AS cnt
+           FROM expenses e
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           GROUP BY 1 ORDER BY amount DESC`,
+          params,
+        ),
+        tx.many<{ branch_id: string; code: string; country: string; currency: string; amount: number }>(
+          `SELECT b.id AS branch_id, b.code, b.country, b.currency,
+                  SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount
+           FROM expenses e JOIN branches b ON b.id = e.branch_id
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           GROUP BY b.id, b.code, b.country, b.currency ORDER BY amount DESC`,
+          params,
+        ),
+        tx.many<{ key: string; amount: number }>(
+          `SELECT COALESCE(NULLIF(e.supplier, ''), '—') AS key,
+                  SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount
+           FROM expenses e
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           GROUP BY 1 ORDER BY amount DESC LIMIT 8`,
+          params,
+        ),
+        tx.one<{ id: string; description: string; category: ExpenseCategory; amount: number; date: string }>(
+          `SELECT e.id, e.description, e.category,
+                  (e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount,
+                  to_char(e.expense_date, 'YYYY-MM-DD') AS date
+           FROM expenses e
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           ORDER BY amount DESC LIMIT 1`,
+          params,
+        ),
+        // Revenue of the same period, from the incremental aggregate (credit side is negative).
+        tx.one<{ amount: number }>(
+          `SELECT COALESCE(-SUM(a.amount_base), 0)::float8 AS amount
+           FROM finance_daily_agg a
+           WHERE a.account_group = 'revenue' AND a.entry_date BETWEEN $1::date AND $2::date
+             AND ($3::uuid IS NULL OR a.branch_id = $3::uuid)`,
+          [from, to, branchId],
+        ),
+      ]);
+
+      const total = num(totals?.amount);
+      const count = num(totals?.cnt);
+      const months = Math.max(1, monthly.length);
+      const revenueBase = round2(num(revenue?.amount));
+      const share = (v: number) => (total > 0 ? round2((v / total) * 100) : 0);
+
+      return {
+        baseCurrency: base,
+        period: { from, to },
+        totals: {
+          amountBase: round2(total),
+          count,
+          avgPerMonthBase: round2(total / months),
+          avgPerExpenseBase: count > 0 ? round2(total / count) : 0,
+          costRatioPct: revenueBase > 0 ? round2((total / revenueBase) * 100) : null,
+          revenueBase,
+        },
+        monthly: monthly.map((m) => ({ month: m.month, amountBase: round2(num(m.amount)) })),
+        byCategory: byCategory.map((c) => ({
+          key: c.key,
+          amountBase: round2(num(c.amount)),
+          share: share(num(c.amount)),
+          count: num(c.cnt),
+        })),
+        byBranch: byBranch.map((b) => ({
+          key: b.code,
+          branchId: b.branch_id,
+          code: b.code,
+          country: b.country,
+          currency: b.currency,
+          amountBase: round2(num(b.amount)),
+          share: share(num(b.amount)),
+        })),
+        bySupplier: bySupplier.map((s) => ({
+          key: s.key,
+          amountBase: round2(num(s.amount)),
+          share: share(num(s.amount)),
+        })),
+        largest: largest
+          ? {
+              id: largest.id,
+              description: largest.description,
+              category: largest.category,
+              amountBase: round2(num(largest.amount)),
+              date: largest.date,
+            }
+          : null,
+      };
+    });
   }
 
   create(user: AuthUser, input: CreateExpenseInput) {
@@ -86,4 +216,16 @@ export class ExpensesService {
       await tx.exec('DELETE FROM expenses WHERE id = $1', [id]);
     });
   }
+}
+
+function num(v: unknown): number {
+  return v === null || v === undefined ? 0 : Number(v);
+}
+
+/** Default analytics window: the last 12 calendar months. */
+function defaultFrom(): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - 11);
+  return d.toISOString().slice(0, 10);
 }

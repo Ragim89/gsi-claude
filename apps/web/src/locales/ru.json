@@ -90,7 +90,13 @@
   },
   "expenses": {
     "title": "Расходы", "new": "Новый расход", "category": "Категория", "description": "Описание",
-    "amount": "Сумма", "supplier": "Поставщик", "date": "Дата", "empty": "Расходов нет"
+    "amount": "Сумма", "supplier": "Поставщик", "date": "Дата", "empty": "Расходов нет",
+    "total": "Всего расходов", "perMonth": "В среднем за месяц", "costRatio": "Доля в выручке",
+    "ofRevenue": "от выручки {{amount}}", "topCategory": "Основная статья", "avgExpense": "Средний расход",
+    "records": "записей: {{count}}", "monthly": "Расходы по месяцам", "monthlySub": "Консолидация, по дате расхода",
+    "categorySub": "Доля в общих затратах", "byBranch": "По филиалам", "byBranchSub": "Где тратит группа",
+    "topSuppliers": "Ключевые поставщики", "largest": "Самый крупный расход", "register": "Журнал расходов",
+    "count": "Записей", "localHint": "В валюте филиала", "deleteConfirm": "Удалить расход? Проводки будут сторнированы."
   },
   "expenseCategories": {
     "salary": "Зарплата", "travel": "Командировки", "subcontractor": "Подрядчики", "lab_materials": "Лабораторные материалы",

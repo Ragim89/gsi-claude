@@ -1,29 +1,51 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
-import { Branch, EXPENSE_CATEGORIES, Expense, ExpenseCategory } from '@gsi/shared-types';
+import { Badge, Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
+import { Branch, EXPENSE_CATEGORIES, Expense, ExpenseCategory, ExpenseSummary } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
+import { BarList, ChartFrame, Columns, StatTile } from '../components/charts';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
+const PERIODS = [
+  { key: '3m', months: 3 },
+  { key: '6m', months: 6 },
+  { key: '12m', months: 12 },
+];
+
+function periodFrom(months: number): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - (months - 1));
+  return d.toISOString().slice(0, 10);
+}
+
+/** Branch costs: analytics first (where the money goes), the register below it. */
 export function ExpensesPage() {
   const { t, i18n } = useTranslation();
   const { user, isHq } = useAuth();
+  const { branchId, current } = useBranch();
   const qc = useQueryClient();
   const fmt = useFormatDate();
+  const [period, setPeriod] = useState('12m');
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
   const [creating, setCreating] = useState(false);
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
 
-  const { branchId, current } = useBranch();
-  const params = new URLSearchParams();
-  if (category) params.set('category', category);
-  if (branchId) params.set('branchId', branchId);
+  const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
+  const from = periodFrom(months);
+  const branchQs = branchId ? `&branchId=${branchId}` : '';
+
+  const summary = useQuery({
+    queryKey: ['expense-summary', from, branchId],
+    queryFn: () => api.get<ExpenseSummary>(`/finance/expenses-summary?from=${from}${branchQs}`),
+  });
   const expenses = useQuery({
-    queryKey: ['expenses', category, branchId],
-    queryFn: () => api.get<Expense[]>(`/finance/expenses?${params}`),
+    queryKey: ['expenses', category, from, branchId],
+    queryFn: () =>
+      api.get<Expense[]>(`/finance/expenses?from=${from}${category ? `&category=${category}` : ''}${branchQs}`),
   });
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches'), enabled: isHq });
 
@@ -36,6 +58,12 @@ export function ExpensesPage() {
     branchId: '',
   });
 
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['expenses'] });
+    qc.invalidateQueries({ queryKey: ['expense-summary'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+  };
+
   const create = useMutation({
     mutationFn: () =>
       api.post<Expense>('/finance/expenses', {
@@ -47,8 +75,7 @@ export function ExpensesPage() {
         ...(isHq && form.branchId ? { branchId: form.branchId } : {}),
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['expenses'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      invalidate();
       setCreating(false);
       setForm((f) => ({ ...f, description: '', amount: '', supplier: '' }));
     },
@@ -56,13 +83,16 @@ export function ExpensesPage() {
 
   const remove = useMutation({
     mutationFn: (id: string) => api.del(`/finance/expenses/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['expenses'] });
-      qc.invalidateQueries({ queryKey: ['dashboard'] });
-    },
+    onSuccess: invalidate,
   });
 
-  const money = (v: number, currency: string) =>
+  const s = summary.data;
+  const base = useMemo(() => {
+    const currency = s?.baseCurrency ?? 'EUR';
+    return (v: number) =>
+      new Intl.NumberFormat(i18n.language, { style: 'currency', currency, maximumFractionDigits: 0 }).format(v);
+  }, [s?.baseCurrency, i18n.language]);
+  const local = (v: number, currency: string) =>
     new Intl.NumberFormat(i18n.language, { style: 'currency', currency, maximumFractionDigits: 2 }).format(v);
 
   function onSubmit(e: FormEvent) {
@@ -70,13 +100,193 @@ export function ExpensesPage() {
     create.mutate();
   }
 
+  const catLabel = (key: string) => t(`expenseCategories.${key}`);
+
   return (
     <div className="stack">
       <PageHead
         title={t('expenses.title')}
-        sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
-        actions={canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('expenses.new')}</Button>}
+        sub={
+          <>
+            {branchId && current ? `${flag(current.country)} ${current.code} — ${current.city} · ` : ''}
+            {s ? t('dashboard.period', { from: s.period.from, to: s.period.to }) : ''}
+            {s ? ` · ${t('dashboard.inCurrency', { currency: s.baseCurrency })}` : ''}
+          </>
+        }
+        actions={
+          <>
+            <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 170 }}>
+              {PERIODS.map((p) => (
+                <option key={p.key} value={p.key}>
+                  {t(`dashboard.periods.${p.key}`)}
+                </option>
+              ))}
+            </Select>
+            {canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('expenses.new')}</Button>}
+          </>
+        }
       />
+
+      <ErrorBox error={summary.error} />
+
+      {summary.isLoading || !s ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="kpi-row">
+            <StatTile label={t('expenses.total')} value={base(s.totals.amountBase)} hint={t('expenses.records', { count: s.totals.count })} />
+            <StatTile label={t('expenses.perMonth')} value={base(s.totals.avgPerMonthBase)} />
+            <StatTile
+              label={t('expenses.costRatio')}
+              value={s.totals.costRatioPct === null ? '—' : `${s.totals.costRatioPct}%`}
+              tone={s.totals.costRatioPct !== null && s.totals.costRatioPct > 80 ? 'negative' : undefined}
+              hint={t('expenses.ofRevenue', { amount: base(s.totals.revenueBase) })}
+            />
+            <StatTile
+              label={t('expenses.topCategory')}
+              value={s.byCategory[0] ? catLabel(s.byCategory[0].key) : '—'}
+              hint={s.byCategory[0] ? `${base(s.byCategory[0].amountBase)} · ${s.byCategory[0].share}%` : undefined}
+            />
+            <StatTile label={t('expenses.avgExpense')} value={base(s.totals.avgPerExpenseBase)} />
+          </div>
+
+          <div className="chart-grid">
+            <ChartFrame
+              title={t('expenses.monthly')}
+              subtitle={t('expenses.monthlySub')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('dashboard.month')}</th>
+                      <th>{t('expenses.amount')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.monthly.map((m) => (
+                      <tr key={m.month}>
+                        <td>{m.month}</td>
+                        <td>{base(m.amountBase)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <Columns labels={s.monthly.map((m) => m.month)} values={s.monthly.map((m) => m.amountBase)} format={base} />
+            </ChartFrame>
+
+            <ChartFrame
+              title={t('dashboard.expensesByCategory')}
+              subtitle={t('expenses.categorySub')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('expenses.category')}</th>
+                      <th>{t('expenses.amount')}</th>
+                      <th>%</th>
+                      <th>{t('expenses.count')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.byCategory.map((c) => (
+                      <tr key={c.key}>
+                        <td>{catLabel(c.key)}</td>
+                        <td>{base(c.amountBase)}</td>
+                        <td>{c.share}%</td>
+                        <td>{c.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <BarList
+                rows={s.byCategory.map((c) => ({ key: c.key, label: `${catLabel(c.key)} · ${c.share}%`, value: c.amountBase }))}
+                format={base}
+              />
+            </ChartFrame>
+
+            {!branchId && s.byBranch.length > 1 && (
+              <ChartFrame
+                title={t('expenses.byBranch')}
+                subtitle={t('expenses.byBranchSub')}
+                table={
+                  <Table>
+                    <thead>
+                      <tr>
+                        <th>{t('common.branch')}</th>
+                        <th>{t('expenses.amount')}</th>
+                        <th>%</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {s.byBranch.map((b) => (
+                        <tr key={b.branchId}>
+                          <td>{b.code}</td>
+                          <td>{base(b.amountBase)}</td>
+                          <td>{b.share}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                }
+              >
+                <BarList
+                  rows={s.byBranch.map((b) => ({
+                    key: b.branchId,
+                    label: `${flag(b.country)} ${b.code} · ${b.share}%`,
+                    value: b.amountBase,
+                  }))}
+                  format={base}
+                />
+              </ChartFrame>
+            )}
+
+            <ChartFrame
+              title={t('expenses.topSuppliers')}
+              table={
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('expenses.supplier')}</th>
+                      <th>{t('expenses.amount')}</th>
+                      <th>%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.bySupplier.map((x) => (
+                      <tr key={x.key}>
+                        <td>{x.key}</td>
+                        <td>{base(x.amountBase)}</td>
+                        <td>{x.share}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              }
+            >
+              <BarList
+                rows={s.bySupplier.map((x) => ({ key: x.key, label: x.key, value: x.amountBase }))}
+                format={base}
+              />
+            </ChartFrame>
+          </div>
+
+          {s.largest && (
+            <Card title={t('expenses.largest')}>
+              <div className="row-actions" style={{ justifyContent: 'space-between' }}>
+                <span>
+                  <strong>{base(s.largest.amountBase)}</strong> · {s.largest.description}{' '}
+                  <Badge tone="neutral">{catLabel(s.largest.category)}</Badge>
+                </span>
+                <span className="muted">{fmt(s.largest.date, false)}</span>
+              </div>
+            </Card>
+          )}
+        </>
+      )}
 
       {creating && (
         <Card title={t('expenses.new')}>
@@ -87,7 +297,7 @@ export function ExpensesPage() {
                 <Select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))}>
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
-                      {t(`expenseCategories.${c}`)}
+                      {catLabel(c)}
                     </option>
                   ))}
                 </Select>
@@ -95,7 +305,7 @@ export function ExpensesPage() {
               <Field label={`${t('expenses.description')} *`}>
                 <Input required minLength={2} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
               </Field>
-              <Field label={`${t('expenses.amount')} *`}>
+              <Field label={`${t('expenses.amount')} *`} hint={t('expenses.localHint')}>
                 <Input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
               </Field>
               <Field label={t('expenses.supplier')}>
@@ -110,7 +320,7 @@ export function ExpensesPage() {
                     <option value="">—</option>
                     {branches.data?.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.code} — {b.city}
+                        {flag(b.country)} {b.code} — {b.city}
                       </option>
                     ))}
                   </Select>
@@ -129,18 +339,21 @@ export function ExpensesPage() {
         </Card>
       )}
 
-      <div className="filters" style={{ marginBottom: 0 }}>
-        <Select value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory | '')}>
-          <option value="">{t('expenses.category')}: {t('common.all')}</option>
-          {EXPENSE_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {t(`expenseCategories.${c}`)}
+      <Card
+        title={t('expenses.register')}
+        actions={
+          <Select value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory | '')} style={{ width: 220 }}>
+            <option value="">
+              {t('expenses.category')}: {t('common.all')}
             </option>
-          ))}
-        </Select>
-      </div>
-
-      <Card>
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {catLabel(c)}
+              </option>
+            ))}
+          </Select>
+        }
+      >
         <ErrorBox error={expenses.error ?? remove.error} />
         {expenses.isLoading ? (
           <Loading />
@@ -151,7 +364,7 @@ export function ExpensesPage() {
             <thead>
               <tr>
                 <th>{t('expenses.date')}</th>
-                {isHq && <th>{t('common.branch')}</th>}
+                {isHq && !branchId && <th>{t('common.branch')}</th>}
                 <th>{t('expenses.category')}</th>
                 <th>{t('expenses.description')}</th>
                 <th>{t('expenses.supplier')}</th>
@@ -163,18 +376,18 @@ export function ExpensesPage() {
               {expenses.data.map((e) => (
                 <tr key={e.id}>
                   <td>{fmt(e.expenseDate, false)}</td>
-                  {isHq && <td>{e.branchCode}</td>}
-                  <td>{t(`expenseCategories.${e.category}`)}</td>
+                  {isHq && !branchId && <td>{e.branchCode}</td>}
+                  <td>{catLabel(e.category)}</td>
                   <td>{e.description}</td>
                   <td>{e.supplier ?? '—'}</td>
-                  <td>{money(e.amount, e.currency)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{local(e.amount, e.currency)}</td>
                   {canWrite && (
                     <td style={{ textAlign: 'end' }}>
                       <Button
                         size="sm"
                         variant="ghost"
                         disabled={remove.isPending}
-                        onClick={() => window.confirm(t('common.confirmDelete')) && remove.mutate(e.id)}
+                        onClick={() => window.confirm(t('expenses.deleteConfirm')) && remove.mutate(e.id)}
                       >
                         {t('common.delete')}
                       </Button>
