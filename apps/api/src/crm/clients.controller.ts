@@ -58,7 +58,7 @@ const UPDATABLE = {
 };
 
 function emptyToNull<T extends object>(dto: T): T {
-  const out: Record<string, unknown> = { ...dto };
+  const out: Record<string, unknown> = { ...(dto as Record<string, unknown>) };
   for (const k of Object.keys(out)) if (out[k] === '') out[k] = null;
   return out as T;
 }
