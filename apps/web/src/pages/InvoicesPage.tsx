@@ -9,6 +9,7 @@ import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 export const INVOICE_TONE: Record<InvoiceStatus, BadgeTone> = {
@@ -86,6 +87,7 @@ export function InvoicesPage() {
         actions={
           <>
             <DateRangeFilter value={range} onChange={setRange} />
+            <ExportButton section="invoices" params={scope} />
             {canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('invoices.new')}</Button>}
           </>
         }

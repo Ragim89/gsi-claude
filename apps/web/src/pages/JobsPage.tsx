@@ -17,6 +17,7 @@ import { api } from '../api';
 import { canManage, useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
 export function JobsPage() {
@@ -78,7 +79,12 @@ export function JobsPage() {
       <PageHead
         title={isInspector ? t('jobs.myTitle') : t('jobs.title')}
         sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
-        actions={canManage(user?.role) && <Button onClick={() => navigate('/jobs/new')}>+ {t('jobs.new')}</Button>}
+        actions={
+          <>
+            <ExportButton section="jobs" params={key} />
+            {canManage(user?.role) && <Button onClick={() => navigate('/jobs/new')}>+ {t('jobs.new')}</Button>}
+          </>
+        }
       />
 
       <Card>

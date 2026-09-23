@@ -69,6 +69,10 @@
     "presets": { "month": "This month", "quarter": "3 months", "6m": "6 months", "year": "12 months", "ytd": "Year to date" }
   },
   "filters": { "more": "More filters", "less": "Fewer filters", "reset": "Reset" },
+  "export": {
+    "csv": "Export", "all": "Export everything", "options": "Export options",
+    "semicolon": "CSV for Excel (semicolon)", "comma": "CSV standard (comma)"
+  },
   "branches": {
     "title": "Branch comparison", "entities": "Legal entities", "entitiesHint": "in the group",
     "bestMargin": "Best margin", "revenueCompare": "Revenue by branch", "revenueCompareSub": "Consolidated, for the period",

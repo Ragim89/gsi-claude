@@ -18,6 +18,7 @@ import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 export const ASSET_TONE: Record<AssetStatus, BadgeTone> = {
@@ -133,6 +134,7 @@ export function AssetsPage() {
         actions={
           <>
             <DateRangeFilter value={range} onChange={setRange} />
+            <ExportButton section="assets" params={branchId ? `branchId=${branchId}` : ''} />
             {canWrite && (
               <Button variant="secondary" loading={run.isPending} onClick={() => run.mutate()}>
                 {t('assets.runDepreciation')}

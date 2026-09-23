@@ -69,6 +69,10 @@
     "presets": { "month": "Bu ay", "quarter": "3 ay", "6m": "6 ay", "year": "12 ay", "ytd": "Yıl başından beri" }
   },
   "filters": { "more": "Daha fazla filtre", "less": "Filtreleri gizle", "reset": "Sıfırla" },
+  "export": {
+    "csv": "Dışa aktar", "all": "Tümünü dışa aktar", "options": "Dışa aktarma seçenekleri",
+    "semicolon": "Excel için CSV (noktalı virgül)", "comma": "Standart CSV (virgül)"
+  },
   "branches": {
     "title": "Şube karşılaştırması", "entities": "Tüzel kişilik", "entitiesHint": "grup içinde",
     "bestMargin": "En iyi kâr marjı", "revenueCompare": "Şubeye göre ciro", "revenueCompareSub": "Dönem için konsolide",

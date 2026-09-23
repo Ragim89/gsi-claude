@@ -8,6 +8,7 @@ import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 /** Branch costs: analytics first (where the money goes), the register below it. */
@@ -102,6 +103,7 @@ export function ExpensesPage() {
         actions={
           <>
             <DateRangeFilter value={range} onChange={setRange} />
+            <ExportButton section="expenses" params={`${scope}${category ? `&category=${category}` : ''}`} />
             {canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('expenses.new')}</Button>}
           </>
         }

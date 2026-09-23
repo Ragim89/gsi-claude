@@ -7,6 +7,7 @@ import { api } from '../api';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead } from '../components/common';
 
 interface ComparisonRow {
@@ -83,7 +84,11 @@ export function BranchesPage() {
         title={t('branches.title')}
         sub={`${t('dashboard.period', { from: q.data.period.from, to: q.data.period.to })} · ${t('dashboard.inCurrency', { currency: q.data.baseCurrency })}`}
         actions={
-          <DateRangeFilter value={range} onChange={setRange} />
+          <>
+            <DateRangeFilter value={range} onChange={setRange} />
+            {/* The whole database the user may see, one CSV per section, in one archive. */}
+            <ExportButton section="all" params={rangeParams(range)} variant="primary" />
+          </>
         }
       />
 

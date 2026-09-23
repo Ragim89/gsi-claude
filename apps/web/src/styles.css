@@ -330,3 +330,22 @@ td.negative { color: var(--gsi-color-danger); }
   .daterange .gsi-input { min-width: 130px; flex: 1; }
   .filter-row > .gsi-input, .filter-row > .gsi-select { min-width: 140px; flex: 1; max-width: none; }
 }
+
+/* ---- Export button with separator options ------------------------------------------- */
+.export { position: relative; display: inline-block; }
+.export__main { border-start-end-radius: 0; border-end-end-radius: 0; }
+.export__more {
+  border-start-start-radius: 0; border-end-start-radius: 0;
+  padding-inline: 8px; border-inline-start-width: 0;
+}
+.export__menu {
+  position: absolute; inset-inline-end: 0; inset-block-start: calc(100% + 4px); z-index: 20;
+  background: var(--gsi-color-surface); border: 1px solid var(--gsi-color-border);
+  border-radius: var(--gsi-radius-md); box-shadow: var(--gsi-shadow-card);
+  display: flex; flex-direction: column; min-width: 240px; overflow: hidden;
+}
+.export__menu button {
+  border: 0; background: transparent; text-align: start; cursor: pointer;
+  padding: 8px 12px; font-family: inherit; font-size: var(--gsi-font-size-sm); color: var(--gsi-color-text);
+}
+.export__menu button:hover { background: var(--gsi-color-background); }

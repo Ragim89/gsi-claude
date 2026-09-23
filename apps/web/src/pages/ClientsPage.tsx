@@ -8,6 +8,7 @@ import { api } from '../api';
 import { canManage, useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { ClientForm } from '../components/ClientForm';
+import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead } from '../components/common';
 
 export function ClientsPage() {
@@ -34,8 +35,12 @@ export function ClientsPage() {
         title={t('clients.title')}
         sub={branchId && current ? `${flag(current.country)} ${current.code} — ${current.city}` : undefined}
         actions={
-          canManage(user?.role) &&
-          !creating && <Button onClick={() => setCreating(true)}>+ {t('clients.new')}</Button>
+          <>
+            <ExportButton section="clients" params={branchId ? `branchId=${branchId}` : ''} />
+            {canManage(user?.role) && !creating && (
+              <Button onClick={() => setCreating(true)}>+ {t('clients.new')}</Button>
+            )}
+          </>
         }
       />
       {creating && (
