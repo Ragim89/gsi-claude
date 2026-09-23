@@ -86,11 +86,23 @@ describe('branch isolation and role gating', () => {
     await as(app, supervisorTr).post('/api/reference/commodities').send({ code: 'X', group: 'other' }).expect(403);
   });
 
-  it('offers an inspector no import or export sections at all', async () => {
-    const exportSections = await as(app, inspectorTr).get('/api/export/sections').expect(200);
-    const importSections = await as(app, inspectorTr).get('/api/import/sections').expect(200);
-    expect(importSections.body.sections).toEqual([]);
-    expect(exportSections.body.sections).not.toContain('invoices');
+  it('does not let an inspector export or import anything', async () => {
+    // Moving data in or out of the system needs its own permission, which field roles do not
+    // have — the whole area is closed, not just the finance sections inside it.
+    await as(app, inspectorTr).get('/api/export/sections').expect(403);
+    await as(app, inspectorTr).get('/api/import/sections').expect(403);
+  });
+
+  it('offers a supervisor the sections their permissions cover, and no more', async () => {
+    const sections = (await as(app, supervisorTr).get('/api/export/sections').expect(200)).body.sections;
+    expect(sections).toContain('jobs');
+    expect(sections).toContain('clients');
+    // A supervisor may read finance figures, so those sections are offered too.
+    expect(sections).toContain('invoices');
+
+    const importSections = (await as(app, supervisorTr).get('/api/import/sections').expect(200)).body.sections;
+    expect(importSections).toContain('clients');
+    expect(importSections).not.toContain('invoices');
   });
 
   it('lets HQ see the whole group', async () => {

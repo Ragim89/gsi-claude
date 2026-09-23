@@ -37,7 +37,7 @@ import {
   DEPRECIATION_METHODS,
   DepreciationMethod,
 } from '@gsi/shared-types';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { AssetsService } from './assets.service';
 import { AssetSummaryService } from './asset-summary.service';
 
@@ -92,7 +92,7 @@ class RunDto {
  * Same audience as the rest of finance; only finance controllers and admins change anything.
  */
 @Controller('assets')
-@Roles('finance_controller', 'supervisor', 'cfo', 'admin')
+@RequirePermission('asset.read')
 export class AssetsController {
   constructor(private readonly assets: AssetsService, private readonly summary: AssetSummaryService) {}
 
@@ -112,33 +112,33 @@ export class AssetsController {
   }
 
   @Post()
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.create')
   create(@CurrentUser() user: AuthUser, @Body() dto: AssetDto) {
     return this.assets.create(user, dto);
   }
 
   @Patch(':id')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.update')
   update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: AssetDto) {
     return this.assets.update(user, id, dto);
   }
 
   @Post(':id/dispose')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.update')
   @HttpCode(200)
   dispose(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: DisposeDto) {
     return this.assets.dispose(user, id, dto);
   }
 
   @Post(':id/photo')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.update')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
   photo(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File) {
     return this.assets.uploadPhoto(user, id, file);
   }
 
   @Delete(':id')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.delete')
   @HttpCode(204)
   async remove(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.assets.remove(user, id);
@@ -146,7 +146,7 @@ export class AssetsController {
 
   /** Charges one month of depreciation across the visible assets and posts it to the ledger. */
   @Post('depreciation/run')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('asset.depreciate')
   @HttpCode(200)
   runDepreciation(@CurrentUser() user: AuthUser, @Body() dto: RunDto) {
     return this.assets.runDepreciation(user, dto.period);

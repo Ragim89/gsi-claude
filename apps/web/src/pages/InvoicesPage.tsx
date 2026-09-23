@@ -29,7 +29,7 @@ interface LineDraft {
 /** Client billing: collection analytics first, the register below. */
 export function InvoicesPage() {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { branchId, current } = useBranch();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ export function InvoicesPage() {
   const [onlyOverdue, setOnlyOverdue] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const canWrite = can('invoice.create', 'invoice.issue');
   // The calendar range and the branch filter scope both the analytics and the register.
   const scope = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
 

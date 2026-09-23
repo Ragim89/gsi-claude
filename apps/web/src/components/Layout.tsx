@@ -7,9 +7,10 @@ import { LANGUAGES } from '../i18n';
 
 export function Layout() {
   const { t, i18n } = useTranslation();
-  const { user, logout, hasRole } = useAuth();
-  // Same role set as app_sees_finance() in the database; the API enforces it regardless.
-  const finance = hasRole('finance_controller', 'supervisor', 'cfo', 'admin');
+  const { user, logout, can } = useAuth();
+  // The menu follows permissions, not roles: giving someone the right to read finance figures
+  // is enough for the finance entries to appear, with no change here.
+  const finance = can('finance.read');
 
   return (
     <div className="shell">
@@ -19,24 +20,28 @@ export function Layout() {
         </div>
         <BranchSwitcher />
         <nav>
-          {finance && <NavLink to="/finance" end>{t('nav.dashboard')}</NavLink>}
-          {finance && <NavLink to="/branches">{t('nav.branches')}</NavLink>}
-          <NavLink to="/jobs">{hasRole('inspector') ? t('nav.myJobs') : t('nav.jobs')}</NavLink>
-          <NavLink to="/clients">{t('nav.clients')}</NavLink>
+          {can('dashboard.read') && <NavLink to="/finance" end>{t('nav.dashboard')}</NavLink>}
+          {can('branch.read') && <NavLink to="/branches">{t('nav.branches')}</NavLink>}
+          {can('job.read') && (
+            <NavLink to="/jobs">{user?.scope === 'own' ? t('nav.myJobs') : t('nav.jobs')}</NavLink>
+          )}
+          {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {finance && (
             <>
               <NavLink to="/finance/invoices">{t('nav.invoices')}</NavLink>
               <NavLink to="/finance/expenses">{t('nav.expenses')}</NavLink>
-              <NavLink to="/assets">{t('nav.assets')}</NavLink>
-              <NavLink to="/import">{t('nav.import')}</NavLink>
             </>
           )}
-          {hasRole('admin') && <NavLink to="/users">{t('nav.users')}</NavLink>}
+          {can('asset.read') && <NavLink to="/assets">{t('nav.assets')}</NavLink>}
+          {can('import.run') && <NavLink to="/import">{t('nav.import')}</NavLink>}
+          {can('user.read') && <NavLink to="/users">{t('nav.users')}</NavLink>}
+          {can('role.manage') && <NavLink to="/admin/roles">{t('nav.roles')}</NavLink>}
+          {can('audit.read') && <NavLink to="/admin/audit">{t('nav.audit')}</NavLink>}
         </nav>
         <div className="sidebar__footer">
           <div>
             <div className="sidebar__user">{user?.fullName}</div>
-            <div className="sidebar__role">{user ? t(`roles.${user.role}`) : ''}</div>
+            <div className="sidebar__role">{user ? t(`roleNames.${user.role}`) : ''}</div>
           </div>
           <select aria-label={t('nav.language')} value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)}>
             {LANGUAGES.map((l) => (

@@ -3,7 +3,7 @@ import { IsDateString, IsIn, IsOptional, IsString, IsUUID, MaxLength } from 'cla
 import archiver from 'archiver';
 import { PassThrough } from 'stream';
 import { AuthUser } from '@gsi/shared-types';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { ExportService } from './export.service';
 import type { CsvDialect } from './csv';
 
@@ -29,6 +29,7 @@ const stamp = () => new Date().toISOString().slice(0, 10);
  * or every section the user may see as a single ZIP. Row-Level Security applies exactly as it
  * does in the app, so an export never widens what someone can reach.
  */
+@RequirePermission('export.run')
 @Controller('export')
 export class ExportController {
   constructor(private readonly exportService: ExportService) {}

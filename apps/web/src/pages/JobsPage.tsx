@@ -14,7 +14,7 @@ import {
   ServiceType,
 } from '@gsi/shared-types';
 import { api } from '../api';
-import { canManage, useAuth } from '../auth';
+import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ExportButton } from '../components/ExportButton';
@@ -22,7 +22,7 @@ import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabe
 
 export function JobsPage() {
   const { t, i18n } = useTranslation();
-  const { user, isHq } = useAuth();
+  const { user, isHq, can } = useAuth();
   const navigate = useNavigate();
   const fmt = useFormatDate();
   const serviceLabel = useServiceLabel();
@@ -59,7 +59,7 @@ export function JobsPage() {
     queryFn: () => api.get<InspectionJob[]>(`/jobs?${key}`),
   });
 
-  const isInspector = user?.role === 'inspector';
+  const isInspector = user?.scope === 'own';
   const totalVolume = (jobs.data ?? []).reduce((s, j) => s + (j.quantityValue ?? 0), 0);
   const reset = () => {
     setRange({ from: '', to: '' });
@@ -82,7 +82,7 @@ export function JobsPage() {
         actions={
           <>
             <ExportButton section="jobs" params={key} />
-            {canManage(user?.role) && <Button onClick={() => navigate('/jobs/new')}>+ {t('jobs.new')}</Button>}
+            {can('job.create') && <Button onClick={() => navigate('/jobs/new')}>+ {t('jobs.new')}</Button>}
           </>
         }
       />

@@ -14,14 +14,14 @@ import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common
 /** Branch costs: analytics first (where the money goes), the register below it. */
 export function ExpensesPage() {
   const { t, i18n } = useTranslation();
-  const { user, isHq } = useAuth();
+  const { user, isHq, can } = useAuth();
   const { branchId, current } = useBranch();
   const qc = useQueryClient();
   const fmt = useFormatDate();
   const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
   const [creating, setCreating] = useState(false);
-  const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const canWrite = can('expense.create');
 
   // The calendar range and the branch filter scope both the analytics and the register.
   const scope = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');

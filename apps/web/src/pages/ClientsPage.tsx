@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Input, Table } from '@gsi/ui-kit/react';
 import { Client } from '@gsi/shared-types';
 import { api } from '../api';
-import { canManage, useAuth } from '../auth';
+import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { ClientForm } from '../components/ClientForm';
 import { ExportButton } from '../components/ExportButton';
@@ -13,7 +13,7 @@ import { ErrorBox, Loading, PageHead } from '../components/common';
 
 export function ClientsPage() {
   const { t } = useTranslation();
-  const { user, isHq } = useAuth();
+  const { user, isHq, can } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
@@ -37,7 +37,7 @@ export function ClientsPage() {
         actions={
           <>
             <ExportButton section="clients" params={branchId ? `branchId=${branchId}` : ''} />
-            {canManage(user?.role) && !creating && (
+            {can('client.create') && !creating && (
               <Button onClick={() => setCreating(true)}>+ {t('clients.new')}</Button>
             )}
           </>

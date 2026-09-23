@@ -12,7 +12,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { IsIn, IsOptional } from 'class-validator';
 import { AuthUser } from '@gsi/shared-types';
-import { CurrentUser } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { ImportService } from './import.service';
 import { parseFile } from './parse';
 import type { CsvDialect } from '../export/csv';
@@ -41,6 +41,7 @@ const upload = () =>
  * The same file is uploaded twice (preview, then commit) so nothing is held server-side
  * between the two steps and the user can edit and re-check as often as they like.
  */
+@RequirePermission('import.run')
 @Controller('import')
 export class ImportController {
   constructor(private readonly importService: ImportService) {}

@@ -18,7 +18,7 @@ import { Type } from 'class-transformer';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { AuthUser, Branch } from '@gsi/shared-types';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { DbService, Tx } from '../db/db.service';
 import { StorageService } from '../storage/storage.service';
 import { buildSet } from '../common/sql';
@@ -99,7 +99,7 @@ export class BranchesController {
    * Declared before ':id' so the path is not swallowed by the parameter route.
    */
   @Get('comparison/summary')
-  @Roles('cfo', 'admin', 'finance_controller', 'supervisor')
+  @RequirePermission('dashboard.read')
   comparison(@CurrentUser() user: AuthUser, @Query('from') from?: string, @Query('to') to?: string) {
     const period = { from: from ?? defaultFrom(), to: to ?? new Date().toISOString().slice(0, 10) };
     return this.db.tx(user, async (tx) => {
@@ -162,7 +162,7 @@ export class BranchesController {
   }
 
   @Patch(':id')
-  @Roles('admin')
+  @RequirePermission('branch.manage')
   update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateBranchDto) {
     const patch: Record<string, unknown> = { ...dto };
     for (const k of Object.keys(patch)) if (patch[k] === '') patch[k] = null;
@@ -177,7 +177,7 @@ export class BranchesController {
 
   /** Photo of the branch office / team. */
   @Post(':id/photo')
-  @Roles('admin')
+  @RequirePermission('branch.manage')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
   photo(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File) {
     return this.uploadImage(user, id, file, 'photo_key', { width: 1400, height: 800 });
@@ -185,7 +185,7 @@ export class BranchesController {
 
   /** Portrait of the person heading the branch. */
   @Post(':id/head-photo')
-  @Roles('admin')
+  @RequirePermission('branch.manage')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1 } }))
   headPhoto(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @UploadedFile() file: Express.Multer.File) {
     return this.uploadImage(user, id, file, 'head_photo_key', { width: 600, height: 600 });

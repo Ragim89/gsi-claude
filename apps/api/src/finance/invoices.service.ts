@@ -2,7 +2,6 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import {
   ArAgingBucket,
   AuthUser,
-  HQ_ROLES,
   Invoice,
   InvoiceLine,
   InvoicePayment,
@@ -11,6 +10,7 @@ import {
 } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { LedgerService } from './ledger.service';
+import { AuditService } from '../common/audit.service';
 import { config } from '../config';
 
 const INVOICE_COLUMNS = `
@@ -53,7 +53,11 @@ export interface CreateInvoiceInput {
  */
 @Injectable()
 export class InvoicesService {
-  constructor(private readonly db: DbService, private readonly ledger: LedgerService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly ledger: LedgerService,
+    private readonly audit: AuditService,
+  ) {}
 
   list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean; branchId?: string }) {
     return this.db.tx(user, (tx) =>
@@ -63,6 +67,7 @@ export class InvoicesService {
            AND ($2::uuid IS NULL OR i.client_id = $2::uuid)
            AND ($3::boolean IS NOT TRUE OR (i.status IN ('issued','partially_paid') AND i.due_date < current_date))
            AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+           AND i.deleted_at IS NULL
          ORDER BY i.issue_date DESC, i.invoice_number DESC
          LIMIT 500`,
         [f.status ?? null, f.clientId ?? null, f.overdue ?? null, f.branchId ?? null],
@@ -95,7 +100,8 @@ export class InvoicesService {
                   count(*) FILTER (WHERE i.status = 'draft')::int AS drafts,
                   avg(i.paid_at::date - i.issue_date) FILTER (WHERE i.status = 'paid')::float8 AS avg_days
            FROM invoices i
-           WHERE i.issue_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)`,
+           WHERE i.issue_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+             AND i.deleted_at IS NULL`,
           p,
         ),
         // Cash actually received in the period, from the payment postings.
@@ -137,6 +143,7 @@ export class InvoicesService {
                   SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))::float8 AS amount
            FROM invoices i
            WHERE i.issue_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+             AND i.deleted_at IS NULL
            GROUP BY i.status`,
           p,
         ),
@@ -250,7 +257,10 @@ export class InvoicesService {
   }
 
   private async load(tx: Tx, id: string): Promise<Invoice> {
-    const inv = await tx.one<Invoice>(`SELECT ${INVOICE_COLUMNS} FROM ${INVOICE_FROM} WHERE i.id = $1`, [id]);
+    const inv = await tx.one<Invoice>(
+      `SELECT ${INVOICE_COLUMNS} FROM ${INVOICE_FROM} WHERE i.id = $1 AND i.deleted_at IS NULL`,
+      [id],
+    );
     if (!inv) throw new NotFoundException('Invoice not found');
     inv.lines = await tx.many<InvoiceLine>(
       `SELECT id, invoice_id AS "invoiceId", description, quantity::float8 AS quantity,
@@ -367,12 +377,21 @@ export class InvoicesService {
     });
   }
 
+  /** Drafts are archived, never destroyed: the number was allocated and stays accounted for. */
   remove(user: AuthUser, id: string) {
     return this.db.tx(user, async (tx) => {
       const inv = await this.lock(tx, id);
       if (inv.status !== 'draft') throw new ConflictException('Only draft invoices can be deleted');
-      await tx.exec('DELETE FROM invoices WHERE id = $1', [id]);
-    });
+      await tx.exec('UPDATE invoices SET deleted_at = now(), deleted_by = $2 WHERE id = $1', [id, user.id]);
+      await this.audit.record(tx, user, {
+        action: 'invoice.delete',
+        entityType: 'invoice',
+        entityId: id,
+        entityLabel: inv.invoice_number,
+        branchId: inv.branch_id,
+        before: { status: inv.status, amountTotal: inv.amount_total },
+      });
+    }, { includeArchived: true });
   }
 
   private async lock(tx: Tx, id: string) {
@@ -398,7 +417,7 @@ export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export const isHq = (user: AuthUser) => HQ_ROLES.includes(user.role);
+export const isHq = (user: AuthUser) => user.scope === 'global';
 
 function n(v: unknown): number {
   return v === null || v === undefined ? 0 : Number(v);

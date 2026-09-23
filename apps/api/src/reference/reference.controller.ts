@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, Get, NotFoundException, Param, P
 import { Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Length, MaxLength, MinLength } from 'class-validator';
 import { AuthUser, COMMODITY_GROUPS, CommodityGroup, LocalizedText } from '@gsi/shared-types';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { DbService } from '../db/db.service';
 import { buildSet } from '../common/sql';
 
@@ -54,7 +54,7 @@ export class ReferenceController {
   }
 
   @Post('commodities')
-  @Roles('admin')
+  @RequirePermission('reference.manage')
   createCommodity(@CurrentUser() user: AuthUser, @Body() dto: CommodityDto) {
     const { code, name } = dto;
     if (!code || !name?.en) throw new BadRequestException('code and name.en are required');
@@ -69,7 +69,7 @@ export class ReferenceController {
   }
 
   @Patch('commodities/:id')
-  @Roles('admin')
+  @RequirePermission('reference.manage')
   updateCommodity(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: CommodityDto) {
     const patch: Record<string, unknown> = { ...dto };
     if (dto.name) patch.name = JSON.stringify(dto.name);
@@ -105,7 +105,7 @@ export class ReferenceController {
   }
 
   @Post('ports')
-  @Roles('admin')
+  @RequirePermission('reference.manage')
   createPort(@CurrentUser() user: AuthUser, @Body() dto: PortDto) {
     const { code, name, country } = dto;
     if (!code || !name || !country) throw new BadRequestException('code, name and country are required');
@@ -119,7 +119,7 @@ export class ReferenceController {
   }
 
   @Patch('ports/:id')
-  @Roles('admin')
+  @RequirePermission('reference.manage')
   updatePort(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: PortDto) {
     const { sql, params } = buildSet({ ...dto }, {
       code: 'code',

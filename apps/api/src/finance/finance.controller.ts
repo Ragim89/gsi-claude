@@ -36,11 +36,10 @@ import {
   AuthUser,
   EXPENSE_CATEGORIES,
   ExpenseCategory,
-  HQ_ROLES,
   INVOICE_STATUSES,
   InvoiceStatus,
 } from '@gsi/shared-types';
-import { CurrentUser, Roles } from '../common/decorators';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { DbService } from '../db/db.service';
 import { config } from '../config';
 import { InvoicesService } from './invoices.service';
@@ -109,7 +108,7 @@ class FxRateDto {
 
 /** Finance & billing domain (docs/01 modules 6–7, docs/03). */
 @Controller('finance')
-@Roles('finance_controller', 'supervisor', 'cfo', 'admin')
+@RequirePermission('finance.read')
 export class FinanceController {
   constructor(
     private readonly invoices: InvoicesService,
@@ -132,7 +131,7 @@ export class FinanceController {
    */
   @Sse('stream')
   stream(@CurrentUser() user: AuthUser): Observable<MessageEvent> {
-    const scope = HQ_ROLES.includes(user.role) ? null : user.branchId;
+    const scope = user.scope === 'global' ? null : user.branchId;
     return this.events.stream(scope).pipe(map((data) => ({ data }) as MessageEvent));
   }
 
@@ -166,34 +165,34 @@ export class FinanceController {
   }
 
   @Post('invoices')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('invoice.create')
   createInvoice(@CurrentUser() user: AuthUser, @Body() dto: CreateInvoiceDto) {
     return this.invoices.create(user, dto);
   }
 
   @Post('invoices/:id/issue')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('invoice.issue')
   @HttpCode(200)
   issueInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.invoices.issue(user, id);
   }
 
   @Post('invoices/:id/pay')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('invoice.pay')
   @HttpCode(200)
   payInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: PayDto) {
     return this.invoices.pay(user, id, dto.amount, dto.paidOn);
   }
 
   @Post('invoices/:id/cancel')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('invoice.cancel')
   @HttpCode(200)
   cancelInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.invoices.cancel(user, id);
   }
 
   @Delete('invoices/:id')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('invoice.delete')
   @HttpCode(204)
   async deleteInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.invoices.remove(user, id);
@@ -212,13 +211,13 @@ export class FinanceController {
   }
 
   @Post('expenses')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('expense.create')
   createExpense(@CurrentUser() user: AuthUser, @Body() dto: CreateExpenseDto) {
     return this.expenses.create(user, dto);
   }
 
   @Delete('expenses/:id')
-  @Roles('finance_controller', 'admin')
+  @RequirePermission('expense.delete')
   @HttpCode(204)
   async deleteExpense(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.expenses.remove(user, id);
@@ -240,7 +239,7 @@ export class FinanceController {
 
   /** ASSUMPTION: rates are entered manually in MVP-3; a central-bank feed is a later integration. */
   @Post('fx-rates')
-  @Roles('finance_controller', 'cfo', 'admin')
+  @RequirePermission('fx.manage')
   upsertRate(@CurrentUser() user: AuthUser, @Body() dto: FxRateDto) {
     return this.db.tx(user, (tx) =>
       tx.one(

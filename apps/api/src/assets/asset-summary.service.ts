@@ -34,7 +34,7 @@ export class AssetSummaryService {
                                      AND acquisition_cost - accumulated > salvage_value + 0.01
                                     THEN (acquisition_cost - salvage_value) / useful_life_months
                                           * fx_rate_on(currency, $1, current_date) END), 0)::float8 AS monthly
-           FROM assets WHERE ($2::uuid IS NULL OR branch_id = $2::uuid)`,
+           FROM assets WHERE deleted_at IS NULL AND ($2::uuid IS NULL OR branch_id = $2::uuid)`,
           [base, branchId],
         ),
         tx.one<{ amount: number }>(
@@ -49,7 +49,8 @@ export class AssetSummaryService {
                   SUM((acquisition_cost - accumulated) * fx_rate_on(currency, $1, current_date))::float8 AS nbv,
                   count(*)::int AS cnt
            FROM assets
-           WHERE status NOT IN ('disposed', 'written_off') AND ($2::uuid IS NULL OR branch_id = $2::uuid)
+           WHERE deleted_at IS NULL AND status NOT IN ('disposed', 'written_off')
+             AND ($2::uuid IS NULL OR branch_id = $2::uuid)
            GROUP BY 1 ORDER BY amount DESC`,
           [base, branchId],
         ),
@@ -58,7 +59,8 @@ export class AssetSummaryService {
                   SUM((a.acquisition_cost - a.accumulated) * fx_rate_on(a.currency, $1, current_date))::float8 AS amount,
                   count(*)::int AS cnt
            FROM assets a JOIN branches b ON b.id = a.branch_id
-           WHERE a.status NOT IN ('disposed', 'written_off') AND ($2::uuid IS NULL OR a.branch_id = $2::uuid)
+           WHERE a.deleted_at IS NULL AND a.status NOT IN ('disposed', 'written_off')
+             AND ($2::uuid IS NULL OR a.branch_id = $2::uuid)
            GROUP BY b.id, b.code, b.country ORDER BY amount DESC`,
           [base, branchId],
         ),
@@ -73,7 +75,7 @@ export class AssetSummaryService {
                               AND ($3::uuid IS NULL OR d.branch_id = $3::uuid)), 0)::float8 AS depreciation,
                   COALESCE((SELECT SUM(a.acquisition_cost * fx_rate_on(a.currency, $4, a.acquisition_date))
                             FROM assets a
-                            WHERE a.acquisition_date <= (months.m_start + interval '1 month' - interval '1 day')::date
+                            WHERE a.deleted_at IS NULL AND a.acquisition_date <= (months.m_start + interval '1 month' - interval '1 day')::date
                               AND (a.disposed_on IS NULL OR a.disposed_on > months.m_start)
                               AND ($3::uuid IS NULL OR a.branch_id = $3::uuid)), 0)::float8
                   - COALESCE((SELECT SUM(d.amount_base) FROM asset_depreciation d
@@ -90,7 +92,7 @@ export class AssetSummaryService {
                     - floor(accumulated / NULLIF((acquisition_cost - salvage_value) / useful_life_months, 0)))::int AS remaining,
                   ((acquisition_cost - accumulated) * fx_rate_on(currency, $1, current_date))::float8 AS nbv
            FROM assets
-           WHERE method = 'straight_line' AND useful_life_months > 0
+           WHERE deleted_at IS NULL AND method = 'straight_line' AND useful_life_months > 0
              AND status NOT IN ('disposed', 'written_off')
              AND acquisition_cost - accumulated > salvage_value + 0.01
              AND ($2::uuid IS NULL OR branch_id = $2::uuid)

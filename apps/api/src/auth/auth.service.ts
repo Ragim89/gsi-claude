@@ -1,20 +1,25 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import type { AuthTokens, AuthUser, Role } from '@gsi/shared-types';
+import type { AccessScope, AuthTokens, AuthUser, Permission, Role } from '@gsi/shared-types';
 import { DbService } from '../db/db.service';
 import { config } from '../config';
 import type { AccessTokenPayload } from '../common/auth.guard';
+import { AuditContext, AuditService } from '../common/audit.service';
 
 interface UserRow {
   id: string;
   branch_id: string;
+  country_id: string | null;
   role: Role;
   email: string;
   password_hash: string;
   full_name: string;
   locale: string;
   is_active: boolean;
+  roles: string[];
+  scope: AccessScope;
+  permissions: Permission[];
 }
 
 // Compared against for unknown emails so login timing doesn't reveal which emails exist.
@@ -28,13 +33,35 @@ const DUMMY_HASH = bcrypt.hashSync('timing-equalizer', 10);
  */
 @Injectable()
 export class AuthService {
-  constructor(private readonly db: DbService, private readonly jwt: JwtService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly jwt: JwtService,
+    private readonly audit: AuditService,
+  ) {}
 
-  async login(email: string, password: string): Promise<AuthTokens> {
+  async login(email: string, password: string, ctx: AuditContext = {}): Promise<AuthTokens> {
     const row = await this.findUser(email, null);
     const ok = await bcrypt.compare(password, row?.password_hash ?? DUMMY_HASH);
-    if (!row || !ok || !row.is_active) throw new UnauthorizedException('Invalid email or password');
-    return this.issue(row);
+    if (!row || !ok || !row.is_active) {
+      // Failed attempts are recorded too: a burst of them against one account is the first
+      // sign of an attack, and without a log nobody would ever see it.
+      await this.audit.log(
+        null,
+        {
+          action: 'auth.login.failed',
+          entityType: 'user',
+          entityLabel: email,
+          branchId: row?.branch_id ?? null,
+          metadata: { reason: !row ? 'unknown_email' : !ok ? 'wrong_password' : 'inactive' },
+        },
+        ctx,
+      );
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    const tokens = await this.issue(row);
+    await this.audit.log(tokens.user, { action: 'auth.login', entityType: 'user', entityId: row.id,
+      entityLabel: row.email, branchId: row.branch_id }, ctx);
+    return tokens;
   }
 
   async refresh(refreshToken: string): Promise<AuthTokens> {
@@ -55,6 +82,7 @@ export class AuthService {
 
   private findUser(email: string | null, id: string | null): Promise<UserRow | null> {
     // auth_find_user is SECURITY DEFINER: login happens before any branch context exists.
+    // It also returns the user's roles, effective scope and permissions.
     return this.db.tx(null, (tx) => tx.one<UserRow>('SELECT * FROM auth_find_user($1, $2)', [email, id]));
   }
 
@@ -62,18 +90,26 @@ export class AuthService {
     const user: AuthUser = {
       id: row.id,
       branchId: row.branch_id,
+      countryId: row.country_id,
       role: row.role,
       email: row.email,
       fullName: row.full_name,
       locale: row.locale,
+      roles: row.roles ?? [],
+      scope: row.scope,
+      permissions: row.permissions ?? [],
     };
+    // The token carries role codes, not permissions: it stays small, and a change to what a
+    // role may do reaches everyone without forcing them to sign in again.
     const access: AccessTokenPayload = {
       sub: user.id,
       branchId: user.branchId,
+      countryId: user.countryId,
       role: user.role,
       email: user.email,
       name: user.fullName,
       locale: user.locale,
+      roles: user.roles,
       typ: 'access',
     };
     const [accessToken, refreshToken] = await Promise.all([

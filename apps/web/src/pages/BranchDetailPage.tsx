@@ -34,7 +34,7 @@ function initials(name: string): string {
 export function BranchDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { user, isHq } = useAuth();
+  const { user, isHq, can } = useAuth();
   const { setBranchId, branchId } = useBranch();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -43,7 +43,7 @@ export function BranchDetailPage() {
   const [uploading, setUploading] = useState<'photo' | 'head' | null>(null);
 
   const q = useQuery({ queryKey: ['branch', id], queryFn: () => api.get<BranchCard>(`/branches/${id}`) });
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = can('branch.manage');
 
   const upload = useMutation({
     mutationFn: async ({ kind, file }: { kind: 'photo' | 'head'; file: File }) => {
@@ -236,7 +236,7 @@ export function BranchDetailPage() {
                         {u.email}
                       </div>
                     </td>
-                    <td>{t(`roles.${u.role}`)}</td>
+                    <td>{t(`roleNames.${u.role}`)}</td>
                     <td style={{ textAlign: 'end' }}>{u.isActive ? null : <Badge tone="neutral">{t('users.inactive')}</Badge>}</td>
                   </tr>
                 ))}

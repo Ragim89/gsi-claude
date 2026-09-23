@@ -13,11 +13,11 @@ import { INVOICE_TONE } from './InvoicesPage';
 export function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fmt = useFormatDate();
-  const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const canWrite = can('invoice.create', 'invoice.issue');
 
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState<unknown>(null);

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { AuthUser, FINANCE_ROLES, localize, Role } from '@gsi/shared-types';
+import { AuthUser, localize, Permission } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { config } from '../config';
 import { CsvColumn, CsvDialect, toCsv } from './csv';
@@ -18,13 +18,14 @@ export interface ExportFilters {
 }
 
 interface Section {
-  /** Roles allowed to export it; undefined = any authenticated user (RLS still applies). */
-  roles?: readonly Role[];
+  /**
+   * Permission needed to export it; undefined = any authenticated user. Row-Level Security
+   * still decides which rows come out, so this only governs whether the section is offered.
+   */
+  permission?: Permission;
   load(tx: Tx, f: ExportFilters, base: string): Promise<Record<string, unknown>[]>;
   columns(locale: string): CsvColumn<Record<string, unknown>>[];
 }
-
-const OPERATIONS: readonly Role[] = ['inspector', 'supervisor', 'cfo', 'admin', 'finance_controller'];
 const col = (header: string, key: string): CsvColumn<Record<string, unknown>> => ({
   header,
   value: (r) => r[key] as string | number | null,
@@ -43,7 +44,7 @@ export class ExportService {
 
   private readonly sections: Record<string, Section> = {
     jobs: {
-      roles: OPERATIONS,
+      permission: 'job.read',
       load: (tx, f) =>
         tx.many(
           `SELECT j.job_number, b.code AS branch, c.name AS client, j.type::text AS service, j.status::text,
@@ -98,7 +99,7 @@ export class ExportService {
     },
 
     clients: {
-      roles: OPERATIONS,
+      permission: 'client.read',
       load: (tx, f) =>
         tx.many(
           `SELECT c.name, b.code AS branch, c.gafta_fosfa_ref, c.tax_id, c.country, c.address,
@@ -126,7 +127,7 @@ export class ExportService {
     },
 
     reports: {
-      roles: OPERATIONS,
+      permission: 'report.read',
       load: (tx, f) =>
         tx.many(
           `SELECT r.report_number, r.version, r.status::text, b.code AS branch, j.job_number,
@@ -157,7 +158,7 @@ export class ExportService {
     },
 
     invoices: {
-      roles: FINANCE_ROLES,
+      permission: 'finance.read',
       load: (tx, f, base) =>
         tx.many(
           `SELECT i.invoice_number, b.code AS branch, c.name AS client, j.job_number, i.status::text,
@@ -202,7 +203,7 @@ export class ExportService {
     },
 
     expenses: {
-      roles: FINANCE_ROLES,
+      permission: 'finance.read',
       load: (tx, f, base) =>
         tx.many(
           `SELECT to_char(e.expense_date, 'YYYY-MM-DD') AS date, b.code AS branch, e.category::text,
@@ -233,7 +234,7 @@ export class ExportService {
     },
 
     assets: {
-      roles: FINANCE_ROLES,
+      permission: 'asset.read',
       load: (tx, f, base) =>
         tx.many(
           `SELECT a.inventory_no, b.code AS branch, a.name, a.category::text, a.status::text, a.serial_no,
@@ -274,7 +275,7 @@ export class ExportService {
     },
 
     depreciation: {
-      roles: FINANCE_ROLES,
+      permission: 'asset.read',
       load: (tx, f) =>
         tx.many(
           `SELECT to_char(d.period, 'YYYY-MM') AS period, b.code AS branch, a.inventory_no, a.name,
@@ -302,7 +303,7 @@ export class ExportService {
     },
 
     ledger: {
-      roles: FINANCE_ROLES,
+      permission: 'finance.read',
       load: (tx, f) =>
         tx.many(
           `SELECT to_char(l.entry_date, 'YYYY-MM-DD') AS date, b.code AS branch, l.account,
@@ -405,14 +406,18 @@ export class ExportService {
 
   sectionNames(user: AuthUser): string[] {
     return Object.entries(this.sections)
-      .filter(([, s]) => !s.roles || s.roles.includes(user.role))
+      .filter(([, s]) => this.allowed(user, s))
       .map(([name]) => name);
+  }
+
+  private allowed(user: AuthUser, section: Section): boolean {
+    return !section.permission || (user.permissions?.includes(section.permission) ?? false);
   }
 
   async csv(user: AuthUser, section: string, f: ExportFilters, dialect: CsvDialect): Promise<string> {
     const def = this.sections[section];
     if (!def) throw new NotFoundException(`Unknown export section "${section}"`);
-    if (def.roles && !def.roles.includes(user.role)) {
+    if (!this.allowed(user, def)) {
       throw new ForbiddenException('Not allowed to export this section');
     }
     const rows = await this.db.tx(user, (tx) => def.load(tx, f, this.base));

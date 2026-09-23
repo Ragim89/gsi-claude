@@ -389,3 +389,41 @@ td.negative { color: var(--gsi-color-danger); }
 .import-msg { font-size: var(--gsi-font-size-sm); }
 .import-msg--error { color: var(--gsi-color-danger); }
 .import-msg--warn { color: var(--gsi-color-warning); }
+
+/* ---- Roles and permissions --------------------------------------------------------- */
+.roles-layout {
+  display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: var(--gsi-space-4); align-items: start;
+}
+.gsi-table tr.is-selected > td { background: var(--gsi-color-infoBg); }
+.perm-group { margin-block-end: var(--gsi-space-4); }
+.perm-group h3 {
+  margin: 0 0 var(--gsi-space-2); font-size: var(--gsi-font-size-xs); text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--gsi-color-text-muted);
+}
+.perm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.perm { display: flex; gap: 8px; align-items: flex-start; font-size: var(--gsi-font-size-sm); cursor: pointer; }
+.perm input { margin-block-start: 3px; }
+.perm code {
+  font-family: var(--gsi-font-mono, monospace); font-size: var(--gsi-font-size-xs);
+  display: block; color: var(--gsi-color-text);
+}
+.perm .muted { display: block; font-size: var(--gsi-font-size-xs); }
+
+/* ---- Audit log --------------------------------------------------------------------- */
+.mono { font-family: var(--gsi-font-mono, monospace); font-size: var(--gsi-font-size-xs); white-space: nowrap; }
+.audit-detail {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--gsi-space-3);
+  background: var(--gsi-color-background); padding: var(--gsi-space-3); border-radius: var(--gsi-radius-md);
+}
+.audit-detail h4 {
+  margin: 0 0 4px; font-size: var(--gsi-font-size-xs); text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--gsi-color-text-muted);
+}
+.audit-detail pre {
+  margin: 0; font-size: var(--gsi-font-size-xs); white-space: pre-wrap; word-break: break-word;
+  font-family: var(--gsi-font-mono, monospace); color: var(--gsi-color-text);
+}
+
+@media (max-width: 900px) {
+  .roles-layout { grid-template-columns: 1fr; }
+}

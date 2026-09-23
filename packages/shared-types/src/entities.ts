@@ -1,5 +1,6 @@
 import type { ChecklistResult, JobStatus, MediaType, ReportStatus, Role, ServiceType } from './enums';
 import type { LocalizedText, ChecklistInputKind } from './checklist-templates';
+import type { AccessScope, Permission } from './rbac';
 
 /** ISO-8601 timestamp string as returned by the API. */
 export type Timestamp = string;
@@ -56,10 +57,19 @@ export interface User {
 export interface AuthUser {
   id: string;
   branchId: string;
+  /** The country the user's office belongs to — drives `country` scope in the policies. */
+  countryId?: string | null;
+  /** Primary (legacy) role. Kept for display and for tokens issued before RBAC existed. */
   role: Role;
   email: string;
   fullName: string;
   locale: string;
+  /** All roles assigned to the user, by code. */
+  roles?: string[];
+  /** How far this user can see: global / country / office / own. */
+  scope?: AccessScope;
+  /** Everything the user may do, resolved from their roles. */
+  permissions?: Permission[];
 }
 
 export interface AuthTokens {

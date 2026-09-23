@@ -2,14 +2,46 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
-    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
+    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
+    "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
+    "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
+  },
+  "roles": {
+    "title": "Roller ve yetkiler",
+    "sub": "Her rolün neler yapabileceği. Bir değişiklik, o role sahip herkes için bir dakika içinde geçerli olur.",
+    "list": "Roller",
+    "role": "Rol",
+    "scope": "Görebildiği",
+    "users": "Kişi",
+    "permissions": "Yetkiler",
+    "effect": "İşaretlenen yetki bu role sahip herkese verilir. Aynı kuralları veritabanı da uygular; hiçbir şey gizlenmiş bir düğmeye bağlı değildir.",
+    "scopes": { "global": "Tüm grup", "country": "Ülke", "office": "Kendi ofisi", "own": "Kendi kayıtları" },
+    "categories": {
+      "operations": "Operasyon", "crm": "Müşteriler", "documents": "Raporlar", "finance": "Finans",
+      "assets": "Varlıklar", "reference": "Referans veriler", "admin": "Yönetim", "data": "Yükleme ve dışa aktarma"
+    }
+  },
+  "audit": {
+    "title": "Denetim kaydı",
+    "sub": "Kim ne yaptı, değerler öncesinde ve sonrasında neydi",
+    "entries": "{{total}} kayıt",
+    "empty": "Bu dönem için kayıt yok",
+    "allActions": "Tüm işlemler",
+    "search": "Kayıt veya e-posta",
+    "when": "Ne zaman", "who": "Kim", "action": "İşlem", "record": "Kayıt", "branch": "Ofis",
+    "before": "Önce", "after": "Sonra", "details": "Ayrıntılar",
+    "page": "Sayfa {{page}} / {{pages}}",
+    "groups": {
+      "auth": "Girişler", "job": "İşler", "report": "Raporlar", "client": "Müşteriler", "invoice": "Faturalar",
+      "expense": "Giderler", "asset": "Varlıklar", "user": "Kullanıcılar", "role": "Roller", "org": "Organizasyon"
+    }
   },
   "common": {
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
     "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube"
   },
-  "roles": {
+  "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
     "finance_controller": "Mali kontrolör", "cfo": "CFO / Merkez", "client": "Müşteri", "admin": "Sistem yöneticisi"
   },

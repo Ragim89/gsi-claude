@@ -1,7 +1,7 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query, StreamableFile } from '@nestjs/common';
 import { IsOptional, IsUUID } from 'class-validator';
 import { AuthUser } from '@gsi/shared-types';
-import { CurrentUser, Public, Roles } from '../common/decorators';
+import { CurrentUser, Public, RequirePermission } from '../common/decorators';
 import { ReportsService } from './reports.service';
 
 class ReportQueryDto {
@@ -16,11 +16,13 @@ export class ReportsController {
 
   /** GET /reports?clientId=… — the client card's report list. RLS scopes it to the caller's branch. */
   @Get()
+  @RequirePermission('report.read')
   list(@CurrentUser() user: AuthUser, @Query() q: ReportQueryDto) {
     return this.reports.list(user, q);
   }
 
   @Get(':id/pdf')
+  @RequirePermission('report.download')
   async download(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     const { stream, filename } = await this.reports.open(user, id);
     return new StreamableFile(stream, {
@@ -36,7 +38,7 @@ export class JobReportPreviewController {
 
   /** Draft PDF (watermarked, not stored) so the supervisor can review before approving. */
   @Get(':id/report-preview')
-  @Roles('supervisor', 'admin')
+  @RequirePermission('report.preview')
   async preview(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return new StreamableFile(await this.reports.preview(user, id), {
       type: 'application/pdf',

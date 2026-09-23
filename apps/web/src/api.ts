@@ -94,6 +94,8 @@ export const api = {
   get: <T>(path: string) => request(path).then((r) => r.json() as Promise<T>),
   post: <T>(path: string, body?: unknown) =>
     request(path, { method: 'POST', ...json(body ?? {}) }).then((r) => r.json() as Promise<T>),
+  put: <T>(path: string, body: unknown) =>
+    request(path, { method: 'PUT', ...json(body) }).then((r) => r.json() as Promise<T>),
   patch: <T>(path: string, body: unknown) =>
     request(path, { method: 'PATCH', ...json(body) }).then((r) => r.json() as Promise<T>),
   del: (path: string) => request(path, { method: 'DELETE' }).then(() => undefined),

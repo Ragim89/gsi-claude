@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AuthUser, Expense, ExpenseCategory, ExpenseSummary, HQ_ROLES } from '@gsi/shared-types';
+import { AuthUser, Expense, ExpenseCategory, ExpenseSummary } from '@gsi/shared-types';
 import { DbService } from '../db/db.service';
 import { LedgerService } from './ledger.service';
+import { AuditService } from '../common/audit.service';
 import { round2, today } from './invoices.service';
 import { config } from '../config';
 
@@ -29,7 +30,11 @@ export interface CreateExpenseInput {
 /** Branch costs (docs/01-architecture.md, module 6). Booking an expense posts to the ledger. */
 @Injectable()
 export class ExpensesService {
-  constructor(private readonly db: DbService, private readonly ledger: LedgerService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly ledger: LedgerService,
+    private readonly audit: AuditService,
+  ) {}
 
   list(user: AuthUser, f: { category?: ExpenseCategory; from?: string; to?: string; branchId?: string }) {
     return this.db.tx(user, (tx) =>
@@ -39,6 +44,7 @@ export class ExpensesService {
            AND ($2::date IS NULL OR e.expense_date >= $2::date)
            AND ($3::date IS NULL OR e.expense_date <= $3::date)
            AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+           AND e.deleted_at IS NULL
          ORDER BY e.expense_date DESC, e.created_at DESC
          LIMIT 500`,
         [f.category ?? null, f.from ?? null, f.to ?? null, f.branchId ?? null],
@@ -64,7 +70,8 @@ export class ExpensesService {
           `SELECT COALESCE(SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date)), 0)::float8 AS amount,
                   count(*)::int AS cnt
            FROM expenses e
-           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)`,
+           WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+             AND e.deleted_at IS NULL`,
           params,
         ),
         tx.many<{ month: string; amount: number }>(
@@ -77,6 +84,7 @@ export class ExpensesService {
            FROM months
            LEFT JOIN expenses e ON date_trunc('month', e.expense_date)::date = months.m_start
                                AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+                               AND e.deleted_at IS NULL
            GROUP BY months.m_start ORDER BY months.m_start`,
           params,
         ),
@@ -86,6 +94,7 @@ export class ExpensesService {
                   count(*)::int AS cnt
            FROM expenses e
            WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+             AND e.deleted_at IS NULL
            GROUP BY 1 ORDER BY amount DESC`,
           params,
         ),
@@ -94,6 +103,7 @@ export class ExpensesService {
                   SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount
            FROM expenses e JOIN branches b ON b.id = e.branch_id
            WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+             AND e.deleted_at IS NULL
            GROUP BY b.id, b.code, b.country, b.currency ORDER BY amount DESC`,
           params,
         ),
@@ -102,6 +112,7 @@ export class ExpensesService {
                   SUM(e.amount * fx_rate_on(e.currency, $3, e.expense_date))::float8 AS amount
            FROM expenses e
            WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+             AND e.deleted_at IS NULL
            GROUP BY 1 ORDER BY amount DESC LIMIT 8`,
           params,
         ),
@@ -111,6 +122,7 @@ export class ExpensesService {
                   to_char(e.expense_date, 'YYYY-MM-DD') AS date
            FROM expenses e
            WHERE e.expense_date BETWEEN $1::date AND $2::date AND ($4::uuid IS NULL OR e.branch_id = $4::uuid)
+             AND e.deleted_at IS NULL
            ORDER BY amount DESC LIMIT 1`,
           params,
         ),
@@ -176,7 +188,7 @@ export class ExpensesService {
   }
 
   create(user: AuthUser, input: CreateExpenseInput) {
-    const branchId = HQ_ROLES.includes(user.role) && input.branchId ? input.branchId : user.branchId;
+    const branchId = user.scope === 'global' && input.branchId ? input.branchId : user.branchId;
     const date = input.expenseDate ?? today();
     return this.db.tx(user, async (tx) => {
       const branch = await tx.one<{ currency: string }>('SELECT currency FROM branches WHERE id = $1', [branchId]);
@@ -209,12 +221,23 @@ export class ExpensesService {
 
   remove(user: AuthUser, id: string) {
     return this.db.tx(user, async (tx) => {
-      const exists = await tx.one('SELECT 1 FROM expenses WHERE id = $1', [id]);
-      if (!exists) throw new NotFoundException('Expense not found');
+      const row = await tx.one<{ description: string; branch_id: string; amount: string; currency: string }>(
+        'SELECT description, branch_id, amount, currency FROM expenses WHERE id = $1 AND deleted_at IS NULL',
+        [id],
+      );
+      if (!row) throw new NotFoundException('Expense not found');
       // Keep the ledger immutable: reverse rather than delete the postings.
       await this.ledger.reverse(tx, user, 'expense', id, today());
-      await tx.exec('DELETE FROM expenses WHERE id = $1', [id]);
-    });
+      await tx.exec('UPDATE expenses SET deleted_at = now(), deleted_by = $2 WHERE id = $1', [id, user.id]);
+      await this.audit.record(tx, user, {
+        action: 'expense.delete',
+        entityType: 'expense',
+        entityId: id,
+        entityLabel: row.description,
+        branchId: row.branch_id,
+        before: { amount: Number(row.amount), currency: row.currency },
+      });
+    }, { includeArchived: true });
   }
 }
 

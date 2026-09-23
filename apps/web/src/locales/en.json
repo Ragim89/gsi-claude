@@ -2,14 +2,46 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
-    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import", "users": "Users", "logout": "Sign out", "language": "Language"
+    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
+    "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
+    "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
+  },
+  "roles": {
+    "title": "Roles and permissions",
+    "sub": "What each role may do. A change applies to everyone with that role within a minute.",
+    "list": "Roles",
+    "role": "Role",
+    "scope": "Sees",
+    "users": "People",
+    "permissions": "Permissions",
+    "effect": "Ticking a permission grants it to everyone holding this role. The database enforces the same rules, so nothing depends on the interface hiding a button.",
+    "scopes": { "global": "Whole group", "country": "Country", "office": "Office", "own": "Own records" },
+    "categories": {
+      "operations": "Operations", "crm": "Clients", "documents": "Reports", "finance": "Finance",
+      "assets": "Assets", "reference": "Reference data", "admin": "Administration", "data": "Import and export"
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "sub": "Who did what, and what the values were before and after",
+    "entries": "{{total}} entries",
+    "empty": "Nothing recorded for this period",
+    "allActions": "All actions",
+    "search": "Record or e-mail",
+    "when": "When", "who": "Who", "action": "Action", "record": "Record", "branch": "Office",
+    "before": "Before", "after": "After", "details": "Details",
+    "page": "Page {{page}} of {{pages}}",
+    "groups": {
+      "auth": "Sign-ins", "job": "Jobs", "report": "Reports", "client": "Clients", "invoice": "Invoices",
+      "expense": "Expenses", "asset": "Assets", "user": "Users", "role": "Roles", "org": "Organisation"
+    }
   },
   "common": {
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
     "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch"
   },
-  "roles": {
+  "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
     "finance_controller": "Finance controller", "cfo": "CFO / HQ", "client": "Client", "admin": "Administrator"
   },

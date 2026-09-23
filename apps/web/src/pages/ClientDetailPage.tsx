@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
 import { Client, InspectionJob, Report } from '@gsi/shared-types';
 import { api } from '../api';
-import { canManage, useAuth } from '../auth';
+import { useAuth } from '../auth';
 import { ClientForm } from '../components/ClientForm';
 import { ReportsTable } from '../components/ReportsTable';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
@@ -14,7 +14,7 @@ import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabe
 export function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fmt = useFormatDate();
@@ -36,7 +36,7 @@ export function ClientDetailPage() {
   if (client.isLoading) return <Loading />;
   if (!client.data) return <ErrorBox error={client.error} />;
   const c = client.data;
-  const manager = canManage(user?.role);
+  const manager = can('client.update', 'job.update');
 
   const detail = (label: string, value: string | null | undefined) => (
     <div>

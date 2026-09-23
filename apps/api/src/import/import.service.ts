@@ -4,10 +4,8 @@ import {
   ASSET_STATUSES,
   AuthUser,
   EXPENSE_CATEGORIES,
-  FINANCE_ROLES,
-  HQ_ROLES,
   INVOICE_STATUSES,
-  Role,
+  Permission,
 } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { LedgerService } from '../finance/ledger.service';
@@ -65,7 +63,8 @@ interface Ctx {
 }
 
 interface Section {
-  roles: readonly Role[];
+  /** Permission required on top of import.run, matching what the section writes. */
+  permission: Permission;
   /** canonical field → accepted header spellings (normalised) */
   fields: Record<string, string[]>;
   required: string[];
@@ -77,7 +76,6 @@ interface Section {
   findExisting(ctx: Ctx, data: Record<string, unknown>): Promise<string | null>;
 }
 
-const OPERATIONS: readonly Role[] = ['supervisor', 'admin', 'cfo', 'finance_controller'];
 const norm = (list: string[]) => list.map(normalizeHeader);
 
 /**
@@ -94,7 +92,7 @@ export class ImportService {
 
   private readonly sections: Record<string, Section> = {
     clients: {
-      roles: OPERATIONS,
+      permission: 'client.create',
       fields: {
         name: norm(['name', 'client', 'название', 'наименование', 'клиент', 'контрагент', 'unvan', 'müşteri']),
         branch: norm(['branch', 'филиал', 'şube']),
@@ -166,7 +164,7 @@ export class ImportService {
     },
 
     assets: {
-      roles: FINANCE_ROLES,
+      permission: 'asset.create',
       fields: {
         inventoryNo: norm(['inventory no.', 'inventoryno', 'инв. номер', 'инвентарный номер', 'demirbaş no.']),
         branch: norm(['branch', 'филиал', 'şube']),
@@ -284,7 +282,7 @@ export class ImportService {
     },
 
     invoices: {
-      roles: FINANCE_ROLES,
+      permission: 'invoice.create',
       fields: {
         invoiceNumber: norm(['invoice no.', 'invoiceno', '№ счёта', 'номер счёта', 'fatura no.']),
         branch: norm(['branch', 'филиал', 'şube']),
@@ -429,7 +427,7 @@ export class ImportService {
     },
 
     expenses: {
-      roles: FINANCE_ROLES,
+      permission: 'expense.create',
       fields: {
         expenseDate: norm(['date', 'дата', 'tarih']),
         branch: norm(['branch', 'филиал', 'şube']),
@@ -490,7 +488,7 @@ export class ImportService {
 
   sectionNames(user: AuthUser): string[] {
     return Object.entries(this.sections)
-      .filter(([, s]) => s.roles.includes(user.role))
+      .filter(([, s]) => user.permissions?.includes(s.permission))
       .map(([name]) => name);
   }
 
@@ -515,7 +513,9 @@ export class ImportService {
   private get(user: AuthUser, section: string): Section {
     const def = this.sections[section];
     if (!def) throw new NotFoundException(`Unknown import section "${section}"`);
-    if (!def.roles.includes(user.role)) throw new ForbiddenException('Not allowed to import this section');
+    if (!user.permissions?.includes(def.permission)) {
+      throw new ForbiddenException('Not allowed to import this section');
+    }
     return def;
   }
 
@@ -652,7 +652,9 @@ function resolveBranch(ctx: Ctx, value: unknown, result: RowResult) {
     return own ?? null;
   }
   const branch = ctx.branches.get(code.toLowerCase());
-  const mine = HQ_ROLES.includes(ctx.user.role);
+  // Beyond their own office only for group-wide roles; a country manager's rows are still
+  // filtered by the database, this only decides how the message reads.
+  const mine = ctx.user.scope === 'global' || ctx.user.scope === 'country';
   if (!branch) {
     // A branch user only ever sees their own branch, so "not found" means one of two things.
     result.errors.push(issue(mine ? 'unknownBranch' : 'foreignBranch', { branch: code }));

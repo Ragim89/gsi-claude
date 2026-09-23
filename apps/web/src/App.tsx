@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import type { Role } from '@gsi/shared-types';
+import { useTranslation } from 'react-i18next';
+import type { Permission } from '@gsi/shared-types';
 import { useAuth } from './auth';
+import { PageHead } from './components/common';
 import { Layout } from './components/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { JobsPage } from './pages/JobsPage';
@@ -19,23 +21,38 @@ import { BranchDetailPage } from './pages/BranchDetailPage';
 import { AssetsPage } from './pages/AssetsPage';
 import { AssetDetailPage } from './pages/AssetDetailPage';
 import { ImportPage } from './pages/ImportPage';
+import { RolesPage } from './pages/RolesPage';
+import { AuditPage } from './pages/AuditPage';
 
-/** Roles allowed into the finance area (mirrors app_sees_finance() in the database). */
-const FINANCE: Role[] = ['finance_controller', 'supervisor', 'cfo', 'admin'];
-
-function RequireAuth({ roles, children }: { roles?: Role[]; children: JSX.Element }) {
-  const { user } = useAuth();
+/**
+ * Guards a route by permission. The API and Row-Level Security enforce the same rules, so
+ * this exists to route people somewhere useful rather than to a wall of 403s.
+ */
+function RequireAuth({ need, children }: { need?: Permission[]; children: JSX.Element }) {
+  const { user, can } = useAuth();
   const location = useLocation();
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/jobs" replace />;
+  if (need?.length && !can(...need)) return <Navigate to="/" replace />;
   return children;
 }
 
-/** Finance roles land on the dashboard; operations roles on their job list. */
+/** Everyone lands on the most useful screen their permissions allow. */
 function HomeRedirect() {
-  const { user } = useAuth();
-  const finance = user && ['cfo', 'finance_controller'].includes(user.role);
-  return <Navigate to={finance ? '/finance' : '/jobs'} replace />;
+  const { can } = useAuth();
+  if (can('dashboard.read')) return <Navigate to="/finance" replace />;
+  if (can('job.read')) return <Navigate to="/jobs" replace />;
+  if (can('client.read')) return <Navigate to="/clients" replace />;
+  // An account with no permissions at all: say so plainly rather than bounce between routes.
+  return <NoAccess />;
+}
+
+function NoAccess() {
+  const { t } = useTranslation();
+  return (
+    <div className="stack">
+      <PageHead title={t('nav.noAccess')} sub={t('nav.noAccessHint')} />
+    </div>
+  );
 }
 
 export function App() {
@@ -51,24 +68,26 @@ export function App() {
         }
       >
         <Route path="/" element={<HomeRedirect />} />
-        <Route path="/finance" element={<RequireAuth roles={FINANCE}><DashboardPage /></RequireAuth>} />
-        <Route path="/finance/invoices" element={<RequireAuth roles={FINANCE}><InvoicesPage /></RequireAuth>} />
-        <Route path="/finance/invoices/:id" element={<RequireAuth roles={FINANCE}><InvoiceDetailPage /></RequireAuth>} />
-        <Route path="/finance/expenses" element={<RequireAuth roles={FINANCE}><ExpensesPage /></RequireAuth>} />
-        <Route path="/assets" element={<RequireAuth roles={FINANCE}><AssetsPage /></RequireAuth>} />
-        <Route path="/assets/:id" element={<RequireAuth roles={FINANCE}><AssetDetailPage /></RequireAuth>} />
-        <Route path="/branches" element={<RequireAuth roles={FINANCE}><BranchesPage /></RequireAuth>} />
-        <Route path="/branches/:id" element={<BranchDetailPage />} />
-        <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/jobs/new" element={<RequireAuth roles={['supervisor', 'admin']}><JobFormPage /></RequireAuth>} />
-        <Route path="/jobs/:id" element={<JobDetailPage />} />
-        <Route path="/jobs/:id/edit" element={<RequireAuth roles={['supervisor', 'admin']}><JobFormPage /></RequireAuth>} />
-        <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/clients/:id" element={<ClientDetailPage />} />
-        <Route path="/import" element={<RequireAuth roles={FINANCE}><ImportPage /></RequireAuth>} />
-        <Route path="/users" element={<RequireAuth roles={['admin']}><UsersPage /></RequireAuth>} />
+        <Route path="/finance" element={<RequireAuth need={['dashboard.read']}><DashboardPage /></RequireAuth>} />
+        <Route path="/finance/invoices" element={<RequireAuth need={['finance.read']}><InvoicesPage /></RequireAuth>} />
+        <Route path="/finance/invoices/:id" element={<RequireAuth need={['finance.read']}><InvoiceDetailPage /></RequireAuth>} />
+        <Route path="/finance/expenses" element={<RequireAuth need={['finance.read']}><ExpensesPage /></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth need={['asset.read']}><AssetsPage /></RequireAuth>} />
+        <Route path="/assets/:id" element={<RequireAuth need={['asset.read']}><AssetDetailPage /></RequireAuth>} />
+        <Route path="/branches" element={<RequireAuth need={['dashboard.read']}><BranchesPage /></RequireAuth>} />
+        <Route path="/branches/:id" element={<RequireAuth need={['branch.read']}><BranchDetailPage /></RequireAuth>} />
+        <Route path="/jobs" element={<RequireAuth need={['job.read']}><JobsPage /></RequireAuth>} />
+        <Route path="/jobs/new" element={<RequireAuth need={['job.create']}><JobFormPage /></RequireAuth>} />
+        <Route path="/jobs/:id" element={<RequireAuth need={['job.read']}><JobDetailPage /></RequireAuth>} />
+        <Route path="/jobs/:id/edit" element={<RequireAuth need={['job.update']}><JobFormPage /></RequireAuth>} />
+        <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
+        <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
+        <Route path="/import" element={<RequireAuth need={['import.run']}><ImportPage /></RequireAuth>} />
+        <Route path="/users" element={<RequireAuth need={['user.read']}><UsersPage /></RequireAuth>} />
+        <Route path="/admin/roles" element={<RequireAuth need={['role.manage']}><RolesPage /></RequireAuth>} />
+        <Route path="/admin/audit" element={<RequireAuth need={['audit.read']}><AuditPage /></RequireAuth>} />
       </Route>
-      <Route path="*" element={<Navigate to="/jobs" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

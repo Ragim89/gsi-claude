@@ -32,7 +32,7 @@ export const ASSET_TONE: Record<AssetStatus, BadgeTone> = {
 /** Company assets: what we own, what it is worth now, what depreciation costs each month. */
 export function AssetsPage() {
   const { t, i18n } = useTranslation();
-  const { user, isHq } = useAuth();
+  const { user, isHq, can } = useAuth();
   const { branchId, current } = useBranch();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export function AssetsPage() {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const canWrite = can('asset.create', 'asset.update');
 
   const scope = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
   const listParams = new URLSearchParams();

@@ -54,6 +54,18 @@ const BRANCH_PROFILE: Record<string, {
   RU: { legalForm: 'OOO', registrationNo: 'OGRN TBC', taxId: 'INN TBC', bankName: 'Bank name TBC', bankAccount: '40702810 TBC 0000000000', bankSwift: 'TBCXRUMM', phone: '+7 8617 00 00 00', email: 'novorossiysk@gsi.example', website: 'https://gsi.example', established: 2011, headEmail: 'supervisor.ru@gsi.local', headTitle: 'Branch Manager', description: 'Novorossiysk office: draft surveys and loading supervision in the Azov–Black Sea basin.' },
 };
 
+/** Country names in their own language, for the country level of the hierarchy. */
+const COUNTRY_NAMES: Record<string, string> = {
+  TR: 'Türkiye',
+  RO: 'România',
+  UA: 'Україна',
+  UZ: 'Oʻzbekiston',
+  KZ: 'Қазақстан',
+  AE: 'United Arab Emirates',
+  IT: 'Italia',
+  RU: 'Россия',
+};
+
 const USERS = [
   { email: 'admin@gsi.local', name: 'System Administrator', role: 'admin', branch: 'TR', locale: 'en' },
   { email: 'cfo@gsi.local', name: 'Group CFO', role: 'cfo', branch: 'TR', locale: 'en' },
@@ -143,6 +155,14 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
          ON CONFLICT ((lower(email))) DO NOTHING`,
         [branchId.get(u.branch), u.email, hash, u.name, u.role, u.locale],
       );
+      // Every demo account carries its role explicitly. Without this a user would fall back
+      // to whichever role happens to declare their legacy value first, which is fragile.
+      await tx.exec(
+        `INSERT INTO user_roles (user_id, role_code)
+         SELECT usr.id, $2 FROM users usr WHERE lower(usr.email) = lower($1)
+         ON CONFLICT DO NOTHING`,
+        [u.email, u.role],
+      );
     }
 
     for (const c of CLIENTS) {
@@ -172,6 +192,12 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
         [tr, clientRow!.id, inspector!.id, supervisor!.id],
       );
       await seedChecklist(tx, job!.id, 'loading_discharge');
+    }
+
+    // Countries are created by the branch trigger with the ISO code as their name; give the
+    // ones the group works in their proper names.
+    for (const [code, name] of Object.entries(COUNTRY_NAMES)) {
+      await tx.exec(`UPDATE countries SET name = $2 WHERE code = $1 AND name = code`, [code, name]);
     }
 
     // Requisites and the head of each entity (idempotent: only fills what is still empty).

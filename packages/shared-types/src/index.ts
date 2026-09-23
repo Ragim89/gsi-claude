@@ -4,3 +4,4 @@ export * from './checklist-templates';
 export * from './finance';
 export * from './reference';
 export * from './assets';
+export * from './rbac';

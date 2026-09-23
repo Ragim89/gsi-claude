@@ -41,6 +41,7 @@ export function as(app: INestApplication, session: Session) {
   return {
     get: (url: string) => agent.get(url).set(auth),
     post: (url: string) => agent.post(url).set(auth),
+    put: (url: string) => agent.put(url).set(auth),
     patch: (url: string) => agent.patch(url).set(auth),
     delete: (url: string) => agent.delete(url).set(auth),
   };

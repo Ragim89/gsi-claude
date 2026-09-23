@@ -8,8 +8,10 @@ import { useAuth } from '../auth';
 import { ErrorBox, Loading } from './common';
 
 /** Mirrors ChecklistService.lockEditableJob on the API. */
-function canEdit(job: InspectionJob, userId: string | undefined, role: string | undefined): boolean {
-  if (role === 'inspector') return job.assignedInspectorId === userId && ['assigned', 'in_progress'].includes(job.status);
+function canEdit(job: InspectionJob, userId: string | undefined, scope: string | undefined): boolean {
+  // Field roles ("own" scope) fill in their own jobs while the work is open; the office can
+  // still correct a checklist that is under review.
+  if (scope === 'own') return job.assignedInspectorId === userId && ['assigned', 'in_progress'].includes(job.status);
   return ['assigned', 'in_progress', 'under_review'].includes(job.status);
 }
 
@@ -20,7 +22,7 @@ export function Checklist({ job }: { job: InspectionJob }) {
     queryKey: ['checklist', job.id],
     queryFn: () => api.get<ChecklistItem[]>(`/jobs/${job.id}/checklist`),
   });
-  const editable = canEdit(job, user?.id, user?.role);
+  const editable = canEdit(job, user?.id, user?.scope);
   const total = items.data?.length ?? 0;
   const done = items.data?.filter((i) => i.result).length ?? 0;
 

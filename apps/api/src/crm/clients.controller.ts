@@ -13,10 +13,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { IsEmail, IsOptional, IsString, IsUUID, Length, MaxLength, MinLength } from 'class-validator';
-import { AuthUser, HQ_ROLES } from '@gsi/shared-types';
-import { CurrentUser, Roles } from '../common/decorators';
+import { AuthUser } from '@gsi/shared-types';
+import { CurrentUser, RequirePermission } from '../common/decorators';
 import { DbService, Tx } from '../db/db.service';
 import { buildSet } from '../common/sql';
+import { AuditService } from '../common/audit.service';
 
 export const CLIENT_COLUMNS = `
   c.id, c.branch_id AS "branchId", b.code AS "branchCode", c.name, c.gafta_fosfa_ref AS "gaftaFosfaRef",
@@ -67,7 +68,7 @@ async function getClient(tx: Tx, id: string) {
   const row = await tx.one(
     `SELECT ${CLIENT_COLUMNS},
             (SELECT count(*)::int FROM inspection_jobs j WHERE j.client_id = c.id) AS "jobCount"
-     FROM clients c JOIN branches b ON b.id = c.branch_id WHERE c.id = $1`,
+     FROM clients c JOIN branches b ON b.id = c.branch_id WHERE c.id = $1 AND c.deleted_at IS NULL`,
     [id],
   );
   if (!row) throw new NotFoundException('Client not found');
@@ -80,7 +81,7 @@ async function getClient(tx: Tx, id: string) {
  */
 @Controller('clients')
 export class ClientsController {
-  constructor(private readonly db: DbService) {}
+  constructor(private readonly db: DbService, private readonly audit: AuditService) {}
 
   /** `branchId` lets an HQ user narrow the group view down to one branch. */
   @Get()
@@ -96,6 +97,7 @@ export class ClientsController {
                 OR c.gafta_fosfa_ref ILIKE '%' || $1 || '%'
                 OR c.tax_id ILIKE '%' || $1 || '%')
            AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
+           AND c.deleted_at IS NULL
          ORDER BY c.name
          LIMIT 500`,
         [q, branchId || null],
@@ -109,10 +111,11 @@ export class ClientsController {
   }
 
   @Post()
-  @Roles('supervisor', 'admin')
+  @RequirePermission('client.create')
   create(@CurrentUser() user: AuthUser, @Body() body: CreateClientDto) {
     const dto = emptyToNull(body);
-    const branchId = HQ_ROLES.includes(user.role) && dto.branchId ? dto.branchId : user.branchId;
+    // Only a group-wide role may place a client in another office; everyone else gets their own.
+    const branchId = user.scope === 'global' && dto.branchId ? dto.branchId : user.branchId;
     return this.db.tx(user, async (tx) => {
       const row = await tx.one<{ id: string }>(
         `INSERT INTO clients (branch_id, name, gafta_fosfa_ref, tax_id, country, address, contact_name,
@@ -127,7 +130,7 @@ export class ClientsController {
   }
 
   @Patch(':id')
-  @Roles('supervisor', 'admin')
+  @RequirePermission('client.update')
   update(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateClientDto) {
     const dto = emptyToNull(body);
     if (dto.country) dto.country = dto.country.toUpperCase();
@@ -140,14 +143,28 @@ export class ClientsController {
     });
   }
 
-  /** Clients with jobs cannot be deleted (FK RESTRICT → 409): their reports must stay traceable. */
+  /**
+   * Archives the client: it disappears from lists and searches, while its jobs, reports and
+   * invoices stay exactly where they are. Nothing is deleted — those documents are evidence.
+   */
   @Delete(':id')
-  @Roles('supervisor', 'admin')
+  @RequirePermission('client.archive')
   @HttpCode(204)
   async remove(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.db.tx(user, async (tx) => {
-      const n = await tx.exec(`DELETE FROM clients WHERE id = $1`, [id]);
-      if (!n) throw new NotFoundException('Client not found');
-    });
+      const row = await tx.one<{ name: string; branch_id: string }>(
+        'SELECT name, branch_id FROM clients WHERE id = $1 AND deleted_at IS NULL',
+        [id],
+      );
+      if (!row) throw new NotFoundException('Client not found');
+      await tx.exec('UPDATE clients SET deleted_at = now(), deleted_by = $2 WHERE id = $1', [id, user.id]);
+      await this.audit.record(tx, user, {
+        action: 'client.archive',
+        entityType: 'client',
+        entityId: id,
+        entityLabel: row.name,
+        branchId: row.branch_id,
+      });
+    }, { includeArchived: true });
   }
 }

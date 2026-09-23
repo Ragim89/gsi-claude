@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Select } from '@gsi/ui-kit/react';
 import { InspectionJob, Report, User } from '@gsi/shared-types';
 import { api, openPdf } from '../api';
-import { canManage, useAuth } from '../auth';
+import { useAuth } from '../auth';
 import { Checklist } from '../components/Checklist';
 import { ReportsTable } from '../components/ReportsTable';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
@@ -13,7 +13,7 @@ import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabe
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fmt = useFormatDate();
@@ -24,7 +24,7 @@ export function JobDetailPage() {
 
   const job = useQuery({ queryKey: ['job', id], queryFn: () => api.get<InspectionJob>(`/jobs/${id}`) });
   const reports = useQuery({ queryKey: ['reports', 'job', id], queryFn: () => api.get<Report[]>(`/reports?jobId=${id}`) });
-  const manager = canManage(user?.role);
+  const manager = can('client.update', 'job.update');
   const inspectors = useQuery({
     queryKey: ['users', 'inspector'],
     queryFn: () => api.get<User[]>('/users?role=inspector'),
@@ -57,7 +57,7 @@ export function JobDetailPage() {
   if (!job.data) return <ErrorBox error={job.error} />;
   const j = job.data;
 
-  const isAssignedInspector = user?.role === 'inspector' && j.assignedInspectorId === user.id;
+  const isAssignedInspector = user?.scope === 'own' && j.assignedInspectorId === user.id;
   const canWork = isAssignedInspector || manager;
   const run = (path: string, confirmText?: string, body?: unknown) => {
     if (confirmText && !window.confirm(confirmText)) return;

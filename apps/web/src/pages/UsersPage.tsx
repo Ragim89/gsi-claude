@@ -58,7 +58,7 @@ export function UsersPage() {
                 <Select value={form.role} onChange={set('role')}>
                   {MVP1_ROLES.map((r) => (
                     <option key={r} value={r}>
-                      {t(`roles.${r}`)}
+                      {t(`roleNames.${r}`)}
                     </option>
                   ))}
                 </Select>
@@ -108,7 +108,7 @@ export function UsersPage() {
                 <tr key={u.id}>
                   <td>{u.fullName}</td>
                   <td>{u.email}</td>
-                  <td>{t(`roles.${u.role}`)}</td>
+                  <td>{t(`roleNames.${u.role}`)}</td>
                   <td>{u.branchCode}</td>
                   <td style={{ textAlign: 'end' }}>
                     <span className="row-actions" style={{ justifyContent: 'flex-end' }}>

@@ -16,13 +16,13 @@ type AssetCard = Asset & { history: AssetDepreciationEntry[] };
 export function AssetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fmt = useFormatDate();
   const photoInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
+  const canWrite = can('asset.create', 'asset.update');
 
   const q = useQuery({ queryKey: ['asset', id], queryFn: () => api.get<AssetCard>(`/assets/${id}`) });
 

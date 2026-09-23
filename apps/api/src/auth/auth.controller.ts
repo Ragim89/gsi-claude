@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { IsEmail, IsString, MinLength } from 'class-validator';
 import type { AuthUser } from '@gsi/shared-types';
 import { CurrentUser, Public } from '../common/decorators';
 import { config } from '../config';
+import type { RequestWithContext } from '../common/request-context';
 import { AuthService } from './auth.service';
 
 /**
@@ -36,8 +37,12 @@ export class AuthController {
   @Throttle(SIGN_IN_LIMIT)
   @Post('login')
   @HttpCode(200)
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto.email, dto.password);
+  login(@Body() dto: LoginDto, @Req() req: RequestWithContext) {
+    return this.auth.login(dto.email, dto.password, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+      requestId: req.requestId,
+    });
   }
 
   @Public()

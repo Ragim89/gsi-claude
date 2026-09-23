@@ -9,11 +9,11 @@ import {
   AuthUser,
   DepreciationMethod,
   DepreciationRunResult,
-  HQ_ROLES,
 } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { StorageService } from '../storage/storage.service';
 import { LedgerService } from '../finance/ledger.service';
+import { AuditService } from '../common/audit.service';
 import { buildSet } from '../common/sql';
 import { config } from '../config';
 
@@ -89,6 +89,7 @@ export class AssetsService {
     private readonly db: DbService,
     private readonly storage: StorageService,
     private readonly ledger: LedgerService,
+    private readonly audit: AuditService,
   ) {}
 
   private columns(): string {
@@ -108,6 +109,7 @@ export class AssetsService {
            AND ($5::date IS NULL OR a.acquisition_date >= $5::date)
            AND ($6::date IS NULL OR a.acquisition_date <= $6::date)
            AND ($7::uuid IS NULL OR a.responsible_user_id = $7::uuid)
+           AND a.deleted_at IS NULL
          ORDER BY a.acquisition_date DESC, a.inventory_no
          LIMIT 500`,
         [f.branchId ?? null, f.category ?? null, f.status ?? null, f.search?.trim() || null,
@@ -136,7 +138,7 @@ export class AssetsService {
     if (!name || !inventoryNo || !acquisitionDate || acquisitionCost == null) {
       throw new BadRequestException('inventoryNo, name, acquisitionDate and acquisitionCost are required');
     }
-    const branchId = HQ_ROLES.includes(user.role) && input.branchId ? input.branchId : user.branchId;
+    const branchId = user.scope === 'global' && input.branchId ? input.branchId : user.branchId;
     return this.db.tx(user, async (tx) => {
       const branch = await tx.one<{ currency: string }>('SELECT currency FROM branches WHERE id = $1', [branchId]);
       if (!branch) throw new NotFoundException('Branch not found');
@@ -214,13 +216,28 @@ export class AssetsService {
     });
   }
 
+  /**
+   * Archives an asset that was entered by mistake. Once depreciation has been charged the
+   * asset is part of the books and can only be disposed of, which keeps it in the register.
+   */
   remove(user: AuthUser, id: string) {
     return this.db.tx(user, async (tx) => {
       const used = await tx.one('SELECT 1 FROM asset_depreciation WHERE asset_id = $1 LIMIT 1', [id]);
       if (used) throw new ConflictException('Asset has depreciation history; dispose of it instead');
-      const n = await tx.exec('DELETE FROM assets WHERE id = $1', [id]);
-      if (!n) throw new NotFoundException('Asset not found');
-    });
+      const row = await tx.one<{ inventory_no: string; name: string; branch_id: string }>(
+        'SELECT inventory_no, name, branch_id FROM assets WHERE id = $1 AND deleted_at IS NULL',
+        [id],
+      );
+      if (!row) throw new NotFoundException('Asset not found');
+      await tx.exec('UPDATE assets SET deleted_at = now(), deleted_by = $2 WHERE id = $1', [id, user.id]);
+      await this.audit.record(tx, user, {
+        action: 'asset.delete',
+        entityType: 'asset',
+        entityId: id,
+        entityLabel: `${row.inventory_no} — ${row.name}`,
+        branchId: row.branch_id,
+      });
+    }, { includeArchived: true });
   }
 
   async uploadPhoto(user: AuthUser, id: string, file: Express.Multer.File) {
@@ -260,7 +277,7 @@ export class AssetsService {
                 accumulated, useful_life_months AS life, to_char(acquisition_date, 'YYYY-MM-DD') AS acquired,
                 to_char(depreciated_through, 'YYYY-MM-DD') AS depreciated_through, category
          FROM assets
-         WHERE method = 'straight_line' AND status IN ('in_use', 'in_repair', 'idle')
+         WHERE deleted_at IS NULL AND method = 'straight_line' AND status IN ('in_use', 'in_repair', 'idle')
            AND acquisition_date < date_trunc('month', $1::date) + interval '1 month'
            AND (depreciated_through IS NULL OR depreciated_through < $1::date)
          ORDER BY branch_id, inventory_no
@@ -329,7 +346,7 @@ export class AssetsService {
 
   private async load(tx: Tx, id: string): Promise<Asset> {
     const row = await tx.one<Asset & { photoKey: string | null }>(
-      `SELECT ${this.columns()} FROM ${ASSET_FROM} WHERE a.id = $1`,
+      `SELECT ${this.columns()} FROM ${ASSET_FROM} WHERE a.id = $1 AND a.deleted_at IS NULL`,
       [id],
     );
     if (!row) throw new NotFoundException('Asset not found');
