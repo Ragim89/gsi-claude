@@ -8,7 +8,7 @@ import { Client } from 'pg';
 import { config } from '../config';
 import { wrapClient } from './db.service';
 import { seedChecklist } from '../operations/checklist-seed';
-import { seedFinance } from './seed-finance';
+import { seedFinance, seedFxRates } from './seed-finance';
 import { seedReference } from './seed-reference';
 import { seedAssets, seedDepreciation } from './seed-assets';
 
@@ -95,11 +95,24 @@ const CLIENTS = [
   { branch: 'RU', name: 'Кубань Агро Экспорт', ref: null, country: 'RU', email: 'trade@kubanagro.example' },
 ];
 
-export async function seed(): Promise<void> {
+export interface SeedOptions {
+  /**
+   * Whether to generate the bulky demo history (a year of jobs, invoices, expenses, assets
+   * and depreciation). Tests turn it off: they need the reference data and the accounts,
+   * not 900 invoices. Defaults to the SEED_DEMO_VOLUME environment variable.
+   */
+  volume?: boolean;
+}
+
+export async function seed(options: SeedOptions = {}): Promise<void> {
   if (process.env.NODE_ENV === 'production' && process.env.SEED_DEMO !== 'true') {
     console.log('seed skipped (production)');
     return;
   }
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('WARNING: seeding demo data into a production database because SEED_DEMO=true');
+  }
+  const withVolume = options.volume ?? process.env.SEED_DEMO_VOLUME !== 'false';
   const password = process.env.SEED_PASSWORD ?? 'ChangeMe123!';
   const hash = await bcrypt.hash(password, 10);
 
@@ -182,12 +195,17 @@ export async function seed(): Promise<void> {
     // Commodities and ports: the references every filter and report works on.
     await seedReference(client);
 
-    // A year of group-wide financial history for the dashboard (jobs, invoices, expenses, FX).
-    await seedFinance(client);
+    // Exchange rates are needed by every posting, demo volume or not.
+    await seedFxRates(client);
 
-    // Fixed assets and their depreciation history (feeds capitalisation and the P&L).
-    await seedAssets(client);
-    await seedDepreciation(client);
+    if (withVolume) {
+      // A year of group-wide financial history for the dashboard (jobs, invoices, expenses, FX).
+      await seedFinance(client);
+
+      // Fixed assets and their depreciation history (feeds capitalisation and the P&L).
+      await seedAssets(client);
+      await seedDepreciation(client);
+    }
 
     await client.query('COMMIT');
     console.log(process.env.SEED_PASSWORD ? "seed complete — demo users use SEED_PASSWORD" : `seed complete — demo users use the default password ${password}`);

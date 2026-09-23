@@ -8,10 +8,16 @@ import ExcelJS from 'exceljs';
 
 export type RawRow = Record<string, unknown>;
 
+/** Byte-order mark: Excel puts one at the start of every UTF-8 CSV it writes. */
+const BOM_CODE = 0xfeff;
+
+function stripBom(s: string): string {
+  return s.charCodeAt(0) === BOM_CODE ? s.slice(1) : s;
+}
+
 /** Header key: lowercase, no punctuation or spaces — so "Inventory no." == "inventory no" == "ИНВ. НОМЕР". */
 export function normalizeHeader(h: string): string {
-  return String(h)
-    .replace(/^﻿/, '')
+  return stripBom(String(h))
     .trim()
     .toLowerCase()
     .replace(/[\s._/\\-]+/g, '')
@@ -26,7 +32,7 @@ function detectDelimiter(firstLine: string): string {
 
 /** Minimal RFC-4180 reader: quoted fields, doubled quotes inside them, CRLF or LF. */
 export function parseCsv(text: string): { headers: string[]; rows: RawRow[] } {
-  const clean = text.replace(/^﻿/, '');
+  const clean = stripBom(text);
   const firstBreak = clean.search(/\r?\n/);
   const delimiter = detectDelimiter(firstBreak > 0 ? clean.slice(0, firstBreak) : clean);
 
@@ -134,7 +140,10 @@ export function parseFile(file: { originalname: string; mimetype: string; buffer
 export function toNumber(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-  let s = String(v).replace(/\s| /g, '').replace(/[^\d.,-]/g, '');
+  // JavaScript's \s covers the non-breaking space Excel uses as a thousands separator.
+  let s = String(v)
+    .replace(/\s/g, '')
+    .replace(/[^\d.,-]/g, '');
   if (!s) return null;
   const lastComma = s.lastIndexOf(',');
   const lastDot = s.lastIndexOf('.');
@@ -151,7 +160,10 @@ export function toNumber(v: unknown): number | null {
 /** ISO, dd.mm.yyyy, dd/mm/yyyy, Excel dates → YYYY-MM-DD */
 export function toDate(v: unknown): string | null {
   if (v === null || v === undefined || v === '') return null;
-  if (v instanceof Date) return new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate())).toISOString().slice(0, 10);
+  if (v instanceof Date) {
+    // Excel hands over a local Date; going through UTC keeps the calendar day.
+    return new Date(Date.UTC(v.getFullYear(), v.getMonth(), v.getDate())).toISOString().slice(0, 10);
+  }
   const s = String(v).trim();
   let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;

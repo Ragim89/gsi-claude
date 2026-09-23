@@ -67,15 +67,17 @@ function rng(seed: number) {
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
-export async function seedFinance(client: ClientBase): Promise<void> {
+/**
+ * Exchange rates only: one per month per currency, with a little drift. Separate from the rest
+ * of the demo data because every posting needs a rate — including in tests, which do not want
+ * a year of invoices.
+ */
+export async function seedFxRates(client: ClientBase): Promise<void> {
   const tx = wrapClient(client);
   const base = config.consolidationCurrency;
-
-
   const today = new Date();
   const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 11, 1));
 
-  // --- FX rates: one per month per currency, with a little drift -----------------------
   for (const [currency, rate] of Object.entries(RATES)) {
     if (currency === base) continue;
     const rand = rng(currency.charCodeAt(0) * 31);
@@ -91,6 +93,15 @@ export async function seedFinance(client: ClientBase): Promise<void> {
   }
   await tx.exec(`INSERT INTO fx_rates (currency, base_currency, rate, rate_date) VALUES ($1, $1, 1, $2::date)
                  ON CONFLICT DO NOTHING`, [base, iso(today)]);
+}
+
+export async function seedFinance(client: ClientBase): Promise<void> {
+  const tx = wrapClient(client);
+  const base = config.consolidationCurrency;
+  const today = new Date();
+  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 11, 1));
+
+  await seedFxRates(client);
 
   const branches = await tx.many<{ id: string; code: string; currency: string }>(
     'SELECT id, code, currency FROM branches ORDER BY code',

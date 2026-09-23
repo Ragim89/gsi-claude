@@ -73,6 +73,38 @@ npm run dev:web     # http://localhost:5173      (proxies /api → :3000)
 
 PDF rendering needs Chromium. Set `PUPPETEER_EXECUTABLE_PATH` to the Chrome or Chromium binary, for example `C:\Program Files\Google\Chrome\Application\chrome.exe`.
 
+## Tests
+
+Everything runs inside Docker, so no local Node installation is needed.
+
+```bash
+docker compose --profile test run --rm test
+```
+
+| Command | What it runs |
+|---|---|
+| `docker compose --profile test run --rm test` | unit + integration |
+| `docker compose --profile test run --rm test npm run test:unit` | pure functions, no database, ~1 s |
+| `docker compose --profile test run --rm test npm run test:integration` | boots the real API against a throwaway `gsi_test` database |
+| `docker compose --profile test run --rm test npm run typecheck` | TypeScript, including tests |
+| `docker compose --profile test run --rm test npm run lint` | ESLint |
+
+The integration suite creates and migrates its own database (`gsi_test`) and seeds the
+reference data without the demo volume. It never touches the development database, and
+`test/global-setup.ts` refuses to run against a database whose name does not end in `_test`.
+
+What it covers today: authentication and token handling, branch isolation and role gating
+(the Row-Level Security rules), and the full job lifecycle from creating a client through
+approval, report issuing and public verification.
+
+## Health checks
+
+| Endpoint | Question it answers |
+|---|---|
+| `/api/health/live` | is the process alive? (no dependencies touched) |
+| `/api/health/ready` | can it serve traffic? (database + object storage) |
+| `/api/health` | human-readable summary with latencies |
+
 ## Key design decisions
 
 - **Branch isolation = PostgreSQL Row-Level Security.** Every business table has a `branch_id`. The API connects as `gsi_app`, a role that is not the table owner and has `NOBYPASSRLS`. For each request it opens a transaction and sets `app.user_id / app.branch_id / app.role` with `set_config(..., is_local)`. The policies in `001_init.sql` enforce three rules:

@@ -75,6 +75,26 @@ export const config = {
    */
   consolidationCurrency: (process.env.CONSOLIDATION_CURRENCY ?? 'EUR').toUpperCase(),
   chromiumPath: process.env.PUPPETEER_EXECUTABLE_PATH,
+  /** Runtime environment name, used for logging format and error verbosity. */
+  get env() {
+    return process.env.NODE_ENV ?? 'development';
+  },
+  get isProduction() {
+    return process.env.NODE_ENV === 'production';
+  },
+  rateLimit: {
+    /** Only ever set in the test compose service: throttling makes a test suite flaky. */
+    disabled: process.env.RATE_LIMIT_DISABLED === 'true',
+    /** General API budget per client per minute. */
+    windowSeconds: Number(process.env.RATE_LIMIT_WINDOW ?? 60),
+    limit: Number(process.env.RATE_LIMIT_MAX ?? 300),
+    /** Sign-in attempts per client per window — the brute-force budget. */
+    authLimit: Number(process.env.RATE_LIMIT_AUTH_MAX ?? 10),
+  },
+  /** JSON logs in production (for log shippers), human-readable ones in development. */
+  get logJson() {
+    return (process.env.LOG_JSON ?? (this.isProduction ? 'true' : 'false')) === 'true';
+  },
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB ?? 25) * 1024 * 1024,
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:8080').split(','),
 };

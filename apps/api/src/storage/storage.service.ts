@@ -49,6 +49,11 @@ export class StorageService implements OnModuleInit {
     }
   }
 
+  /** Readiness probe: the bucket answers and the credentials are accepted. */
+  async ping(): Promise<void> {
+    await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+  }
+
   async put(key: string, body: Buffer, contentType: string, metadata?: Record<string, string>): Promise<void> {
     await this.client.send(
       new PutObjectCommand({ Bucket: this.bucket, Key: key, Body: body, ContentType: contentType, Metadata: metadata }),

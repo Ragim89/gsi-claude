@@ -83,6 +83,54 @@ services:
     ports:
       - "8080:80"
 
+  # Test runner. Uses the API image (dev dependencies included) and its own database, so it
+  # never touches development data:
+  #   docker compose --profile test run --rm test            # unit + integration
+  #   docker compose --profile test run --rm test npm run test:unit
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgres://gsi_app:${APP_DB_PASSWORD:-gsi_app}@db:5432/gsi_test
+      DATABASE_OWNER_URL: postgres://${POSTGRES_USER:-gsi}:${POSTGRES_PASSWORD:-gsi}@db:5432/gsi_test
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-gsi_app}
+      SEED_PASSWORD: ${SEED_PASSWORD:-ChangeMe123!}
+      SEED_DEMO_VOLUME: "false"
+      JWT_ACCESS_SECRET: test-access-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: gsi-media-test
+      PUBLIC_WEB_URL: http://localhost:8080
+      # Dozens of logins in a few seconds would trip the sign-in limiter and make the suite
+      # flaky; the limiter itself is exercised against the development stack.
+      RATE_LIMIT_DISABLED: "true"
+    # vitest writes its cache into the workspace, which the `node` user cannot do.
+    user: root
+    working_dir: /repo/apps/api
+    shm_size: "512mb"
+    # Sources are mounted, so editing a test does not mean rebuilding the image. Dependencies
+    # still come from the image — change package.json and the image needs a rebuild.
+    volumes:
+      - ./apps/api/src:/repo/apps/api/src:ro
+      - ./apps/api/test:/repo/apps/api/test:ro
+      - ./apps/api/migrations:/repo/apps/api/migrations:ro
+      - ./apps/api/vitest.config.ts:/repo/apps/api/vitest.config.ts:ro
+      - ./apps/api/vitest.integration.config.ts:/repo/apps/api/vitest.integration.config.ts:ro
+      - ./apps/api/tsconfig.json:/repo/apps/api/tsconfig.json:ro
+      - ./apps/api/tsconfig.test.json:/repo/apps/api/tsconfig.test.json:ro
+      - ./apps/api/.eslintrc.cjs:/repo/apps/api/.eslintrc.cjs:ro
+    command: ["npm", "test"]
+
 volumes:
   db-data:
   minio-data:

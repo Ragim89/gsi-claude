@@ -363,7 +363,8 @@ export class ExportService {
     },
 
     commodities: {
-      load: (tx, f) =>
+      // Reference data: the same for every branch, so the filters do not apply.
+      load: (tx, _f) =>
         tx.many(
           `SELECT code, "group"::text, name->>'en' AS name_en, name->>'ru' AS name_ru, name->>'tr' AS name_tr,
                   hs_code, array_to_string(lab_methods, ' | ') AS lab_methods, is_active,
