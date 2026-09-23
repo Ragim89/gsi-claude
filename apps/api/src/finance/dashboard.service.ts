@@ -55,6 +55,15 @@ export class DashboardService {
           this.overdueTotal(tx, base, period.branchId),
         ]);
 
+      // Net book value of the fixed assets, so "capitalisation" is not just liquid assets.
+      const assets = await tx.one<{ nbv: number }>(
+        `SELECT COALESCE(SUM((acquisition_cost - accumulated) * fx_rate_on(currency, $1, current_date)), 0)::float8 AS nbv
+         FROM assets WHERE status NOT IN ('disposed', 'written_off')
+           AND ($2::uuid IS NULL OR branch_id = $2::uuid)`,
+        [base, period.branchId],
+      );
+      const assetsBase = round2(n(assets?.nbv));
+
       const revenueBase = sum(branches, 'revenueBase');
       const expenseBase = sum(branches, 'expenseBase');
       const cashBase = sum(branches, 'cashBase');
@@ -65,10 +74,11 @@ export class DashboardService {
         baseCurrency: base,
         period: { from: period.from, to: period.to },
         totals: {
-          // ASSUMPTION: "капитализация группы" is reported as net liquid assets
-          // (cash + receivables). Fixed assets and equity arrive with the accounting
-          // integration; the metric label must be confirmed with GSI's CFO.
-          capitalizationBase: round2(cashBase + receivableBase),
+          // "Капитализация группы" = cash + receivables + net book value of fixed assets.
+          // ASSUMPTION: this is net asset value, not equity or a company valuation; liabilities
+          // arrive with the accounting integration and the label must be confirmed with the CFO.
+          capitalizationBase: round2(cashBase + receivableBase + assetsBase),
+          assetsBase,
           revenueBase,
           expenseBase,
           profitBase,

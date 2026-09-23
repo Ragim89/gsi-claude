@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
-    "invoices": "Faturalar", "expenses": "Giderler", "branches": "Şubeler", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
+    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
   },
   "common": {
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
@@ -90,7 +90,7 @@
     "groupTitle": "Grup mali gösterge paneli", "branchTitle": "Şube mali paneli", "branchOf": "Mali durum — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "{{currency}} cinsinden konsolide", "live": "canlı · {{count}} güncelleme",
     "periods": { "3m": "Son 3 ay", "6m": "Son 6 ay", "12m": "Son 12 ay" },
-    "capitalization": "Grup varlıkları", "capitalizationHint": "Nakit + alacaklar",
+    "capitalization": "Grup varlıkları", "capitalizationHint": "Nakit + alacaklar + duran varlıklar",
     "revenue": "Ciro", "expenses": "Giderler", "profit": "Kâr", "margin": "marj %{{pct}}", "margin2": "Marj",
     "cash": "Nakit", "receivable": "Alacaklar", "overdue": "vadesi geçen: {{amount}}",
     "pnl": "Aylık gelir tablosu", "pnlSub": "Ciro, gider ve kâr — konsolide para biriminde",
@@ -137,6 +137,38 @@
     "salary": "Personel", "travel": "Seyahat", "subcontractor": "Taşeron", "lab_materials": "Laboratuvar malzemesi",
     "equipment": "Ekipman", "office": "Ofis", "other": "Diğer"
   },
+  "assets": {
+    "title": "Varlıklar", "new": "Yeni varlık", "register": "Varlık defteri", "empty": "Varlık yok",
+    "inventoryNo": "Demirbaş no.", "name": "Adı", "category": "Kategori", "serialNo": "Seri no.",
+    "location": "Bulunduğu yer", "responsible": "Sorumlu", "acquisitionDate": "Alım tarihi", "cost": "Alış bedeli",
+    "accumulated": "Birikmiş amortisman", "netBookValue": "Net defter değeri", "depreciation": "Amortisman",
+    "usefulLife": "Faydalı ömür", "usefulLifeHint": "Ay olarak; 60 = 5 yıl", "salvage": "Hurda değeri",
+    "salvageHint": "Ömrünün sonunda beklenen değer", "method": "Yöntem", "months": "{{count}} ay",
+    "remaining": "Kalan ömür", "remainingMonths": "{{count}} ay kaldı", "count": "Varlık", "countShort": "Adet",
+    "inUse": "{{count}} kullanımda", "ofCost": "{{amount}} alış bedelinden", "monthlyCharge": "Aylık amortisman",
+    "periodCharge": "dönemde {{amount}}", "fullyDepreciated": "Tamamen amorti",
+    "disposedCount": "{{count}} elden çıkarıldı", "nbvTrend": "Net defter değeri", "nbvTrendSub": "Ay sonları, konsolide",
+    "depreciationByMonth": "Aylık amortisman", "depreciationByMonthSub": "Gider olarak kaydedilir",
+    "byCategory": "Kategoriye göre", "byCategorySub": "Net defter değeri ve adet",
+    "byBranch": "Şubelere göre", "byBranchSub": "Varlıkların bulunduğu yer",
+    "endingSoon": "Ömrü dolmak üzere", "endingSoonHint": "önümüzdeki 6 ay içinde",
+    "runDepreciation": "Amortisman işle", "runDone": "{{period}} dönemi amortismanı {{count}} varlıkta işlendi",
+    "depreciationCard": "Amortisman", "depreciated": "%{{pct}} amorti edildi", "history": "Aylık geçmiş",
+    "noHistory": "Henüz amortisman işlenmedi", "details": "Kart", "photo": "Fotoğraf",
+    "depreciatedThrough": "İşlendiği dönem", "dispose": "Sat / elden çıkar",
+    "disposePrompt": "Varlık para biriminde satış tutarı (satış yoksa boş bırakın):",
+    "writeOff": "Kayıttan düş", "writeOffConfirm": "Bu varlık kayıttan düşülsün mü? Amortisman durur ve bilançodan çıkar.",
+    "disposedOn": "Çıkış tarihi", "disposalAmount": "Satış geliri"
+  },
+  "assetCategories": {
+    "real_estate": "Gayrimenkul ve tadilat", "vehicles": "Araçlar", "lab_equipment": "Laboratuvar ekipmanı",
+    "inspection_equipment": "Muayene ekipmanı", "it_equipment": "Bilişim ekipmanı", "furniture": "Mobilya",
+    "intangible": "Maddi olmayan varlıklar", "other": "Diğer"
+  },
+  "assetStatus": {
+    "in_use": "Kullanımda", "in_repair": "Onarımda", "idle": "Atıl", "disposed": "Elden çıkarıldı", "written_off": "Kayıttan düşüldü"
+  },
+  "depreciationMethods": { "straight_line": "Normal (doğrusal)", "none": "Amortismana tabi değil" },
   "verify": {
     "title": "Rapor doğrulama", "valid": "Bu rapor gerçek ve geçerlidir.",
     "invalid": "Bu koda ait geçerli bir rapor bulunamadı.", "revoked": "Bu rapor iptal edilmiştir."

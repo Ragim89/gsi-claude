@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
-    "invoices": "Invoices", "expenses": "Expenses", "branches": "Branches", "users": "Users", "logout": "Sign out", "language": "Language"
+    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "users": "Users", "logout": "Sign out", "language": "Language"
   },
   "common": {
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
@@ -90,7 +90,7 @@
     "groupTitle": "Group finance dashboard", "branchTitle": "Branch finance dashboard", "branchOf": "Finance — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "consolidated in {{currency}}", "live": "live · {{count}} updates",
     "periods": { "3m": "Last 3 months", "6m": "Last 6 months", "12m": "Last 12 months" },
-    "capitalization": "Group capitalization", "capitalizationHint": "Cash + receivables",
+    "capitalization": "Group capitalization", "capitalizationHint": "Cash + receivables + assets",
     "revenue": "Revenue", "expenses": "Expenses", "profit": "Profit", "margin": "margin {{pct}}%", "margin2": "Margin",
     "cash": "Cash", "receivable": "Receivables", "overdue": "overdue: {{amount}}",
     "pnl": "P&L by month", "pnlSub": "Revenue, expenses and profit, consolidated",
@@ -137,6 +137,38 @@
     "salary": "Payroll", "travel": "Travel", "subcontractor": "Subcontractors", "lab_materials": "Lab materials",
     "equipment": "Equipment", "office": "Office", "other": "Other"
   },
+  "assets": {
+    "title": "Assets", "new": "New asset", "register": "Asset register", "empty": "No assets",
+    "inventoryNo": "Inventory no.", "name": "Name", "category": "Category", "serialNo": "Serial no.",
+    "location": "Location", "responsible": "Responsible", "acquisitionDate": "Acquired", "cost": "Cost",
+    "accumulated": "Accumulated depreciation", "netBookValue": "Net book value", "depreciation": "Depreciation",
+    "usefulLife": "Useful life", "usefulLifeHint": "In months; 60 = 5 years", "salvage": "Residual value",
+    "salvageHint": "Value expected at the end of its life", "method": "Method", "months": "{{count}} mo.",
+    "remaining": "Life left", "remainingMonths": "{{count}} months left", "count": "Assets", "countShort": "Qty",
+    "inUse": "{{count}} in use", "ofCost": "of {{amount}} at cost", "monthlyCharge": "Monthly charge",
+    "periodCharge": "{{amount}} in the period", "fullyDepreciated": "Fully depreciated",
+    "disposedCount": "{{count}} disposed", "nbvTrend": "Net book value", "nbvTrendSub": "End of each month, consolidated",
+    "depreciationByMonth": "Depreciation by month", "depreciationByMonthSub": "Charged to the P&L",
+    "byCategory": "By category", "byCategorySub": "Net book value and quantity",
+    "byBranch": "By branch", "byBranchSub": "Where the assets sit",
+    "endingSoon": "Useful life ending", "endingSoonHint": "within 6 months",
+    "runDepreciation": "Charge depreciation", "runDone": "Depreciation for {{period}} charged on {{count}} assets",
+    "depreciationCard": "Depreciation", "depreciated": "{{pct}}% depreciated", "history": "Monthly history",
+    "noHistory": "No depreciation charged yet", "details": "Details", "photo": "Photo",
+    "depreciatedThrough": "Charged through", "dispose": "Sell / dispose",
+    "disposePrompt": "Sale proceeds in the asset currency (leave empty if none):",
+    "writeOff": "Write off", "writeOffConfirm": "Write this asset off? Depreciation stops and it leaves the balance.",
+    "disposedOn": "Disposed on", "disposalAmount": "Proceeds"
+  },
+  "assetCategories": {
+    "real_estate": "Property & fit-out", "vehicles": "Vehicles", "lab_equipment": "Laboratory equipment",
+    "inspection_equipment": "Inspection equipment", "it_equipment": "IT equipment", "furniture": "Furniture",
+    "intangible": "Intangible assets", "other": "Other"
+  },
+  "assetStatus": {
+    "in_use": "In use", "in_repair": "In repair", "idle": "Idle", "disposed": "Disposed", "written_off": "Written off"
+  },
+  "depreciationMethods": { "straight_line": "Straight line", "none": "Not depreciated" },
   "verify": {
     "title": "Report verification", "valid": "This report is authentic and valid.",
     "invalid": "No valid report matches this code.", "revoked": "This report has been revoked."

@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
-    "invoices": "Счета", "expenses": "Расходы", "branches": "Филиалы", "users": "Пользователи", "logout": "Выйти", "language": "Язык"
+    "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "users": "Пользователи", "logout": "Выйти", "language": "Язык"
   },
   "common": {
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
@@ -90,7 +90,7 @@
     "groupTitle": "Финансовый дашборд группы", "branchTitle": "Финансы филиала", "branchOf": "Финансы — {{branch}}",
     "period": "{{from}} — {{to}}", "inCurrency": "консолидация в {{currency}}", "live": "обновлений: {{count}}",
     "periods": { "3m": "Последние 3 месяца", "6m": "Последние 6 месяцев", "12m": "Последние 12 месяцев" },
-    "capitalization": "Капитализация группы", "capitalizationHint": "Деньги + дебиторка",
+    "capitalization": "Капитализация группы", "capitalizationHint": "Деньги + дебиторка + активы",
     "revenue": "Выручка", "expenses": "Расходы", "profit": "Прибыль", "margin": "маржа {{pct}}%", "margin2": "Маржа",
     "cash": "Денежные средства", "receivable": "Дебиторка", "overdue": "просрочено: {{amount}}",
     "pnl": "P&L по месяцам", "pnlSub": "Выручка, расходы и прибыль в валюте консолидации",
@@ -138,6 +138,39 @@
     "salary": "Зарплата", "travel": "Командировки", "subcontractor": "Подрядчики", "lab_materials": "Лабораторные материалы",
     "equipment": "Оборудование", "office": "Офис", "other": "Прочее"
   },
+  "assets": {
+    "title": "Активы", "new": "Новый актив", "register": "Реестр активов", "empty": "Активов нет",
+    "inventoryNo": "Инв. номер", "name": "Наименование", "category": "Категория", "serialNo": "Серийный номер",
+    "location": "Местонахождение", "responsible": "Ответственный", "acquisitionDate": "Дата приобретения",
+    "cost": "Первоначальная стоимость", "accumulated": "Накопленная амортизация", "netBookValue": "Остаточная стоимость",
+    "depreciation": "Амортизация", "usefulLife": "Срок полезного использования", "usefulLifeHint": "В месяцах; 60 = 5 лет",
+    "salvage": "Ликвидационная стоимость", "salvageHint": "Ожидаемая стоимость в конце срока", "method": "Метод",
+    "months": "{{count}} мес.", "remaining": "Осталось", "remainingMonths": "осталось {{count}} мес.",
+    "count": "Активов", "countShort": "Кол-во", "inUse": "в эксплуатации: {{count}}", "ofCost": "из {{amount}} по стоимости",
+    "monthlyCharge": "Амортизация в месяц", "periodCharge": "за период: {{amount}}",
+    "fullyDepreciated": "Самортизировано полностью", "disposedCount": "выбыло: {{count}}",
+    "nbvTrend": "Остаточная стоимость", "nbvTrendSub": "На конец каждого месяца, консолидация",
+    "depreciationByMonth": "Амортизация по месяцам", "depreciationByMonthSub": "Относится на расходы",
+    "byCategory": "По категориям", "byCategorySub": "Остаточная стоимость и количество",
+    "byBranch": "По филиалам", "byBranchSub": "Где находятся активы",
+    "endingSoon": "Срок службы заканчивается", "endingSoonHint": "в ближайшие 6 месяцев",
+    "runDepreciation": "Начислить амортизацию", "runDone": "Амортизация за {{period}} начислена по {{count}} активам",
+    "depreciationCard": "Амортизация", "depreciated": "самортизировано {{pct}}%", "history": "История по месяцам",
+    "noHistory": "Амортизация ещё не начислялась", "details": "Карточка", "photo": "Фото",
+    "depreciatedThrough": "Начислено по", "dispose": "Продать / вывести",
+    "disposePrompt": "Сумма продажи в валюте актива (оставьте пустым, если продажи нет):",
+    "writeOff": "Списать", "writeOffConfirm": "Списать актив? Амортизация прекратится, актив уйдёт с баланса.",
+    "disposedOn": "Дата выбытия", "disposalAmount": "Выручка от продажи"
+  },
+  "assetCategories": {
+    "real_estate": "Помещения и ремонт", "vehicles": "Транспорт", "lab_equipment": "Лабораторное оборудование",
+    "inspection_equipment": "Инспекционное оборудование", "it_equipment": "Компьютерная техника", "furniture": "Мебель",
+    "intangible": "Нематериальные активы", "other": "Прочее"
+  },
+  "assetStatus": {
+    "in_use": "В эксплуатации", "in_repair": "В ремонте", "idle": "Простаивает", "disposed": "Выбыл", "written_off": "Списан"
+  },
+  "depreciationMethods": { "straight_line": "Линейный", "none": "Не амортизируется" },
   "verify": {
     "title": "Проверка подлинности отчёта", "valid": "Отчёт подлинный и действителен.",
     "invalid": "Действительный отчёт с таким кодом не найден.", "revoked": "Отчёт отозван."

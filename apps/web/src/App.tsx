@@ -16,6 +16,8 @@ import { ExpensesPage } from './pages/ExpensesPage';
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { BranchDetailPage } from './pages/BranchDetailPage';
+import { AssetsPage } from './pages/AssetsPage';
+import { AssetDetailPage } from './pages/AssetDetailPage';
 
 /** Roles allowed into the finance area (mirrors app_sees_finance() in the database). */
 const FINANCE: Role[] = ['finance_controller', 'supervisor', 'cfo', 'admin'];
@@ -52,6 +54,8 @@ export function App() {
         <Route path="/finance/invoices" element={<RequireAuth roles={FINANCE}><InvoicesPage /></RequireAuth>} />
         <Route path="/finance/invoices/:id" element={<RequireAuth roles={FINANCE}><InvoiceDetailPage /></RequireAuth>} />
         <Route path="/finance/expenses" element={<RequireAuth roles={FINANCE}><ExpensesPage /></RequireAuth>} />
+        <Route path="/assets" element={<RequireAuth roles={FINANCE}><AssetsPage /></RequireAuth>} />
+        <Route path="/assets/:id" element={<RequireAuth roles={FINANCE}><AssetDetailPage /></RequireAuth>} />
         <Route path="/branches" element={<RequireAuth roles={FINANCE}><BranchesPage /></RequireAuth>} />
         <Route path="/branches/:id" element={<BranchDetailPage />} />
         <Route path="/jobs" element={<JobsPage />} />

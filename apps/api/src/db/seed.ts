@@ -10,6 +10,7 @@ import { wrapClient } from './db.service';
 import { seedChecklist } from '../operations/checklist-seed';
 import { seedFinance } from './seed-finance';
 import { seedReference } from './seed-reference';
+import { seedAssets, seedDepreciation } from './seed-assets';
 
 // ASSUMPTION: legal names / addresses are placeholders until GSI confirms the list of legal
 // entities (docs/07-open-questions.md #2). Only the Turkish accreditation data comes from the brief.
@@ -183,6 +184,10 @@ export async function seed(): Promise<void> {
 
     // A year of group-wide financial history for the dashboard (jobs, invoices, expenses, FX).
     await seedFinance(client);
+
+    // Fixed assets and their depreciation history (feeds capitalisation and the P&L).
+    await seedAssets(client);
+    await seedDepreciation(client);
 
     await client.query('COMMIT');
     console.log(process.env.SEED_PASSWORD ? "seed complete — demo users use SEED_PASSWORD" : `seed complete — demo users use the default password ${password}`);

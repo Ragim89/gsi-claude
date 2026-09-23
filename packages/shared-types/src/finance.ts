@@ -15,7 +15,7 @@ export const EXPENSE_CATEGORIES = [
 ] as const;
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
-export const ACCOUNT_GROUPS = ['revenue', 'expense', 'receivable', 'cash', 'tax'] as const;
+export const ACCOUNT_GROUPS = ['revenue', 'expense', 'receivable', 'cash', 'tax', 'asset'] as const;
 export type AccountGroup = (typeof ACCOUNT_GROUPS)[number];
 
 /** Roles allowed to see money (mirrors app_sees_finance() in the DB). */
@@ -216,6 +216,8 @@ export interface FinanceDashboard {
   totals: {
     /** Cash + receivables across the group, consolidated. */
     capitalizationBase: number;
+    /** Net book value of fixed assets, included in the capitalization figure. */
+    assetsBase: number;
     revenueBase: number;
     expenseBase: number;
     profitBase: number;
