@@ -13,12 +13,28 @@ export interface JobFilters {
   search?: string;
   /** HQ users can narrow the group view to one branch; RLS still bounds everyone else. */
   branchId?: string;
+  // Reference and period filters (the calendar range on every list screen).
+  commodityId?: string;
+  commodityGroup?: string;
+  portId?: string;
+  contractNo?: string;
+  minQuantity?: number;
+  maxQuantity?: number;
+  /** Inclusive range over the job date (scheduled date, falling back to creation). */
+  from?: string;
+  to?: string;
+  type?: ServiceType;
 }
 
 export interface CreateJobInput {
   clientId: string;
   type: ServiceType;
   location: string;
+  commodityId?: string | null;
+  portId?: string | null;
+  contractNo?: string | null;
+  quantityValue?: number | null;
+  quantityUnit?: string | null;
   vesselOrObject?: string | null;
   commodity?: string | null;
   quantity?: string | null;
@@ -44,9 +60,20 @@ export class JobsService {
            AND ($4::text IS NULL OR j.job_number ILIKE '%' || $4 || '%' OR c.name ILIKE '%' || $4 || '%'
                 OR j.vessel_or_object ILIKE '%' || $4 || '%' OR j.location ILIKE '%' || $4 || '%')
            AND ($5::uuid IS NULL OR j.branch_id = $5::uuid)
+           AND ($6::uuid IS NULL OR j.commodity_id = $6::uuid)
+           AND ($7::uuid IS NULL OR j.port_id = $7::uuid)
+           AND ($8::text IS NULL OR j.contract_no ILIKE '%' || $8 || '%')
+           AND ($9::numeric IS NULL OR j.quantity_value >= $9::numeric)
+           AND ($10::numeric IS NULL OR j.quantity_value <= $10::numeric)
+           AND ($11::date IS NULL OR COALESCE(j.scheduled_at, j.created_at)::date >= $11::date)
+           AND ($12::date IS NULL OR COALESCE(j.scheduled_at, j.created_at)::date <= $12::date)
+           AND ($13::service_type IS NULL OR j.type = $13::service_type)
+           AND ($14::commodity_group IS NULL OR cm."group" = $14::commodity_group)
          ORDER BY COALESCE(j.scheduled_at, j.created_at) DESC
          LIMIT 500`,
-        [f.status ?? null, f.clientId ?? null, f.inspectorId ?? null, f.search?.trim() || null, f.branchId ?? null],
+        [f.status ?? null, f.clientId ?? null, f.inspectorId ?? null, f.search?.trim() || null, f.branchId ?? null,
+         f.commodityId ?? null, f.portId ?? null, f.contractNo?.trim() || null, f.minQuantity ?? null,
+         f.maxQuantity ?? null, f.from ?? null, f.to ?? null, f.type ?? null, f.commodityGroup ?? null],
       ),
     );
   }
@@ -74,12 +101,16 @@ export class JobsService {
 
       const row = await tx.one<{ id: string }>(
         `INSERT INTO inspection_jobs (branch_id, job_number, client_id, type, status, assigned_inspector_id,
-                                      location, vessel_or_object, commodity, quantity, scheduled_at, instructions, created_by)
-         VALUES ($1, next_doc_number($1, 'J'), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                                      location, vessel_or_object, commodity, quantity, scheduled_at, instructions,
+                                      commodity_id, port_id, contract_no, quantity_value, quantity_unit, created_by)
+         VALUES ($1, next_doc_number($1, 'J'), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+                 COALESCE($16, 'MT'), $17)
          RETURNING id`,
         [client.branch_id, input.clientId, input.type, input.assignedInspectorId ? 'assigned' : 'new',
          input.assignedInspectorId ?? null, input.location.trim(), input.vesselOrObject ?? null, input.commodity ?? null,
-         input.quantity ?? null, input.scheduledAt ?? null, input.instructions ?? null, user.id],
+         input.quantity ?? null, input.scheduledAt ?? null, input.instructions ?? null,
+         input.commodityId ?? null, input.portId ?? null, input.contractNo?.trim() || null,
+         input.quantityValue ?? null, input.quantityUnit ?? null, user.id],
       );
       await seedChecklist(tx, row!.id, input.type);
       return this.load(tx, row!.id);
@@ -92,6 +123,11 @@ export class JobsService {
       vesselOrObject: 'vessel_or_object',
       commodity: 'commodity',
       quantity: 'quantity',
+      commodityId: 'commodity_id',
+      portId: 'port_id',
+      contractNo: 'contract_no',
+      quantityValue: 'quantity_value',
+      quantityUnit: 'quantity_unit',
       scheduledAt: 'scheduled_at',
       instructions: 'instructions',
     }, 2);

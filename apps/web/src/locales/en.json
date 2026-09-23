@@ -25,9 +25,14 @@
   "jobs": {
     "title": "Inspection jobs", "myTitle": "My jobs", "new": "New job", "number": "Job no.", "client": "Client",
     "type": "Service", "location": "Place of inspection", "scheduled": "Scheduled", "inspector": "Inspector",
-    "status": "Status", "empty": "No jobs found", "vessel": "Vessel / object", "commodity": "Commodity",
+    "status": "Status", "empty": "No jobs found", "vessel": "Vessel / object", "commodity": "Commodity / culture",
     "quantity": "Quantity", "instructions": "Instructions", "unassigned": "Unassigned", "selectClient": "Select client…",
-    "selectType": "Select service…", "editTitle": "Edit job {{number}}"
+    "selectType": "Select service…", "editTitle": "Edit job {{number}}",
+    "port": "Port / terminal", "contractNo": "Contract no.", "volume": "Volume", "volumeFrom": "Volume from",
+    "volumeTo": "Volume to", "selectCommodity": "Select commodity…", "selectPort": "Select port…",
+    "commodityHint": "Reference list — used by filters and reports", "quantityNote": "Quantity as nominated",
+    "quantityNoteHint": "Free text from the client, e.g. 25,000 MT ±10%", "found": "{{count}} jobs",
+    "totalVolume": "Total volume: {{value}}"
   },
   "job": {
     "details": "Details", "assign": "Assign", "selectInspector": "Select inspector…", "start": "Start inspection",
@@ -59,6 +64,11 @@
   },
   "charts": { "showTable": "Table", "showChart": "Chart" },
   "branch": { "label": "Branch", "all": "All branches (group)" },
+  "period": {
+    "label": "Period", "from": "From", "to": "To", "clear": "Clear",
+    "presets": { "month": "This month", "quarter": "3 months", "6m": "6 months", "year": "12 months", "ytd": "Year to date" }
+  },
+  "filters": { "more": "More filters", "less": "Fewer filters", "reset": "Reset" },
   "branches": {
     "title": "Branch comparison", "entities": "Legal entities", "entitiesHint": "in the group",
     "bestMargin": "Best margin", "revenueCompare": "Revenue by branch", "revenueCompareSub": "Consolidated, for the period",

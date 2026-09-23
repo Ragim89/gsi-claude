@@ -9,6 +9,7 @@ import { config } from '../config';
 import { wrapClient } from './db.service';
 import { seedChecklist } from '../operations/checklist-seed';
 import { seedFinance } from './seed-finance';
+import { seedReference } from './seed-reference';
 
 // ASSUMPTION: legal names / addresses are placeholders until GSI confirms the list of legal
 // entities (docs/07-open-questions.md #2). Only the Turkish accreditation data comes from the brief.
@@ -176,6 +177,9 @@ export async function seed(): Promise<void> {
          p.bankSwift, p.phone, p.email, p.website, p.established, p.description, p.headTitle, p.headEmail],
       );
     }
+
+    // Commodities and ports: the references every filter and report works on.
+    await seedReference(client);
 
     // A year of group-wide financial history for the dashboard (jobs, invoices, expenses, FX).
     await seedFinance(client);

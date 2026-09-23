@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Field, Input, Select, TextArea } from '@gsi/ui-kit/react';
-import { Client, InspectionJob, SERVICE_TYPES, ServiceType, User } from '@gsi/shared-types';
+import { Client, Commodity, InspectionJob, localize, Port, SERVICE_TYPES, ServiceType, User } from '@gsi/shared-types';
 import { api, blanksToNull } from '../api';
 import { ErrorBox, fromLocalInput, Loading, PageHead, toLocalInput, useServiceLabel } from '../components/common';
 
@@ -11,6 +11,11 @@ interface FormState {
   clientId: string;
   type: ServiceType | '';
   location: string;
+  commodityId: string;
+  portId: string;
+  contractNo: string;
+  quantityValue: string;
+  quantityUnit: string;
   vesselOrObject: string;
   commodity: string;
   quantity: string;
@@ -23,6 +28,11 @@ const EMPTY: FormState = {
   clientId: '',
   type: '',
   location: '',
+  commodityId: '',
+  portId: '',
+  contractNo: '',
+  quantityValue: '',
+  quantityUnit: 'MT',
   vesselOrObject: '',
   commodity: '',
   quantity: '',
@@ -36,7 +46,7 @@ export function JobFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const [search] = useSearchParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const serviceLabel = useServiceLabel();
@@ -53,6 +63,8 @@ export function JobFormPage() {
     queryFn: () => api.get<User[]>('/users?role=inspector'),
     enabled: !isEdit,
   });
+  const commodities = useQuery({ queryKey: ['commodities'], queryFn: () => api.get<Commodity[]>('/reference/commodities'), staleTime: 300_000 });
+  const ports = useQuery({ queryKey: ['ports'], queryFn: () => api.get<Port[]>('/reference/ports'), staleTime: 300_000 });
 
   useEffect(() => {
     const j = existing.data;
@@ -61,6 +73,11 @@ export function JobFormPage() {
       clientId: j.clientId,
       type: j.type,
       location: j.location,
+      commodityId: j.commodityId ?? '',
+      portId: j.portId ?? '',
+      contractNo: j.contractNo ?? '',
+      quantityValue: j.quantityValue != null ? String(j.quantityValue) : '',
+      quantityUnit: j.quantityUnit || 'MT',
       vesselOrObject: j.vesselOrObject ?? '',
       commodity: j.commodity ?? '',
       quantity: j.quantity ?? '',
@@ -72,13 +89,20 @@ export function JobFormPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const common = blanksToNull({
-        location: form.location,
-        vesselOrObject: form.vesselOrObject,
-        commodity: form.commodity,
-        quantity: form.quantity,
-        instructions: form.instructions,
-      });
+      const common = {
+        ...blanksToNull({
+          location: form.location,
+          vesselOrObject: form.vesselOrObject,
+          commodity: form.commodity,
+          quantity: form.quantity,
+          instructions: form.instructions,
+          contractNo: form.contractNo,
+          commodityId: form.commodityId,
+          portId: form.portId,
+        }),
+        quantityValue: form.quantityValue ? Number(form.quantityValue) : null,
+        quantityUnit: form.quantityUnit || 'MT',
+      };
       const scheduledAt = fromLocalInput(form.scheduledAt);
       if (isEdit) return api.patch<InspectionJob>(`/jobs/${id}`, { ...common, scheduledAt });
       return api.post<InspectionJob>('/jobs', {
@@ -158,10 +182,48 @@ export function JobFormPage() {
             <Field label={t('jobs.vessel')}>
               <Input value={form.vesselOrObject} onChange={(e) => set('vesselOrObject', e.target.value)} />
             </Field>
-            <Field label={t('jobs.commodity')}>
-              <Input value={form.commodity} onChange={(e) => set('commodity', e.target.value)} />
+            <Field label={t('jobs.commodity')} hint={t('jobs.commodityHint')}>
+              <Select value={form.commodityId} onChange={(e) => set('commodityId', e.target.value)}>
+                <option value="">{t('jobs.selectCommodity')}</option>
+                {commodities.data?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {localize(c.name, i18n.language)}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field label={t('jobs.quantity')}>
+            <Field label={t('jobs.port')}>
+              <Select value={form.portId} onChange={(e) => set('portId', e.target.value)}>
+                <option value="">{t('jobs.selectPort')}</option>
+                {ports.data?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.country})
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label={t('jobs.contractNo')}>
+              <Input value={form.contractNo} onChange={(e) => set('contractNo', e.target.value)} />
+            </Field>
+            <Field label={t('jobs.volume')}>
+              <div className="row-actions" style={{ flexWrap: 'nowrap' }}>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={form.quantityValue}
+                  onChange={(e) => set('quantityValue', e.target.value)}
+                />
+                <Select value={form.quantityUnit} onChange={(e) => set('quantityUnit', e.target.value)} style={{ width: 90 }}>
+                  <option value="MT">MT</option>
+                  <option value="kg">kg</option>
+                  <option value="L">L</option>
+                  <option value="pcs">pcs</option>
+                  <option value="cont">cont.</option>
+                </Select>
+              </div>
+            </Field>
+            <Field label={t('jobs.quantityNote')} hint={t('jobs.quantityNoteHint')}>
               <Input value={form.quantity} onChange={(e) => set('quantity', e.target.value)} />
             </Field>
             <Field label={t('jobs.scheduled')}>

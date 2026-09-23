@@ -25,9 +25,14 @@
   "jobs": {
     "title": "Заявки на инспекцию", "myTitle": "Мои задания", "new": "Новая заявка", "number": "№ заявки", "client": "Клиент",
     "type": "Услуга", "location": "Место инспекции", "scheduled": "Запланировано", "inspector": "Инспектор",
-    "status": "Статус", "empty": "Заявок не найдено", "vessel": "Судно / объект", "commodity": "Товар",
+    "status": "Статус", "empty": "Заявок не найдено", "vessel": "Судно / объект", "commodity": "Культура",
     "quantity": "Количество", "instructions": "Инструкции", "unassigned": "Не назначен", "selectClient": "Выберите клиента…",
-    "selectType": "Выберите услугу…", "editTitle": "Изменить заявку {{number}}"
+    "selectType": "Выберите услугу…", "editTitle": "Изменить заявку {{number}}",
+    "port": "Порт / терминал", "contractNo": "№ контракта", "volume": "Объём", "volumeFrom": "Объём от",
+    "volumeTo": "Объём до", "selectCommodity": "Выберите культуру…", "selectPort": "Выберите порт…",
+    "commodityHint": "Справочник — по нему работают фильтры и отчёты", "quantityNote": "Количество по номинации",
+    "quantityNoteHint": "Текст от клиента, например 25 000 т ±10%", "found": "Найдено заявок: {{count}}",
+    "totalVolume": "Суммарный объём: {{value}}"
   },
   "job": {
     "details": "Детали", "assign": "Назначить", "selectInspector": "Выберите инспектора…", "start": "Начать инспекцию",
@@ -59,6 +64,11 @@
   },
   "charts": { "showTable": "Таблица", "showChart": "График" },
   "branch": { "label": "Филиал", "all": "Все филиалы (группа)" },
+  "period": {
+    "label": "Период", "from": "С", "to": "По", "clear": "Сбросить",
+    "presets": { "month": "Этот месяц", "quarter": "3 месяца", "6m": "6 месяцев", "year": "12 месяцев", "ytd": "С начала года" }
+  },
+  "filters": { "more": "Ещё фильтры", "less": "Свернуть фильтры", "reset": "Сбросить" },
   "branches": {
     "title": "Сравнение филиалов", "entities": "Юридических лиц", "entitiesHint": "в группе",
     "bestMargin": "Лучшая маржа", "revenueCompare": "Выручка по филиалам", "revenueCompareSub": "Консолидация за период",

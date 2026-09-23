@@ -15,7 +15,16 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
 import { IsDateString, IsIn, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { AuthUser, CHECKLIST_RESULTS, ChecklistResult, JOB_STATUSES, JobStatus, SERVICE_TYPES, ServiceType } from '@gsi/shared-types';
+import {
+  AuthUser,
+  CHECKLIST_RESULTS,
+  COMMODITY_GROUPS,
+  ChecklistResult,
+  JOB_STATUSES,
+  JobStatus,
+  SERVICE_TYPES,
+  ServiceType,
+} from '@gsi/shared-types';
 import { CurrentUser, Roles } from '../common/decorators';
 import { config } from '../config';
 import { JobsService } from './jobs.service';
@@ -23,6 +32,11 @@ import { ChecklistService } from './checklist.service';
 
 class JobFieldsDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(300) location?: string;
+  @IsOptional() @IsUUID() commodityId?: string | null;
+  @IsOptional() @IsUUID() portId?: string | null;
+  @IsOptional() @IsString() @MaxLength(100) contractNo?: string | null;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) quantityValue?: number | null;
+  @IsOptional() @IsString() @MaxLength(10) quantityUnit?: string | null;
   @IsOptional() @IsString() @MaxLength(200) vesselOrObject?: string | null;
   @IsOptional() @IsString() @MaxLength(200) commodity?: string | null;
   @IsOptional() @IsString() @MaxLength(100) quantity?: string | null;
@@ -40,6 +54,12 @@ class CreateJobDto {
   @IsOptional() @IsDateString() scheduledAt?: string | null;
   @IsOptional() @IsString() @MaxLength(4000) instructions?: string | null;
   @IsOptional() @IsUUID() assignedInspectorId?: string | null;
+  // Reference data and contract details (migration 004).
+  @IsOptional() @IsUUID() commodityId?: string | null;
+  @IsOptional() @IsUUID() portId?: string | null;
+  @IsOptional() @IsString() @MaxLength(100) contractNo?: string | null;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) quantityValue?: number | null;
+  @IsOptional() @IsString() @MaxLength(10) quantityUnit?: string | null;
 }
 
 class AssignDto {
@@ -56,6 +76,15 @@ class JobQueryDto {
   @IsOptional() @IsUUID() inspectorId?: string;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsUUID() branchId?: string;
+  @IsOptional() @IsUUID() commodityId?: string;
+  @IsOptional() @IsIn(COMMODITY_GROUPS) commodityGroup?: string;
+  @IsOptional() @IsUUID() portId?: string;
+  @IsOptional() @IsString() @MaxLength(100) contractNo?: string;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minQuantity?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) maxQuantity?: number;
+  @IsOptional() @IsDateString() from?: string;
+  @IsOptional() @IsDateString() to?: string;
+  @IsOptional() @IsIn(SERVICE_TYPES) type?: ServiceType;
 }
 
 class UpdateItemDto {

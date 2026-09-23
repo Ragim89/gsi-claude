@@ -6,6 +6,7 @@ import { Badge, Card, Select, Table } from '@gsi/ui-kit/react';
 import { api } from '../api';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, StatTile } from '../components/charts';
+import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ErrorBox, Loading, PageHead } from '../components/common';
 
 interface ComparisonRow {
@@ -31,19 +32,6 @@ interface Comparison {
   branches: ComparisonRow[];
 }
 
-const PERIODS = [
-  { key: '3m', months: 3 },
-  { key: '6m', months: 6 },
-  { key: '12m', months: 12 },
-];
-
-function periodFrom(months: number): string {
-  const d = new Date();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() - (months - 1));
-  return d.toISOString().slice(0, 10);
-}
-
 type SortKey = 'revenueBase' | 'profit' | 'margin' | 'jobCount' | 'revenuePerInspector' | 'overdueBase';
 
 /** All entities side by side: the group view HQ needs to compare, not just aggregate. */
@@ -51,14 +39,12 @@ export function BranchesPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { setBranchId } = useBranch();
-  const [period, setPeriod] = useState('12m');
+  const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [sort, setSort] = useState<SortKey>('revenueBase');
 
-  const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
-  const from = periodFrom(months);
   const q = useQuery({
-    queryKey: ['branch-comparison', from],
-    queryFn: () => api.get<Comparison>(`/branches/comparison/summary?from=${from}`),
+    queryKey: ['branch-comparison', rangeParams(range)],
+    queryFn: () => api.get<Comparison>(`/branches/comparison/summary?${rangeParams(range)}`),
   });
 
   const money = useMemo(() => {
@@ -97,13 +83,7 @@ export function BranchesPage() {
         title={t('branches.title')}
         sub={`${t('dashboard.period', { from: q.data.period.from, to: q.data.period.to })} · ${t('dashboard.inCurrency', { currency: q.data.baseCurrency })}`}
         actions={
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 170 }}>
-            {PERIODS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {t(`dashboard.periods.${p.key}`)}
-              </option>
-            ))}
-          </Select>
+          <DateRangeFilter value={range} onChange={setRange} />
         }
       />
 

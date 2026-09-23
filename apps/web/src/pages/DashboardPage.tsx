@@ -8,37 +8,23 @@ import { api, subscribeFinance } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, FlowColumns, LineChart, StatTile } from '../components/charts';
+import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ErrorBox, Loading, PageHead } from '../components/common';
-
-const PERIODS = [
-  { key: '3m', months: 3 },
-  { key: '6m', months: 6 },
-  { key: '12m', months: 12 },
-];
-
-function fromDate(months: number): string {
-  const d = new Date();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() - (months - 1));
-  return d.toISOString().slice(0, 10);
-}
 
 /** Real-time group finance dashboard (docs/03-finance-dashboard.md). */
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { isHq } = useAuth();
   const qc = useQueryClient();
-  const [period, setPeriod] = useState('12m');
+  const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [live, setLive] = useState<{ at: string; count: number } | null>(null);
 
   const { branchId, current } = useBranch();
-  const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
-  const from = fromDate(months);
+  const query = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
 
   const q = useQuery({
-    queryKey: ['dashboard', from, branchId],
-    queryFn: () =>
-      api.get<FinanceDashboard>(`/finance/dashboard?from=${from}${branchId ? `&branchId=${branchId}` : ''}`),
+    queryKey: ['dashboard', query],
+    queryFn: () => api.get<FinanceDashboard>(`/finance/dashboard?${query}`),
   });
 
   // Event-driven refresh: the API pushes a message whenever a posting lands (no polling).
@@ -77,15 +63,7 @@ export function DashboardPage() {
             {live ? <> · <Badge tone="success">{t('dashboard.live', { count: live.count })}</Badge></> : null}
           </>
         }
-        actions={
-          <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 160 }}>
-            {PERIODS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {t(`dashboard.periods.${p.key}`)}
-              </option>
-            ))}
-          </Select>
-        }
+        actions={<DateRangeFilter value={range} onChange={setRange} />}
       />
 
       <div className="kpi-row">

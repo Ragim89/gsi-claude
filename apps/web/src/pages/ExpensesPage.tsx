@@ -7,20 +7,8 @@ import { api } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, StatTile } from '../components/charts';
+import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
-
-const PERIODS = [
-  { key: '3m', months: 3 },
-  { key: '6m', months: 6 },
-  { key: '12m', months: 12 },
-];
-
-function periodFrom(months: number): string {
-  const d = new Date();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() - (months - 1));
-  return d.toISOString().slice(0, 10);
-}
 
 /** Branch costs: analytics first (where the money goes), the register below it. */
 export function ExpensesPage() {
@@ -29,23 +17,21 @@ export function ExpensesPage() {
   const { branchId, current } = useBranch();
   const qc = useQueryClient();
   const fmt = useFormatDate();
-  const [period, setPeriod] = useState('12m');
+  const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
   const [creating, setCreating] = useState(false);
   const canWrite = user?.role === 'finance_controller' || user?.role === 'admin';
 
-  const months = PERIODS.find((p) => p.key === period)?.months ?? 12;
-  const from = periodFrom(months);
-  const branchQs = branchId ? `&branchId=${branchId}` : '';
+  // The calendar range and the branch filter scope both the analytics and the register.
+  const scope = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
 
   const summary = useQuery({
-    queryKey: ['expense-summary', from, branchId],
-    queryFn: () => api.get<ExpenseSummary>(`/finance/expenses-summary?from=${from}${branchQs}`),
+    queryKey: ['expense-summary', scope],
+    queryFn: () => api.get<ExpenseSummary>(`/finance/expenses-summary?${scope}`),
   });
   const expenses = useQuery({
-    queryKey: ['expenses', category, from, branchId],
-    queryFn: () =>
-      api.get<Expense[]>(`/finance/expenses?from=${from}${category ? `&category=${category}` : ''}${branchQs}`),
+    queryKey: ['expenses', category, scope],
+    queryFn: () => api.get<Expense[]>(`/finance/expenses?${scope}${category ? `&category=${category}` : ''}`),
   });
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches'), enabled: isHq });
 
@@ -115,13 +101,7 @@ export function ExpensesPage() {
         }
         actions={
           <>
-            <Select value={period} onChange={(e) => setPeriod(e.target.value)} style={{ width: 170 }}>
-              {PERIODS.map((p) => (
-                <option key={p.key} value={p.key}>
-                  {t(`dashboard.periods.${p.key}`)}
-                </option>
-              ))}
-            </Select>
+            <DateRangeFilter value={range} onChange={setRange} />
             {canWrite && !creating && <Button onClick={() => setCreating(true)}>+ {t('expenses.new')}</Button>}
           </>
         }

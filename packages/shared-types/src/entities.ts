@@ -99,8 +99,19 @@ export interface InspectionJob {
   assignedInspectorName?: string | null;
   location: string;
   vesselOrObject: string | null;
+  /** Free text from the client's nomination; the structured value is commodityId. */
   commodity: string | null;
   quantity: string | null;
+  // Structured reference data (migration 004) — what filters and reporting work on.
+  commodityId: string | null;
+  commodityName?: LocalizedText | null;
+  commodityGroup?: string | null;
+  portId: string | null;
+  portName?: string | null;
+  portCountry?: string | null;
+  contractNo: string | null;
+  quantityValue: number | null;
+  quantityUnit: string;
   scheduledAt: Timestamp | null;
   instructions: string | null;
   reviewComment: string | null;
