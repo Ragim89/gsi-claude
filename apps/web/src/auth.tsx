@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AuthTokens, AuthUser, Role } from '@gsi/shared-types';
 import { HQ_ROLES } from '@gsi/shared-types';
 import { api, getSession, onSessionChange, setSession } from './api';
+import { applyUserLocale } from './i18n';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -17,7 +18,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(getSession()?.user ?? null);
 
   useEffect(() => {
-    const off = onSessionChange((s) => setUser(s?.user ?? null));
+    applyUserLocale(getSession()?.user?.locale);
+    const off = onSessionChange((s) => {
+      setUser(s?.user ?? null);
+      applyUserLocale(s?.user?.locale);
+    });
     return () => {
       off();
     };

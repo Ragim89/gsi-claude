@@ -1,0 +1,144 @@
+{
+  "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
+  "nav": {
+    "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
+    "invoices": "Faturalar", "expenses": "Giderler", "branches": "Şubeler", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
+  },
+  "common": {
+    "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
+    "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
+    "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube"
+  },
+  "roles": {
+    "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
+    "finance_controller": "Mali kontrolör", "cfo": "CFO / Merkez", "client": "Müşteri", "admin": "Sistem yöneticisi"
+  },
+  "status": {
+    "new": "Yeni", "assigned": "Atandı", "in_progress": "Devam ediyor", "under_review": "İncelemede",
+    "approved": "Onaylandı", "cancelled": "İptal edildi"
+  },
+  "result": { "ok": "Uygun", "deviation": "Uygunsuzluk", "na": "Uygulanamaz" },
+  "login": {
+    "title": "Giriş", "email": "E-posta", "password": "Parola", "submit": "Giriş yap",
+    "demoHint": "Demo hesaplar: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — parola ChangeMe123!"
+  },
+  "jobs": {
+    "title": "Muayene işleri", "myTitle": "İşlerim", "new": "Yeni iş", "number": "İş no.", "client": "Müşteri",
+    "type": "Hizmet", "location": "Muayene yeri", "scheduled": "Planlanan", "inspector": "Eksper",
+    "status": "Durum", "empty": "İş bulunamadı", "vessel": "Gemi / obje", "commodity": "Ürün",
+    "quantity": "Miktar", "instructions": "Talimatlar", "unassigned": "Atanmadı", "selectClient": "Müşteri seçin…",
+    "selectType": "Hizmet seçin…", "editTitle": "{{number}} işini düzenle",
+    "port": "Liman / terminal", "contractNo": "Kontrat no.", "volume": "Tonaj", "volumeFrom": "Tonaj (min.)",
+    "volumeTo": "Tonaj (maks.)", "selectCommodity": "Ürün seçin…", "selectPort": "Liman seçin…",
+    "commodityHint": "Referans listesi — filtreler ve raporlar bunu kullanır", "quantityNote": "Nominasyondaki miktar",
+    "quantityNoteHint": "Müşterinin yazdığı serbest metin, örn. 25.000 MT ±%10", "found": "{{count}} iş bulundu",
+    "totalVolume": "Toplam tonaj: {{value}}"
+  },
+  "job": {
+    "details": "Ayrıntılar", "assign": "Ata", "selectInspector": "Eksper seçin…", "start": "Muayeneye başla",
+    "submit": "İncelemeye gönder", "submitConfirm": "Kontrol listesi süpervizör incelemesine gönderilsin mi? Sonrasında değiştiremezsiniz.",
+    "return": "Düzeltmeye iade et", "returnPrompt": "Eksper için açıklama (neyin düzeltilmesi gerekiyor):",
+    "approve": "Onayla ve rapor düzenle", "approveConfirm": "Bu iş onaylanıp şube antetli PDF raporu düzenlensin mi?",
+    "cancel": "İşi iptal et", "cancelConfirm": "Bu iş iptal edilsin mi?", "previewPdf": "PDF önizleme (taslak)",
+    "reviewComment": "Süpervizör açıklaması", "reports": "Raporlar", "approvedIssued": "Onaylandı — {{number}} raporu düzenlendi",
+    "noReports": "Henüz rapor düzenlenmedi"
+  },
+  "checklist": {
+    "title": "Saha kontrol listesi", "progress": "{{total}} maddeden {{done}} tamamlandı", "value": "Değer / okuma",
+    "notes": "Açıklama", "addPhoto": "Fotoğraf ekle", "uploading": "Yükleniyor…", "deletePhoto": "Fotoğrafı sil",
+    "readOnly": "Salt okunur: iş «{{status}}» durumunda", "empty": "Kontrol listesi maddesi yok", "saving": "Kaydediliyor…", "saved": "Kaydedildi"
+  },
+  "clients": {
+    "title": "Müşteriler", "new": "Yeni müşteri", "name": "Unvan", "gafta": "GAFTA / FOSFA ref.", "taxId": "Vergi no.",
+    "country": "Ülke (ISO-2)", "address": "Adres", "contactName": "İlgili kişi", "contactEmail": "İlgili e-posta",
+    "contactPhone": "İlgili telefon", "notes": "Notlar", "jobs": "İşler", "empty": "Müşteri bulunamadı",
+    "reports": "Raporlar", "noReports": "Henüz rapor yok", "info": "Müşteri kartı"
+  },
+  "reports": {
+    "number": "Rapor no.", "version": "Rev.", "issued": "Düzenlendi", "approvedBy": "Onaylayan",
+    "download": "PDF indir", "job": "İş", "service": "Hizmet"
+  },
+  "users": {
+    "title": "Kullanıcılar", "new": "Yeni kullanıcı", "fullName": "Ad soyad", "email": "E-posta", "role": "Rol",
+    "password": "Başlangıç parolası", "active": "Aktif", "inactive": "Pasif", "deactivate": "Pasifleştir", "activate": "Aktifleştir"
+  },
+  "charts": { "showTable": "Tablo", "showChart": "Grafik" },
+  "branch": { "label": "Şube", "all": "Tüm şubeler (grup)" },
+  "period": {
+    "label": "Dönem", "from": "Başlangıç", "to": "Bitiş", "clear": "Temizle",
+    "presets": { "month": "Bu ay", "quarter": "3 ay", "6m": "6 ay", "year": "12 ay", "ytd": "Yıl başından beri" }
+  },
+  "filters": { "more": "Daha fazla filtre", "less": "Filtreleri gizle", "reset": "Sıfırla" },
+  "branches": {
+    "title": "Şube karşılaştırması", "entities": "Tüzel kişilik", "entitiesHint": "grup içinde",
+    "bestMargin": "En iyi kâr marjı", "revenueCompare": "Şubeye göre ciro", "revenueCompareSub": "Dönem için konsolide",
+    "profitCompare": "Şubeye göre kâr", "profitCompareSub": "Ciro eksi giderler, marj ile",
+    "perInspector": "Eksper başına ciro", "perInspectorSub": "İş yükü verimliliği", "perInspectorShort": "Eksper başına",
+    "inspectorsShort": "eksper", "overdueCompare": "Vadesi geçen alacaklar", "overdueCompareSub": "Tahsilatın geciktiği yerler",
+    "table": "Tüm şubeler", "sortBy": "Sıralama", "focus": "Her şeyi bu şubeye göre filtrele", "active": "Aktif filtre",
+    "requisites": "Künye", "legalName": "Ticaret unvanı", "currency": "Muhasebe para birimi", "timezone": "Saat dilimi",
+    "locale": "Yerel ayar", "accreditation": "Akreditasyon", "template": "Antet şablonu", "team": "Ekip",
+    "noTeam": "Henüz kullanıcı yok", "activeUsers": "aktif kullanıcı", "openJobs": "{{count}} açık iş",
+    "head": "Şube müdürü", "headShort": "Müdür", "headUnset": "Atanmadı", "changePhoto": "Ofis fotoğrafı",
+    "changeHeadPhoto": "Portreyi değiştir", "legalRequisites": "Yasal bilgiler", "legalForm": "Şirket türü",
+    "registrationNo": "Sicil no.", "taxId": "Vergi no.", "vatNumber": "KDV no.", "established": "Kuruluş yılı",
+    "bank": "Banka bilgileri", "bankName": "Banka", "bankAccount": "Hesap / IBAN", "bankSwift": "SWIFT / BIC",
+    "bankHint": "GSI onayladıktan sonra bu bilgiler faturalara basılacaktır.", "operational": "Operasyon", "website": "Web sitesi",
+    "editHint": "Şube künyesi şimdilik veritabanından güncelleniyor; yönetim ekranı planlanıyor."
+  },
+  "dashboard": {
+    "groupTitle": "Grup mali gösterge paneli", "branchTitle": "Şube mali paneli", "branchOf": "Mali durum — {{branch}}",
+    "period": "{{from}} — {{to}}", "inCurrency": "{{currency}} cinsinden konsolide", "live": "canlı · {{count}} güncelleme",
+    "periods": { "3m": "Son 3 ay", "6m": "Son 6 ay", "12m": "Son 12 ay" },
+    "capitalization": "Grup varlıkları", "capitalizationHint": "Nakit + alacaklar",
+    "revenue": "Ciro", "expenses": "Giderler", "profit": "Kâr", "margin": "marj %{{pct}}", "margin2": "Marj",
+    "cash": "Nakit", "receivable": "Alacaklar", "overdue": "vadesi geçen: {{amount}}",
+    "pnl": "Aylık gelir tablosu", "pnlSub": "Ciro, gider ve kâr — konsolide para biriminde",
+    "cashFlow": "Nakit akışı", "cashFlowSub": "Aylık tahsilat ve ödemeler", "inflow": "Giriş", "outflow": "Çıkış", "net": "Net",
+    "revenueByService": "Hizmete göre ciro", "expensesByCategory": "Kategoriye göre giderler", "topClients": "Başlıca müşteriler",
+    "arAging": "Alacak yaşlandırma", "arAgingSub": "Ödenmemiş faturalar, vadeden bu yana geçen güne göre", "days": "{{range}} gün",
+    "bucket": "Aralık", "amount": "Tutar", "invoices": "Fatura", "month": "Ay", "service": "Hizmet", "category": "Kategori",
+    "byBranch": "Şubelere göre", "localRevenue": "Ciro (yerel)", "unassigned": "İşle ilişkilendirilmemiş",
+    "opsKpis": "Operasyonel göstergeler", "jobsInPeriod": "Açılan iş", "jobsApproved": "Onaylanan iş",
+    "reportsIssued": "Düzenlenen rapor", "avgCycle": "İş → rapor", "days2": "{{days}} gün",
+    "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper"
+  },
+  "invoices": {
+    "title": "Faturalar", "new": "Yeni fatura", "number": "Fatura no.", "issued": "Düzenlendi", "due": "Vade",
+    "total": "Genel toplam", "paid": "Ödenen", "net": "Ara toplam", "taxRate": "KDV oranı, %", "lines": "Kalemler",
+    "lineDescription": "Açıklama", "qty": "Miktar", "unitPrice": "Birim fiyat", "addLine": "Kalem ekle",
+    "issue": "Düzenle", "pay": "Ödeme", "payPrompt": "Ödeme tutarı (kalan: {{amount}})",
+    "cancelConfirm": "Bu fatura iptal edilsin mi? Muhasebe kayıtları ters kayıtla kapatılacak.",
+    "overdueDays": "{{days}} gün gecikme", "empty": "Fatura yok",
+    "issuedTotal": "Faturalanan", "collected": "Tahsil edilen", "collectionRate": "Tahsilat oranı",
+    "outstanding": "Ödenmemiş", "overdue": "Vadesi geçen", "invoiceCount": "{{count}} fatura",
+    "avgDaysToPay": "ortalama {{days}} günde ödeniyor", "drafts": "{{count}} taslak",
+    "issuedVsCollected": "Faturalanan ve tahsil edilen", "issuedVsCollectedSub": "Aylık, konsolide",
+    "issuedShort": "Faturalanan", "collectedShort": "Tahsil edilen", "byClient": "Müşteriye göre", "byStatus": "Duruma göre",
+    "toChase": "Önce bunları takip edin", "amountDue": "Kalan tutar", "overdueBy": "Gecikme",
+    "register": "Fatura defteri", "onlyOverdue": "Sadece vadesi geçen", "dueDate": "Vade tarihi",
+    "cancelInvoice": "Faturayı iptal et", "details": "Bilgiler", "paidAt": "Ödendiği tarih", "currency": "Para birimi",
+    "payments": "Ödemeler", "noPayments": "Henüz ödeme yok", "registeredBy": "Kaydeden", "downloadPdf": "Fatura PDF"
+  },
+  "invoiceStatus": {
+    "draft": "Taslak", "issued": "Düzenlendi", "partially_paid": "Kısmi ödendi", "paid": "Ödendi", "cancelled": "İptal edildi"
+  },
+  "expenses": {
+    "title": "Giderler", "new": "Yeni gider", "category": "Kategori", "description": "Açıklama",
+    "amount": "Tutar", "supplier": "Tedarikçi", "date": "Tarih", "empty": "Gider yok",
+    "total": "Toplam gider", "perMonth": "Aylık ortalama", "costRatio": "Ciroya oranı",
+    "ofRevenue": "{{amount}} ciroya göre", "topCategory": "En büyük kalem", "avgExpense": "Ortalama gider",
+    "records": "{{count}} kayıt", "monthly": "Aylık giderler", "monthlySub": "Gider tarihine göre, konsolide",
+    "categorySub": "Toplam maliyet içindeki payı", "byBranch": "Şubelere göre", "byBranchSub": "Grup nerede harcıyor",
+    "topSuppliers": "Başlıca tedarikçiler", "largest": "En büyük tekil gider", "register": "Gider defteri",
+    "count": "Kayıt", "localHint": "Şube para biriminde", "deleteConfirm": "Bu gider silinsin mi? Muhasebe kayıtları ters kayıtla kapatılacak."
+  },
+  "expenseCategories": {
+    "salary": "Personel", "travel": "Seyahat", "subcontractor": "Taşeron", "lab_materials": "Laboratuvar malzemesi",
+    "equipment": "Ekipman", "office": "Ofis", "other": "Diğer"
+  },
+  "verify": {
+    "title": "Rapor doğrulama", "valid": "Bu rapor gerçek ve geçerlidir.",
+    "invalid": "Bu koda ait geçerli bir rapor bulunamadı.", "revoked": "Bu rapor iptal edilmiştir."
+  }
+}
