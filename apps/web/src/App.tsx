@@ -18,6 +18,7 @@ import { BranchesPage } from './pages/BranchesPage';
 import { BranchDetailPage } from './pages/BranchDetailPage';
 import { AssetsPage } from './pages/AssetsPage';
 import { AssetDetailPage } from './pages/AssetDetailPage';
+import { ImportPage } from './pages/ImportPage';
 
 /** Roles allowed into the finance area (mirrors app_sees_finance() in the database). */
 const FINANCE: Role[] = ['finance_controller', 'supervisor', 'cfo', 'admin'];
@@ -64,6 +65,7 @@ export function App() {
         <Route path="/jobs/:id/edit" element={<RequireAuth roles={['supervisor', 'admin']}><JobFormPage /></RequireAuth>} />
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/clients/:id" element={<ClientDetailPage />} />
+        <Route path="/import" element={<RequireAuth roles={FINANCE}><ImportPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth roles={['admin']}><UsersPage /></RequireAuth>} />
       </Route>
       <Route path="*" element={<Navigate to="/jobs" replace />} />

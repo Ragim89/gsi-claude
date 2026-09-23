@@ -349,3 +349,43 @@ td.negative { color: var(--gsi-color-danger); }
   padding: 8px 12px; font-family: inherit; font-size: var(--gsi-font-size-sm); color: var(--gsi-color-text);
 }
 .export__menu button:hover { background: var(--gsi-color-background); }
+
+/* ---- Bulk import from Excel/CSV ------------------------------------------------------ */
+.chips { display: flex; gap: var(--gsi-space-2); flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--gsi-color-border); background: var(--gsi-color-surface);
+  color: var(--gsi-color-text); font-family: inherit; font-size: var(--gsi-font-size-sm);
+  padding: 6px 14px; border-radius: 999px; cursor: pointer;
+}
+.chip:hover { border-color: var(--gsi-color-primary); }
+.chip--on {
+  background: var(--gsi-color-primary); border-color: var(--gsi-color-primary);
+  color: var(--gsi-color-on-primary); font-weight: var(--gsi-font-weight-medium);
+}
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 130px; padding: var(--gsi-space-4); cursor: pointer; text-align: center;
+  border: 2px dashed var(--gsi-color-border); border-radius: var(--gsi-radius-md);
+  background: var(--gsi-color-background); transition: border-color 120ms, background 120ms;
+}
+.dropzone:hover, .dropzone--over { border-color: var(--gsi-color-accent); background: var(--gsi-color-surface); }
+.import-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--gsi-space-3); margin-block-end: var(--gsi-space-4);
+}
+.import-stat {
+  border: 1px solid var(--gsi-color-border); border-radius: var(--gsi-radius-md);
+  padding: var(--gsi-space-3); display: flex; flex-direction: column; gap: 2px;
+  border-inline-start-width: 4px;
+}
+.import-stat--success { border-inline-start-color: var(--gsi-color-success); }
+.import-stat--info { border-inline-start-color: var(--gsi-color-info); }
+.import-stat--danger { border-inline-start-color: var(--gsi-color-danger); }
+.import-stat__value { font-size: var(--gsi-font-size-xl); font-weight: var(--gsi-font-weight-bold); }
+.import-stat__label {
+  font-size: var(--gsi-font-size-xs); text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--gsi-color-text-muted);
+}
+.import-msg { font-size: var(--gsi-font-size-sm); }
+.import-msg--error { color: var(--gsi-color-danger); }
+.import-msg--warn { color: var(--gsi-color-warning); }

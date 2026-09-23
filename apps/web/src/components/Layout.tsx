@@ -28,6 +28,7 @@ export function Layout() {
               <NavLink to="/finance/invoices">{t('nav.invoices')}</NavLink>
               <NavLink to="/finance/expenses">{t('nav.expenses')}</NavLink>
               <NavLink to="/assets">{t('nav.assets')}</NavLink>
+              <NavLink to="/import">{t('nav.import')}</NavLink>
             </>
           )}
           {hasRole('admin') && <NavLink to="/users">{t('nav.users')}</NavLink>}

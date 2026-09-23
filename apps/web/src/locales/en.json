@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
-    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "users": "Users", "logout": "Sign out", "language": "Language"
+    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import", "users": "Users", "logout": "Sign out", "language": "Language"
   },
   "common": {
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
@@ -72,6 +72,64 @@
   "export": {
     "csv": "Export", "all": "Export everything", "options": "Export options",
     "semicolon": "CSV for Excel (semicolon)", "comma": "CSV standard (comma)"
+  },
+  "import": {
+    "title": "Data import",
+    "sub": "Load what you already keep in Excel instead of typing it in",
+    "template": "Download template",
+    "step1": "1. What are you loading?",
+    "step2": "2. The file",
+    "step3": "3. Check before writing",
+    "result": "Import result",
+    "drop": "Drop the file here or click to choose",
+    "formats": "Excel (.xlsx) or CSV, up to 10 MB, first row — column headers",
+    "check": "Check the file",
+    "commit_one": "Import {{count}} row",
+    "commit_other": "Import {{count}} rows",
+    "done": "Done: created {{created}}, updated {{updated}}, skipped {{skipped}}",
+    "rows": "Rows in file",
+    "willCreate": "To create",
+    "willUpdate": "To update",
+    "withErrors": "With errors",
+    "row": "Row",
+    "action": "Action",
+    "record": "Record",
+    "problems": "What needs attention",
+    "allClean": "Every row is valid — nothing needs attention",
+    "unknownColumns": "These columns were not recognised and will be ignored: {{columns}}",
+    "truncated": "Showing {{shown}} of {{total}} rows",
+    "sections": { "clients": "Clients", "assets": "Assets", "invoices": "Invoices", "expenses": "Expenses" },
+    "actions": { "create": "New", "update": "Update", "error": "Error" },
+    "fields": {
+      "branch": "Branch", "name": "Name", "client": "Client", "inventoryNo": "Inventory no.",
+      "invoiceNumber": "Invoice no.", "acquisitionDate": "Acquisition date", "acquisitionCost": "Cost",
+      "issueDate": "Issue date", "expenseDate": "Date", "description": "Description", "amount": "Amount",
+      "category": "Category", "status": "Status"
+    },
+    "errors": {
+      "required": "\"{{field}}\" is required",
+      "unknownBranch": "unknown branch \"{{branch}}\"",
+      "foreignBranch": "branch \"{{branch}}\" is outside your branch",
+      "clientNotFound": "client \"{{client}}\" not found in branch {{branch}}",
+      "userNotFound": "user \"{{user}}\" not found — left unassigned",
+      "userOtherBranch": "user \"{{user}}\" works at another branch — left unassigned",
+      "unknownValue": "unknown {{field}} \"{{value}}\" — using \"{{fallback}}\"",
+      "accumulatedOverCost": "accumulated depreciation exceeds the cost",
+      "residualOverCost": "residual value exceeds the cost",
+      "amountRequired": "either the net or the total amount is required",
+      "amountPositive": "amount must be greater than zero",
+      "paidOverTotal": "paid amount exceeds the total",
+      "duplicate": "a record with this key already exists",
+      "missingRef": "references a record that does not exist",
+      "forbidden": "not allowed for this branch",
+      "failed": "could not be saved: {{message}}"
+    },
+    "hints": {
+      "clients": "Matched by name or tax ID within the branch: an existing client is updated, a new one is created.",
+      "assets": "Matched by inventory number within the branch. Accumulated depreciation is taken as given — no back-dated charges are posted.",
+      "invoices": "Matched by invoice number. New invoices are posted to the ledger, so they appear in the dashboard and ageing at once; invoices already in the system are left untouched.",
+      "expenses": "Every row becomes a new expense and is posted to the ledger — importing the same file twice doubles the costs."
+    }
   },
   "branches": {
     "title": "Branch comparison", "entities": "Legal entities", "entitiesHint": "in the group",

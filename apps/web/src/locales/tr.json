@@ -2,7 +2,7 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
-    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
+    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme", "users": "Kullanıcılar", "logout": "Çıkış", "language": "Dil"
   },
   "common": {
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
@@ -72,6 +72,64 @@
   "export": {
     "csv": "Dışa aktar", "all": "Tümünü dışa aktar", "options": "Dışa aktarma seçenekleri",
     "semicolon": "Excel için CSV (noktalı virgül)", "comma": "Standart CSV (virgül)"
+  },
+  "import": {
+    "title": "Veri yükleme",
+    "sub": "Elle girmek yerine Excel'de tuttuğunuz verileri aktarın",
+    "template": "Şablonu indir",
+    "step1": "1. Ne yükleniyor?",
+    "step2": "2. Dosya",
+    "step3": "3. Yazmadan önce kontrol",
+    "result": "Yükleme sonucu",
+    "drop": "Dosyayı buraya bırakın veya seçmek için tıklayın",
+    "formats": "Excel (.xlsx) veya CSV, en fazla 10 MB, ilk satır sütun başlıkları",
+    "check": "Dosyayı kontrol et",
+    "commit_one": "{{count}} satırı yükle",
+    "commit_other": "{{count}} satırı yükle",
+    "done": "Tamam: {{created}} oluşturuldu, {{updated}} güncellendi, {{skipped}} atlandı",
+    "rows": "Dosyadaki satır",
+    "willCreate": "Oluşturulacak",
+    "willUpdate": "Güncellenecek",
+    "withErrors": "Hatalı",
+    "row": "Satır",
+    "action": "İşlem",
+    "record": "Kayıt",
+    "problems": "Dikkat edilmesi gerekenler",
+    "allClean": "Tüm satırlar geçerli — sorun yok",
+    "unknownColumns": "Bu sütunlar tanınmadı ve atlanacak: {{columns}}",
+    "truncated": "{{total}} satırın {{shown}} tanesi gösteriliyor",
+    "sections": { "clients": "Müşteriler", "assets": "Varlıklar", "invoices": "Faturalar", "expenses": "Giderler" },
+    "actions": { "create": "Yeni", "update": "Güncelleme", "error": "Hata" },
+    "fields": {
+      "branch": "Şube", "name": "Adı", "client": "Müşteri", "inventoryNo": "Demirbaş no.",
+      "invoiceNumber": "Fatura no.", "acquisitionDate": "Alım tarihi", "acquisitionCost": "Alış bedeli",
+      "issueDate": "Düzenleme tarihi", "expenseDate": "Tarih", "description": "Açıklama", "amount": "Tutar",
+      "category": "Kategori", "status": "Durum"
+    },
+    "errors": {
+      "required": "\"{{field}}\" alanı zorunlu",
+      "unknownBranch": "bilinmeyen şube \"{{branch}}\"",
+      "foreignBranch": "\"{{branch}}\" şubesi erişiminiz dışında",
+      "clientNotFound": "\"{{client}}\" müşterisi {{branch}} şubesinde bulunamadı",
+      "userNotFound": "\"{{user}}\" kullanıcısı bulunamadı — sorumlu atanmadı",
+      "userOtherBranch": "\"{{user}}\" başka bir şubede — sorumlu atanmadı",
+      "unknownValue": "bilinmeyen {{field}} değeri \"{{value}}\" — \"{{fallback}}\" kullanıldı",
+      "accumulatedOverCost": "birikmiş amortisman alış bedelini aşıyor",
+      "residualOverCost": "hurda değeri alış bedelini aşıyor",
+      "amountRequired": "ara toplam veya genel toplam gerekli",
+      "amountPositive": "tutar sıfırdan büyük olmalı",
+      "paidOverTotal": "ödenen tutar genel toplamı aşıyor",
+      "duplicate": "bu anahtara sahip bir kayıt zaten var",
+      "missingRef": "var olmayan bir kayda atıf yapıyor",
+      "forbidden": "bu şube için izin yok",
+      "failed": "kaydedilemedi: {{message}}"
+    },
+    "hints": {
+      "clients": "Şube içinde unvan veya vergi numarasıyla eşleştirilir: mevcut müşteri güncellenir, yeni olan oluşturulur.",
+      "assets": "Şube içinde demirbaş numarasıyla eşleştirilir. Birikmiş amortisman olduğu gibi alınır — geriye dönük kayıt oluşturulmaz.",
+      "invoices": "Fatura numarasıyla eşleştirilir. Yeni faturalar muhasebeleştirilir ve gösterge paneli ile yaşlandırmada hemen görünür; sistemde zaten olan faturalara dokunulmaz.",
+      "expenses": "Her satır yeni bir gider ve kayıt oluşturur — aynı dosyayı iki kez yüklemek giderleri ikiye katlar."
+    }
   },
   "branches": {
     "title": "Şube karşılaştırması", "entities": "Tüzel kişilik", "entitiesHint": "grup içinde",
