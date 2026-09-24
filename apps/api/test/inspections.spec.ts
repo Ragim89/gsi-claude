@@ -2,6 +2,12 @@ import { INestApplication } from '@nestjs/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ACCOUNTS, as, createTestApp, login, Session } from './app';
 
+/** A real 1×1 PNG: small enough to inline, real enough for sharp to make a preview from. */
+const PNG_1PX = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
 /**
  * The Phase 4 acceptance scenario, end to end: a job is opened, a second inspection is booked
  * on it, an inspector is assigned, the work is started from the field, the checklist is filled
@@ -204,6 +210,48 @@ describe('inspection lifecycle', () => {
     expect(x.measurementCount).toBe(1);
   });
 
+  it('takes a photo from the field, with its category, caption and checksum', async () => {
+    const checklist = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
+    const itemId = checklist.items[0].id;
+
+    const res = await as(app, inspector)
+      .post(`/api/inspections/${inspectionId}/photos`)
+      .field('category', 'damage')
+      .field('caption', 'Torn gasket, hatch 3')
+      .field('checklistItemId', itemId)
+      .field('gpsLat', '40.7614')
+      .field('gpsLng', '29.8283')
+      .field('takenAt', '2026-10-02T07:15:00.000Z')
+      .attach('file', PNG_1PX, 'damage.png')
+      .expect(201);
+
+    expect(res.body.category).toBe('damage');
+    expect(res.body.caption).toBe('Torn gasket, hatch 3');
+    expect(res.body.checklistItemId).toBe(itemId);
+    expect(res.body.gpsLat).toBeCloseTo(40.7614, 3);
+    // The original is stored byte for byte; the checksum is what an auditor verifies.
+    expect(res.body.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(res.body.url).toBeTruthy();
+
+    const photos = (await as(app, inspector).get(`/api/inspections/${inspectionId}/photos`).expect(200)).body;
+    expect(photos).toHaveLength(1);
+
+    // The field screen shows it on the item it proves, not only in the gallery.
+    const after = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
+    expect(after.items.find((i: { id: string }) => i.id === itemId).media).toHaveLength(1);
+
+    const x = (await as(app, inspector).get(`/api/inspections/${inspectionId}`).expect(200)).body;
+    expect(x.photoCount).toBe(1);
+  }, 30_000);
+
+  it('refuses a file that is not an image', async () => {
+    const res = await as(app, inspector)
+      .post(`/api/inspections/${inspectionId}/photos`)
+      .attach('file', Buffer.from('not a photo'), 'notes.txt');
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/unsupported file type/i);
+  });
+
   it('refuses a measurement with no value at all', async () => {
     const res = await as(app, inspector)
       .post(`/api/inspections/${inspectionId}/measurements`)
@@ -325,7 +373,14 @@ describe('inspection lifecycle', () => {
       .post(`/api/inspections/${inspectionId}/findings`)
       .send({ title: 'Something else entirely' })
       .expect(409);
-  });
+
+    // Evidence cannot be added to finished work either.
+    await as(app, inspector)
+      .post(`/api/inspections/${inspectionId}/photos`)
+      .field('category', 'general')
+      .attach('file', PNG_1PX, 'late.png')
+      .expect(409);
+  }, 30_000);
 
   it('still lets a finding be resolved after approval — follow-up is not a rewrite', async () => {
     const resolved = await as(app, supervisor)
