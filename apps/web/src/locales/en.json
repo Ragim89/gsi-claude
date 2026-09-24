@@ -4,6 +4,7 @@
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
     "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
+    "samples": "Samples", "mySamples": "My samples",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
   },
@@ -104,6 +105,84 @@
   "checklistSection": {
     "general": "General", "documents": "Documents", "vessel": "Vessel / object", "cargo": "Cargo",
     "operations": "Operations", "observations": "Observations"
+  },
+  "sampleStatus": {
+    "draft": "Draft", "collected": "Collected", "registered": "Registered", "sealed": "Sealed",
+    "dispatched": "Dispatched", "received_by_lab": "Received by laboratory",
+    "accepted_by_lab": "Accepted by laboratory", "rejected_by_lab": "Rejected by laboratory",
+    "on_hold": "On hold", "cancelled": "Cancelled"
+  },
+  "sampleAction": {
+    "collect": "Collect", "register": "Register", "seal": "Apply seal", "dispatch": "Dispatch",
+    "receive": "Receive", "accept": "Accept", "reject": "Reject", "return": "Return to office",
+    "hold": "Put on hold", "resume": "Resume", "cancel": "Cancel sample"
+  },
+  "sampleType": {
+    "representative": "Representative", "composite": "Composite", "increment": "Increment",
+    "retention": "Retention", "reference": "Reference", "control": "Control",
+    "counter_sample": "Counter sample", "other": "Other"
+  },
+  "samplingMethod": {
+    "manual": "Manual", "automatic": "Automatic", "systematic": "Systematic", "random": "Random",
+    "composite": "Composite", "incremental": "Incremental", "other": "Other"
+  },
+  "sealCondition": { "intact": "Intact", "damaged": "Damaged", "broken": "Broken", "missing": "Missing" },
+  "sampleCondition": {
+    "good": "Good", "damaged": "Damaged", "leaking": "Leaking", "contaminated": "Contaminated",
+    "insufficient": "Insufficient", "other": "Other"
+  },
+  "rejectionReason": {
+    "damaged": "Damaged", "broken_seal": "Broken seal", "insufficient_quantity": "Insufficient quantity",
+    "wrong_sample": "Wrong sample", "missing_documentation": "Missing documentation",
+    "container_damage": "Container damage", "other": "Other"
+  },
+  "custodyEvent": {
+    "collected": "Collected", "registered": "Registered", "sealed": "Sealed", "handover": "Handed over",
+    "dispatched": "Dispatched", "in_transit": "In transit", "received": "Received",
+    "lab_received": "Received at laboratory", "lab_accepted": "Accepted by laboratory",
+    "lab_rejected": "Rejected by laboratory", "returned": "Returned", "archived": "Archived",
+    "correction": "Correction"
+  },
+  "custody": {
+    "title": "Chain of custody",
+    "hint": "Every handover is added, never edited. A mistake is put right by recording a correction, and both entries stay.",
+    "empty": "Nothing recorded yet",
+    "handover": "Record a handover", "record": "Record", "recordedBy": "Recorded by {{name}}",
+    "fromTo": "{{from}} → {{to}}", "to": "To {{to}}", "from": "From {{from}}",
+    "toPerson": "Handed to", "toLocation": "Location",
+    "correct": "Correct “{{event}}”", "correctionHint": "The original entry stays on the record; this adds a correction beside it.",
+    "whatWasWrong": "What was wrong?", "recordCorrection": "Record correction", "amended": "amended"
+  },
+  "samples": {
+    "title": "Samples", "myTitle": "My samples", "all": "All", "mine": "Mine",
+    "search": "Number, job, client, commodity, seal, lot…",
+    "found": "{{count}} samples", "empty": "No samples found", "number": "Sample no.",
+    "new": "New sample", "create": "Record sample", "noneHere": "No samples here yet",
+    "view": {
+      "all": "All", "today": "Collected today", "awaiting_registration": "Awaiting registration",
+      "awaiting_dispatch": "Awaiting dispatch", "in_transit": "In transit", "rejected": "Rejected"
+    }
+  },
+  "sample": {
+    "type": "Sample type", "method": "Sampling method", "quantity": "Quantity", "unit": "Unit",
+    "container": "Container", "batch": "Batch / lot no.", "containerRef": "Container reference",
+    "seal": "Seal", "sealNumber": "Seal number", "sealType": "Seal type", "noSeal": "Not sealed",
+    "sealLater": "Can be left until the sample is sealed",
+    "sealCondition": "Seal condition", "condition": "Sample condition",
+    "sealedBy": "Sealed by", "sealedAt": "Sealed at",
+    "sampledBy": "Taken by", "sampledAt": "Taken at", "conditionNotes": "Condition notes",
+    "destination": "Destination laboratory", "chooseLab": "Choose a laboratory…", "external": "external",
+    "dispatchedAt": "Dispatched", "courier": "Courier", "tracking": "Tracking reference",
+    "packages": "Packages", "receivedAt": "Received", "custodian": "Currently with",
+    "group": "Sample set", "reason": "Reason", "rejectionReason": "Rejection reason",
+    "attachments": "Photos & documents", "noAttachments": "Nothing attached yet",
+    "printLabel": "Print label",
+    "commodityFree": "Not in the list — type it", "commodityText": "Commodity",
+    "acceptedBy": "Accepted by {{name}} on {{at}}",
+    "rejectedBy": "Rejected by {{name}}: {{reason}}",
+    "laboratory": "Laboratory",
+    "labPending": "Sent to {{name}}. Test results arrive with the laboratory module.",
+    "labNone": "No laboratory chosen yet."
   },
   "inspections": {
     "title": "Inspections", "myTitle": "My inspections", "all": "All", "mine": "Mine",

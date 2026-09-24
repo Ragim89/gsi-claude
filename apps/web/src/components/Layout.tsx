@@ -30,6 +30,9 @@ export function Layout() {
               {user?.scope === 'own' ? t('nav.myInspections') : t('nav.inspections')}
             </NavLink>
           )}
+          {can('sample.read') && (
+            <NavLink to="/samples">{user?.scope === 'own' ? t('nav.mySamples') : t('nav.samples')}</NavLink>
+          )}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
           {finance && (

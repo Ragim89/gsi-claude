@@ -73,6 +73,10 @@ const USERS = [
   { email: 'supervisor.tr@gsi.local', name: 'Ayşe Demir', role: 'supervisor', branch: 'TR', locale: 'tr' },
   { email: 'inspector.tr@gsi.local', name: 'Mehmet Yılmaz', role: 'inspector', branch: 'TR', locale: 'tr' },
   { email: 'inspector2.tr@gsi.local', name: 'Can Öztürk', role: 'inspector', branch: 'TR', locale: 'tr' },
+  // `legacy` is the coarse `users.role` enum kept from MVP-1; the RBAC role code is what
+  // actually grants anything, and the two stopped being the same list at PHASE 1.
+  { email: 'sampler.tr@gsi.local', name: 'Burak Şahin', role: 'sampler', legacy: 'inspector', branch: 'TR', locale: 'tr' },
+  { email: 'lab.tr@gsi.local', name: 'Zeynep Arslan', role: 'lab_manager', legacy: 'lab_technician', branch: 'TR', locale: 'tr' },
   { email: 'supervisor.ro@gsi.local', name: 'Andrei Popescu', role: 'supervisor', branch: 'RO', locale: 'en' },
   { email: 'inspector.ro@gsi.local', name: 'Ioana Ionescu', role: 'inspector', branch: 'RO', locale: 'en' },
   { email: 'finance.ro@gsi.local', name: 'Elena Marin', role: 'finance_controller', branch: 'RO', locale: 'en' },
@@ -89,6 +93,21 @@ const USERS = [
   { email: 'supervisor.ru@gsi.local', name: 'Сергей Волков', role: 'supervisor', branch: 'RU', locale: 'ru' },
   { email: 'inspector.ru@gsi.local', name: 'Николай Орлов', role: 'inspector', branch: 'RU', locale: 'ru' },
 ];
+
+/**
+ * Demo laboratories: two of the group's own and one independent house, so the demo can show a
+ * sample going somewhere that is not us. A real installation starts with none.
+ */
+const LABORATORIES = [
+  { code: 'TR-LAB', name: 'İstanbul Laboratory', branch: 'TR', city: 'İstanbul', external: false, email: 'lab.istanbul@gsi.example' },
+  { code: 'RO-LAB', name: 'Constanța Laboratory', branch: 'RO', city: 'Constanța', external: false, email: 'lab.constanta@gsi.example' },
+  { code: 'EXT-SGS-RO', name: 'Independent Grain Laboratory, Constanța', branch: null, city: 'Constanța', external: true, email: 'intake@grainlab.example' },
+];
+
+/** The value for the legacy `users.role` enum, which is narrower than the RBAC role list. */
+function legacyRole(u: { role: string; legacy?: string }): string {
+  return u.legacy ?? u.role;
+}
 
 const CLIENTS = [
   { branch: 'TR', name: 'Anatolia Grain Trading A.Ş.', ref: 'GAFTA-M-0000', country: 'TR', email: 'ops@anatolia-grain.example' },
@@ -153,7 +172,7 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
         `INSERT INTO users (branch_id, email, password_hash, full_name, role, locale)
          VALUES ($1,$2,$3,$4,$5,$6)
          ON CONFLICT ((lower(email))) DO NOTHING`,
-        [branchId.get(u.branch), u.email, hash, u.name, u.role, u.locale],
+        [branchId.get(u.branch), u.email, hash, u.name, legacyRole(u), u.locale],
       );
       // Every demo account carries its role explicitly. Without this a user would fall back
       // to whichever role happens to declare their legacy value first, which is fragile.
@@ -201,6 +220,19 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
         scheduledStart: new Date(Date.now() + 86400000).toISOString(),
         createdBy: supervisor!.id,
       });
+    }
+
+    // Demo laboratories. The migration deliberately creates none — nothing in a real database
+    // says which offices run one — so these exist only where demo data is wanted, and a real
+    // installation enters its own through the administration screens.
+    for (const lab of LABORATORIES) {
+      const branch = lab.branch ? branchId.get(lab.branch) : null;
+      await tx.exec(
+        `INSERT INTO laboratories (branch_id, country_id, code, name, city, is_external, contact_email)
+         SELECT $1::uuid, (SELECT country_id FROM branches WHERE id = $1::uuid), $2, $3, $4, $5, $6
+         WHERE NOT EXISTS (SELECT 1 FROM laboratories WHERE code = $2)`,
+        [branch ?? null, lab.code, lab.name, lab.city, lab.external, lab.email],
+      );
     }
 
     // Countries are created by the branch trigger with the ISO code as their name; give the

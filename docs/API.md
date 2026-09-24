@@ -2,7 +2,7 @@
 
 REST поверх `/api`. Все эндпоинты, кроме явно публичных, требуют заголовок `Authorization: Bearer <access token>`.
 
-Актуально после PHASE 4.
+Актуально после PHASE 5.
 
 ---
 
@@ -14,7 +14,7 @@ REST поверх `/api`. Все эндпоинты, кроме явно пуб�
 { "rows": [ ... ], "total": 942, "limit": 50, "offset": 0 }
 ```
 
-Так отвечают `/jobs`, `/inspections`, `/clients`, `/contracts`, `/admin/audit`. Остальные списки короткие по своей природе (контакты клиента, исполнители заявки, справочники) и отдаются массивом.
+Так отвечают `/jobs`, `/inspections`, `/samples`, `/clients`, `/contracts`, `/admin/audit`. Остальные списки короткие по своей природе (контакты клиента, исполнители заявки, справочники) и отдаются массивом.
 
 **Ошибка** — всегда одинаковой формы:
 
@@ -163,6 +163,67 @@ PATCH /api/inspections/{id}/checklist
 | `from`, `to` | период по плановой дате |
 | `search` | номер инспекции, номер заявки, клиент, место, город |
 | `sort` | `inspectionNumber`, `scheduledStart`, `status`, `updatedAt` |
+| `dir` | `asc` \| `desc` |
+| `limit` (≤200), `offset` | страница |
+
+---
+
+## Пробы и цепочка хранения
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/samples` | `sample.read` | список: пагинация, поиск, фильтры, сортировка |
+| GET | `/samples/laboratories` | `sample.read` | куда можно отправить пробу |
+| POST | `/samples/laboratories` | `org.manage` | добавить лабораторию |
+| GET | `/samples/:id` | `sample.read` | карточка + `actions` — что этот пользователь может сделать сейчас |
+| POST | `/samples` | `sample.create` | запись пробы: `{ inspectionId \| jobId, sampleType?, commodity?, quantity?, unit?, … }` |
+| PATCH | `/samples/:id` | `sample.update` | изменение; `version` для защиты от перезаписи |
+| **POST** | **`/samples/:id/transitions`** | зависит от действия | **единственный вход для смены статуса** |
+| GET | `/samples/:id/history` | `sample.read` | история статусов |
+| GET | `/samples/:id/custody` | `sample.read_custody` | цепочка ответственного хранения |
+| **POST** | **`/samples/:id/custody`** | `sample.update` | **передача из рук в руки** (статус не меняется) |
+| POST | `/samples/:id/custody/:eventId/corrections` | `sample.update` | исправление записи новой записью |
+| GET/POST | `/samples/:id/attachments` | `sample.read` / `sample.add_attachment` | фото и документы (multipart) |
+| GET | `/samples/:id/label` | `sample.print_label` | данные этикетки и QR |
+| DELETE | `/samples/:id` | `sample.archive` | в архив (не удаление) |
+| POST | `/samples/:id/restore` | `sample.restore` | вернуть из архива |
+
+Для события цепочки хранения **нет** `PATCH` и **нет** `DELETE` — и у роли базы данных нет таких прав. Это не забытая функциональность, а суть модуля.
+
+### Смена статуса
+
+```http
+POST /api/samples/{id}/transitions
+{ "action": "dispatch", "destinationLaboratoryId": "…", "courier": "Aras Kargo",
+  "trackingReference": "AK-772311", "packageCount": 1 }
+```
+
+`action` — из словаря: `collect`, `register`, `seal`, `dispatch`, `receive`, `accept`, `reject`, `return`, `hold`, `resume`, `cancel`. Причина обязательна для `hold`, `cancel`, `reject`, `return`.
+
+Каждое действие принимает поля, которые принадлежат именно ему, и они записываются вместе со статусом в одной транзакции:
+
+| Действие | Поля |
+|---|---|
+| `collect` | `location`, `condition`, `notes` |
+| `seal` | `sealNumber` (обязательно), `sealType`, `sealedBy` |
+| `dispatch` | `destinationLaboratoryId`, `courier`, `trackingReference`, `packageCount` |
+| `receive` | `sealState`, `condition`, `receivedBy`, `notes` |
+| `accept` / `reject` | `decidedBy`, `rejectionReason` (обязательна при `reject`), `notes` |
+
+Кто опломбировал, отправил, принял и решил, подставляется из текущего пользователя, если поле не передано: запись не должна оставаться пустой.
+
+### Параметры списка проб
+
+| Параметр | Значения |
+|---|---|
+| `status` | любой статус жизненного цикла |
+| `active` | `true` — всё, что не принято лабораторией и не отменено |
+| `mine` | `true` — пробы, которые я отобрал или записал |
+| `jobId`, `inspectionId`, `clientId`, `samplerId`, `commodityId`, `laboratoryId`, `branchId`, `countryId` | фильтры по связям |
+| `sampleType` | тип пробы |
+| `from`, `to` | период по дате отбора |
+| `search` | номер пробы, номер заявки, клиент, культура, **номер пломбы**, партия/лот, ссылка на контейнер |
+| `sort` | `sampleNumber`, `sampledAt`, `status`, `updatedAt` |
 | `dir` | `asc` \| `desc` |
 | `limit` (≤200), `offset` | страница |
 

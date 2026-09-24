@@ -15,6 +15,11 @@ export const PERMISSIONS = [
   'inspection.start', 'inspection.complete', 'inspection.review', 'inspection.approve',
   'inspection.cancel', 'inspection.archive', 'inspection.restore',
   'inspection.add_finding', 'inspection.add_measurement',
+  // Samples and chain of custody
+  'sample.read', 'sample.create', 'sample.update', 'sample.register', 'sample.seal',
+  'sample.dispatch', 'sample.receive', 'sample.accept_lab', 'sample.reject_lab',
+  'sample.archive', 'sample.restore', 'sample.read_custody', 'sample.add_attachment',
+  'sample.print_label',
   // CRM
   'client.read', 'client.create', 'client.update', 'client.archive',
   // Documents

@@ -25,6 +25,7 @@ import {
 import { api, blanksToNull } from '../api';
 import { useAuth } from '../auth';
 import { InspectionChecklist } from '../components/InspectionChecklist';
+import { SamplesOn } from '../components/SamplesOn';
 import {
   ActionBar,
   INSPECTION_ACTIONS_NEEDING_REASON,
@@ -34,7 +35,7 @@ import {
 } from '../components/InspectionBits';
 import { ErrorBox, Loading, PageHead, toLocalInput, fromLocalInput, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'checklist' | 'findings' | 'measurements' | 'photos' | 'team' | 'history';
+type Tab = 'overview' | 'checklist' | 'findings' | 'measurements' | 'photos' | 'samples' | 'team' | 'history';
 
 /**
  * The inspection card: everything about one piece of field work, and the only place its
@@ -116,6 +117,7 @@ export function InspectionDetailPage() {
     { key: 'findings', label: t('inspection.findings'), show: true, count: findings.data?.length },
     { key: 'measurements', label: t('inspection.measurements'), show: true, count: measurements.data?.length },
     { key: 'photos', label: t('inspection.photos'), show: true, count: x.photoCount },
+    { key: 'samples', label: t('samples.title'), show: can('sample.read') },
     { key: 'team', label: t('job.assignments'), show: true, count: assignments.data?.length },
     { key: 'history', label: t('job.history'), show: true },
   ];
@@ -179,6 +181,14 @@ export function InspectionDetailPage() {
         <Measurements inspection={x} rows={measurements.data ?? []} loading={measurements.isLoading} />
       )}
       {tab === 'photos' && <Photos inspection={x} rows={photos.data ?? []} loading={photos.isLoading} />}
+      {tab === 'samples' && (
+        <SamplesOn
+          inspectionId={x.id}
+          jobId={x.jobId}
+          jobStatus={x.status === 'cancelled' ? 'cancelled' : undefined}
+          locationHint={x.location}
+        />
+      )}
       {tab === 'team' && <Team inspection={x} rows={assignments.data ?? []} loading={assignments.isLoading} />}
       {tab === 'history' && (
         <Card title={t('job.history')}>

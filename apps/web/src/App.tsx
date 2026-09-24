@@ -10,6 +10,8 @@ import { JobFormPage } from './pages/JobFormPage';
 import { JobDetailPage } from './pages/JobDetailPage';
 import { InspectionsPage } from './pages/InspectionsPage';
 import { InspectionDetailPage } from './pages/InspectionDetailPage';
+import { SamplesPage } from './pages/SamplesPage';
+import { SampleDetailPage } from './pages/SampleDetailPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailPage } from './pages/ClientDetailPage';
 import { UsersPage } from './pages/UsersPage';
@@ -88,6 +90,8 @@ export function App() {
         <Route path="/jobs/:id/edit" element={<RequireAuth need={['job.update']}><JobFormPage /></RequireAuth>} />
         <Route path="/inspections" element={<RequireAuth need={['inspection.read']}><InspectionsPage /></RequireAuth>} />
         <Route path="/inspections/:id" element={<RequireAuth need={['inspection.read']}><InspectionDetailPage /></RequireAuth>} />
+        <Route path="/samples" element={<RequireAuth need={['sample.read']}><SamplesPage /></RequireAuth>} />
+        <Route path="/samples/:id" element={<RequireAuth need={['sample.read']}><SampleDetailPage /></RequireAuth>} />
         <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
         <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth need={['contract.read']}><ContractsPage /></RequireAuth>} />

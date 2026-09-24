@@ -70,9 +70,27 @@ describe('branch isolation and role gating', () => {
     }
   });
 
-  it('gives an inspector only their own jobs', async () => {
+  it('gives an inspector only the jobs they are actually on', async () => {
     const jobs = (await as(app, inspectorTr).get('/api/jobs').expect(200)).body.rows;
-    for (const job of jobs) expect(job.assignedInspectorId).toBe(inspectorTr.user.id);
+    expect(jobs.length).toBeGreaterThan(0);
+
+    for (const job of jobs as { id: string; assignedInspectorId: string | null }[]) {
+      if (job.assignedInspectorId === inspectorTr.user.id) continue;
+
+      // Since PHASE 4 an inspector is also on a job through its inspections: being sent to
+      // one inspection of a nomination is what gives them the job it belongs to.
+      const assignments = (await as(app, inspectorTr).get(`/api/jobs/${job.id}/assignments`).expect(200)).body;
+      const onJob = assignments.some((a: { userId: string }) => a.userId === inspectorTr.user.id);
+
+      const inspections = (await as(app, inspectorTr).get(`/api/inspections?jobId=${job.id}`).expect(200)).body;
+      const onInspection = inspections.rows.some(
+        (i: { leadInspectorId: string | null; assignees?: { userId: string }[] }) =>
+          i.leadInspectorId === inspectorTr.user.id ||
+          (i.assignees ?? []).some((a) => a.userId === inspectorTr.user.id),
+      );
+
+      expect(onJob || onInspection).toBe(true);
+    }
   });
 
   it('keeps finance away from operational roles', async () => {

@@ -4,6 +4,7 @@
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
     "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
     "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
+    "samples": "Пробы", "mySamples": "Мои пробы",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль."
   },
@@ -104,6 +105,85 @@
   "checklistSection": {
     "general": "Общее", "documents": "Документы", "vessel": "Судно / объект", "cargo": "Груз",
     "operations": "Операции", "observations": "Наблюдения"
+  },
+  "sampleStatus": {
+    "draft": "Черновик", "collected": "Отобрана", "registered": "Зарегистрирована", "sealed": "Опломбирована",
+    "dispatched": "Отправлена", "received_by_lab": "Получена лабораторией",
+    "accepted_by_lab": "Принята лабораторией", "rejected_by_lab": "Отклонена лабораторией",
+    "on_hold": "Приостановлена", "cancelled": "Отменена"
+  },
+  "sampleAction": {
+    "collect": "Отобрать", "register": "Зарегистрировать", "seal": "Опломбировать", "dispatch": "Отправить",
+    "receive": "Принять поступление", "accept": "Принять", "reject": "Отклонить", "return": "Вернуть в офис",
+    "hold": "Приостановить", "resume": "Возобновить", "cancel": "Отменить пробу"
+  },
+  "sampleType": {
+    "representative": "Представительная", "composite": "Объединённая", "increment": "Точечная",
+    "retention": "Архивная", "reference": "Эталонная", "control": "Контрольная",
+    "counter_sample": "Контрпроба", "other": "Прочее"
+  },
+  "samplingMethod": {
+    "manual": "Ручной", "automatic": "Автоматический", "systematic": "Систематический", "random": "Случайный",
+    "composite": "Объединение", "incremental": "Точечный", "other": "Прочее"
+  },
+  "sealCondition": { "intact": "Цела", "damaged": "Повреждена", "broken": "Нарушена", "missing": "Отсутствует" },
+  "sampleCondition": {
+    "good": "Хорошее", "damaged": "Повреждена", "leaking": "Просыпь / течь", "contaminated": "Загрязнена",
+    "insufficient": "Недостаточно", "other": "Прочее"
+  },
+  "rejectionReason": {
+    "damaged": "Повреждение", "broken_seal": "Нарушена пломба", "insufficient_quantity": "Недостаточное количество",
+    "wrong_sample": "Не та проба", "missing_documentation": "Нет документов",
+    "container_damage": "Повреждена тара", "other": "Прочее"
+  },
+  "custodyEvent": {
+    "collected": "Отобрана", "registered": "Зарегистрирована", "sealed": "Опломбирована", "handover": "Передана",
+    "dispatched": "Отправлена", "in_transit": "В пути", "received": "Получена",
+    "lab_received": "Поступила в лабораторию", "lab_accepted": "Принята лабораторией",
+    "lab_rejected": "Отклонена лабораторией", "returned": "Возвращена", "archived": "В архиве",
+    "correction": "Исправление"
+  },
+  "custody": {
+    "title": "Цепочка ответственного хранения",
+    "hint": "Каждая передача добавляется и никогда не редактируется. Ошибку исправляет новая запись, и обе остаются в истории.",
+    "empty": "Записей пока нет",
+    "handover": "Записать передачу", "record": "Записать", "recordedBy": "Записал: {{name}}",
+    "fromTo": "{{from}} → {{to}}", "to": "Кому: {{to}}", "from": "От кого: {{from}}",
+    "toPerson": "Передано кому", "toLocation": "Место",
+    "correct": "Исправить «{{event}}»",
+    "correctionHint": "Исходная запись останется в истории; рядом появится исправление.",
+    "whatWasWrong": "Что было неверно?", "recordCorrection": "Записать исправление", "amended": "исправлено"
+  },
+  "samples": {
+    "title": "Пробы", "myTitle": "Мои пробы", "all": "Все", "mine": "Мои",
+    "search": "Номер, заявка, контрагент, культура, пломба, партия…",
+    "found": "Проб: {{count}}", "empty": "Пробы не найдены", "number": "№ пробы",
+    "new": "Новая проба", "create": "Записать пробу", "noneHere": "Проб здесь пока нет",
+    "view": {
+      "all": "Все", "today": "Отобраны сегодня", "awaiting_registration": "Ждут регистрации",
+      "awaiting_dispatch": "Ждут отправки", "in_transit": "В пути", "rejected": "Отклонены"
+    }
+  },
+  "sample": {
+    "type": "Тип пробы", "method": "Метод отбора", "quantity": "Количество", "unit": "Ед. изм.",
+    "container": "Тара", "batch": "№ партии / лота", "containerRef": "Ссылка на контейнер",
+    "seal": "Пломба", "sealNumber": "Номер пломбы", "sealType": "Тип пломбы", "noSeal": "Без пломбы",
+    "sealLater": "Можно заполнить при опломбировании",
+    "sealCondition": "Состояние пломбы", "condition": "Состояние пробы",
+    "sealedBy": "Опломбировал", "sealedAt": "Опломбирована",
+    "sampledBy": "Отобрал", "sampledAt": "Отобрана", "conditionNotes": "Примечания к состоянию",
+    "destination": "Лаборатория назначения", "chooseLab": "Выберите лабораторию…", "external": "внешняя",
+    "dispatchedAt": "Отправлена", "courier": "Перевозчик", "tracking": "Трек-номер",
+    "packages": "Мест", "receivedAt": "Получена", "custodian": "Сейчас у",
+    "group": "Набор проб", "reason": "Причина", "rejectionReason": "Причина отклонения",
+    "attachments": "Фото и документы", "noAttachments": "Вложений пока нет",
+    "printLabel": "Печать этикетки",
+    "commodityFree": "Нет в списке — введите вручную", "commodityText": "Культура",
+    "acceptedBy": "Принята: {{name}}, {{at}}",
+    "rejectedBy": "Отклонена ({{name}}): {{reason}}",
+    "laboratory": "Лаборатория",
+    "labPending": "Отправлена в «{{name}}». Результаты анализов появятся с модулем лаборатории.",
+    "labNone": "Лаборатория пока не выбрана."
   },
   "inspections": {
     "title": "Инспекции", "myTitle": "Мои инспекции", "all": "Все", "mine": "Мои",

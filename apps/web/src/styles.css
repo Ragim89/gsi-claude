@@ -563,3 +563,38 @@ td.negative { color: var(--gsi-color-danger); }
   .photo, .photo--lg { width: 104px; height: 104px; }
   .check-item__head { align-items: flex-start; }
 }
+
+/* ---- Samples: custody timeline, amended entries, documents -------------------------- */
+.timeline__dot--custody-collected,
+.timeline__dot--custody-registered { border-color: var(--gsi-color-accent); }
+.timeline__dot--custody-sealed { border-color: var(--gsi-color-success); }
+.timeline__dot--custody-handover,
+.timeline__dot--custody-in_transit { border-color: var(--gsi-color-border-strong); }
+.timeline__dot--custody-dispatched { border-color: var(--gsi-color-accent); }
+.timeline__dot--custody-received,
+.timeline__dot--custody-lab_received { border-color: var(--gsi-color-warning); }
+.timeline__dot--custody-lab_accepted { border-color: var(--gsi-color-success); }
+.timeline__dot--custody-lab_rejected,
+.timeline__dot--custody-returned { border-color: var(--gsi-color-danger); }
+.timeline__dot--custody-correction { border-color: var(--gsi-color-warning); border-style: dashed; }
+
+/* Business status dots reuse the job colours; the ones only samples have are added here. */
+.timeline__dot--collected, .timeline__dot--registered { border-color: var(--gsi-color-accent); }
+.timeline__dot--sealed { border-color: var(--gsi-color-success); }
+.timeline__dot--dispatched { border-color: var(--gsi-color-accent); }
+.timeline__dot--received_by_lab { border-color: var(--gsi-color-warning); }
+.timeline__dot--accepted_by_lab { border-color: var(--gsi-color-success); }
+.timeline__dot--rejected_by_lab { border-color: var(--gsi-color-danger); }
+
+/*
+ * A corrected entry is never removed: it stays on the timeline, faded and struck through, with
+ * the correction beneath it. Deleting it would be the one thing a chain of custody must not do.
+ */
+.timeline__item--amended .timeline__body > .timeline__head strong { text-decoration: line-through; }
+.timeline__item--amended { opacity: 0.72; }
+
+.photo__doc {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  background: var(--gsi-color-background); color: var(--gsi-color-text-muted);
+  font-weight: var(--gsi-font-weight-bold); font-size: var(--gsi-font-size-sm);
+}

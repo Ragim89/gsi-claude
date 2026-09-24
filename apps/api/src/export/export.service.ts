@@ -98,6 +98,66 @@ export class ExportService {
       ],
     },
 
+    samples: {
+      permission: 'sample.read',
+      load: (tx, f) =>
+        tx.many(
+          `SELECT s.sample_number, j.job_number, i.inspection_number, b.code AS branch, c.name AS client,
+                  cm.name AS commodity_name, s.commodity AS commodity_text,
+                  s.quantity::float8 AS quantity, s.unit,
+                  s.sample_type::text AS sample_type, s.sampling_method::text AS sampling_method,
+                  s.seal_number, s.batch_lot_number, s.container_reference, s.location,
+                  s.status::text, l.name AS destination,
+                  u.full_name AS sampler,
+                  to_char(s.sampled_at, 'YYYY-MM-DD') AS sampled,
+                  to_char(s.dispatched_at, 'YYYY-MM-DD') AS dispatched,
+                  to_char(s.received_at, 'YYYY-MM-DD') AS received
+           FROM samples s
+           JOIN branches b ON b.id = s.branch_id
+           JOIN inspection_jobs j ON j.id = s.job_id
+           JOIN clients c ON c.id = s.client_id
+           LEFT JOIN inspections i ON i.id = s.inspection_id
+           LEFT JOIN commodities cm ON cm.id = s.commodity_id
+           LEFT JOIN laboratories l ON l.id = s.destination_laboratory_id
+           LEFT JOIN users u ON u.id = s.sampled_by
+           WHERE s.deleted_at IS NULL
+             AND ($1::uuid IS NULL OR s.branch_id = $1::uuid)
+             AND ($2::date IS NULL OR COALESCE(s.sampled_at, s.created_at)::date >= $2::date)
+             AND ($3::date IS NULL OR COALESCE(s.sampled_at, s.created_at)::date <= $3::date)
+             AND ($4::uuid IS NULL OR s.client_id = $4::uuid)
+             AND ($5::uuid IS NULL OR s.commodity_id = $5::uuid)
+           ORDER BY COALESCE(s.sampled_at, s.created_at) DESC
+           LIMIT 20000`,
+          [f.branchId ?? null, f.from ?? null, f.to ?? null, f.clientId ?? null, f.commodityId ?? null],
+        ),
+      columns: (locale) => [
+        col('Sample no.', 'sample_number'),
+        col('Job no.', 'job_number'),
+        col('Inspection no.', 'inspection_number'),
+        col('Branch', 'branch'),
+        col('Client', 'client'),
+        {
+          header: 'Commodity',
+          value: (r) =>
+            r.commodity_name ? localize(r.commodity_name as never, locale) : ((r.commodity_text as string) ?? ''),
+        },
+        col('Quantity', 'quantity'),
+        col('Unit', 'unit'),
+        col('Sample type', 'sample_type'),
+        col('Sampling method', 'sampling_method'),
+        col('Seal no.', 'seal_number'),
+        col('Batch / lot', 'batch_lot_number'),
+        col('Container ref.', 'container_reference'),
+        col('Location', 'location'),
+        col('Status', 'status'),
+        col('Destination', 'destination'),
+        col('Sampler', 'sampler'),
+        col('Sampled', 'sampled'),
+        col('Dispatched', 'dispatched'),
+        col('Received', 'received'),
+      ],
+    },
+
     clients: {
       permission: 'client.read',
       load: (tx, f) =>

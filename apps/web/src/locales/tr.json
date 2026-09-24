@@ -4,6 +4,7 @@
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
+    "samples": "Numuneler", "mySamples": "Numunelerim",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
   },
@@ -104,6 +105,85 @@
   "checklistSection": {
     "general": "Genel", "documents": "Belgeler", "vessel": "Gemi / nesne", "cargo": "Yük",
     "operations": "Operasyonlar", "observations": "Gözlemler"
+  },
+  "sampleStatus": {
+    "draft": "Taslak", "collected": "Alındı", "registered": "Kaydedildi", "sealed": "Mühürlendi",
+    "dispatched": "Gönderildi", "received_by_lab": "Laboratuvara ulaştı",
+    "accepted_by_lab": "Laboratuvar kabul etti", "rejected_by_lab": "Laboratuvar reddetti",
+    "on_hold": "Beklemede", "cancelled": "İptal edildi"
+  },
+  "sampleAction": {
+    "collect": "Numune al", "register": "Kaydet", "seal": "Mühürle", "dispatch": "Gönder",
+    "receive": "Teslim al", "accept": "Kabul et", "reject": "Reddet", "return": "Ofise iade et",
+    "hold": "Beklemeye al", "resume": "Devam et", "cancel": "Numuneyi iptal et"
+  },
+  "sampleType": {
+    "representative": "Temsili", "composite": "Kompozit", "increment": "Ara numune",
+    "retention": "Şahit numune", "reference": "Referans", "control": "Kontrol",
+    "counter_sample": "Karşı numune", "other": "Diğer"
+  },
+  "samplingMethod": {
+    "manual": "Manuel", "automatic": "Otomatik", "systematic": "Sistematik", "random": "Rastgele",
+    "composite": "Kompozit", "incremental": "Ara numuneli", "other": "Diğer"
+  },
+  "sealCondition": { "intact": "Sağlam", "damaged": "Hasarlı", "broken": "Kırık", "missing": "Yok" },
+  "sampleCondition": {
+    "good": "İyi", "damaged": "Hasarlı", "leaking": "Sızıntılı", "contaminated": "Bulaşmış",
+    "insufficient": "Yetersiz", "other": "Diğer"
+  },
+  "rejectionReason": {
+    "damaged": "Hasar", "broken_seal": "Mühür kırık", "insufficient_quantity": "Yetersiz miktar",
+    "wrong_sample": "Yanlış numune", "missing_documentation": "Belge eksik",
+    "container_damage": "Kap hasarlı", "other": "Diğer"
+  },
+  "custodyEvent": {
+    "collected": "Alındı", "registered": "Kaydedildi", "sealed": "Mühürlendi", "handover": "Teslim edildi",
+    "dispatched": "Gönderildi", "in_transit": "Yolda", "received": "Teslim alındı",
+    "lab_received": "Laboratuvara ulaştı", "lab_accepted": "Laboratuvar kabul etti",
+    "lab_rejected": "Laboratuvar reddetti", "returned": "İade edildi", "archived": "Arşivlendi",
+    "correction": "Düzeltme"
+  },
+  "custody": {
+    "title": "Zilyetlik zinciri",
+    "hint": "Her teslim kayda eklenir, hiçbiri düzenlenmez. Hata, yeni bir düzeltme kaydıyla giderilir; her iki kayıt da kalır.",
+    "empty": "Henüz kayıt yok",
+    "handover": "Teslim kaydet", "record": "Kaydet", "recordedBy": "Kaydeden: {{name}}",
+    "fromTo": "{{from}} → {{to}}", "to": "Kime: {{to}}", "from": "Kimden: {{from}}",
+    "toPerson": "Teslim edilen kişi", "toLocation": "Konum",
+    "correct": "«{{event}}» kaydını düzelt",
+    "correctionHint": "Asıl kayıt kayıtta kalır; yanına bir düzeltme eklenir.",
+    "whatWasWrong": "Neyi yanlıştı?", "recordCorrection": "Düzeltmeyi kaydet", "amended": "düzeltildi"
+  },
+  "samples": {
+    "title": "Numuneler", "myTitle": "Numunelerim", "all": "Tümü", "mine": "Benim",
+    "search": "Numara, iş, müşteri, ürün, mühür, parti…",
+    "found": "{{count}} numune", "empty": "Numune bulunamadı", "number": "Numune no.",
+    "new": "Yeni numune", "create": "Numuneyi kaydet", "noneHere": "Burada henüz numune yok",
+    "view": {
+      "all": "Tümü", "today": "Bugün alınan", "awaiting_registration": "Kayıt bekleyen",
+      "awaiting_dispatch": "Gönderim bekleyen", "in_transit": "Yolda", "rejected": "Reddedilen"
+    }
+  },
+  "sample": {
+    "type": "Numune türü", "method": "Numune alma yöntemi", "quantity": "Miktar", "unit": "Birim",
+    "container": "Kap", "batch": "Parti / lot no.", "containerRef": "Konteyner referansı",
+    "seal": "Mühür", "sealNumber": "Mühür numarası", "sealType": "Mühür tipi", "noSeal": "Mühürsüz",
+    "sealLater": "Mühürleme sırasında da girilebilir",
+    "sealCondition": "Mühür durumu", "condition": "Numune durumu",
+    "sealedBy": "Mühürleyen", "sealedAt": "Mühürlenme",
+    "sampledBy": "Alan", "sampledAt": "Alınma", "conditionNotes": "Durum notları",
+    "destination": "Hedef laboratuvar", "chooseLab": "Laboratuvar seçin…", "external": "harici",
+    "dispatchedAt": "Gönderim", "courier": "Kurye", "tracking": "Takip numarası",
+    "packages": "Koli", "receivedAt": "Teslim", "custodian": "Şu anda",
+    "group": "Numune seti", "reason": "Gerekçe", "rejectionReason": "Ret gerekçesi",
+    "attachments": "Fotoğraf ve belgeler", "noAttachments": "Henüz ek yok",
+    "printLabel": "Etiket yazdır",
+    "commodityFree": "Listede yok — elle yazın", "commodityText": "Ürün",
+    "acceptedBy": "{{at}} tarihinde {{name}} kabul etti",
+    "rejectedBy": "{{name}} reddetti: {{reason}}",
+    "laboratory": "Laboratuvar",
+    "labPending": "{{name}} laboratuvarına gönderildi. Analiz sonuçları laboratuvar modülüyle gelecek.",
+    "labNone": "Henüz laboratuvar seçilmedi."
   },
   "inspections": {
     "title": "Muayeneler", "myTitle": "Muayenelerim", "all": "Tümü", "mine": "Benim",

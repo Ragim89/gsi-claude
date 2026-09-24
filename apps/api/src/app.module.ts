@@ -7,6 +7,7 @@ import { AdminModule } from './admin/admin.module';
 import { CrmModule } from './crm/crm.module';
 import { OperationsModule } from './operations/operations.module';
 import { InspectionsModule } from './inspections/inspections.module';
+import { SamplesModule } from './samples/samples.module';
 import { DocumentsModule } from './documents/documents.module';
 import { FinanceModule } from './finance/finance.module';
 import { ReferenceModule } from './reference/reference.module';
@@ -37,6 +38,7 @@ import { config } from './config';
     CrmModule,
     OperationsModule,
     InspectionsModule,
+    SamplesModule,
     DocumentsModule,
     FinanceModule,
     ReferenceModule,

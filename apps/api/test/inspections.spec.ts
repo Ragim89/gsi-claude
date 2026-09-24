@@ -268,6 +268,45 @@ describe('inspection lifecycle', () => {
     expect(res.body.message).toMatch(/required checklist/i);
   });
 
+  it('counts only required items as blocking, never the optional ones', async () => {
+    const checklist = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
+    const optional = checklist.items.filter((i: { isRequired: boolean }) => !i.isRequired);
+    // The loading/discharge template marks stoppages optional: most operations have none.
+    expect(optional.length).toBeGreaterThan(0);
+
+    const unanswered = checklist.items.filter((i: { result: string | null }) => !i.result);
+    const requiredUnanswered = unanswered.filter((i: { isRequired: boolean }) => i.isRequired);
+    expect(checklist.requiredRemaining).toBe(requiredUnanswered.length);
+    expect(checklist.requiredRemaining).toBeLessThan(unanswered.length);
+  });
+
+  it('completes with an optional item deliberately left blank', async () => {
+    const checklist = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
+    const required = checklist.items
+      .filter((i: { result: string | null; isRequired: boolean }) => !i.result && i.isRequired)
+      .map((i: { id: string }) => ({ itemId: i.id, result: 'ok' }));
+    const optional = checklist.items.filter((i: { isRequired: boolean }) => !i.isRequired);
+
+    await as(app, inspector).patch(`/api/inspections/${inspectionId}/checklist`).send({ answers: required }).expect(200);
+
+    const ready = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
+    expect(ready.requiredRemaining).toBe(0);
+    // Still genuinely unanswered, and completion goes through anyway.
+    expect(ready.items.find((i: { id: string }) => i.id === optional[0].id).result).toBeNull();
+
+    const res = await as(app, inspector)
+      .post(`/api/inspections/${inspectionId}/transitions`)
+      .send({ action: 'complete' })
+      .expect(200);
+    expect(res.body.status).toBe('completed');
+
+    // Put it back into progress for the rest of the scenario.
+    await as(app, supervisor)
+      .post(`/api/inspections/${inspectionId}/transitions`)
+      .send({ action: 'return', reason: 'Continue the walkthrough' })
+      .expect(200);
+  });
+
   it('completes once every required item has an answer', async () => {
     const checklist = (await as(app, inspector).get(`/api/inspections/${inspectionId}/checklist`).expect(200)).body;
     const rest = checklist.items
@@ -414,13 +453,15 @@ describe('inspection lifecycle', () => {
     expect(path).toEqual([
       'scheduled',
       'in_progress',
+      'completed', // completed with an optional item left blank
+      'in_progress', // returned to carry on the walkthrough
       'completed',
       'under_review',
-      'in_progress',
+      'in_progress', // returned for rework
       'completed',
       'under_review',
       'approved',
-      'in_progress',
+      'in_progress', // reopened
     ]);
 
     const reopen = history[history.length - 1];
