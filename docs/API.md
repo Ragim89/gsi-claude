@@ -231,6 +231,81 @@ POST /api/samples/{id}/transitions
 
 ---
 
+## Лаборатория
+
+Справочники — что можно измерить, чем и до каких пределов:
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/lab/units` | `lab.method.read` | единицы измерения |
+| GET | `/lab/tests` | `lab.method.read` | каталог анализов (`?includeInactive=true`) |
+| POST/PATCH | `/lab/tests`, `/lab/tests/:id` | `lab.method.manage` | завести или изменить анализ |
+| GET | `/lab/methods?labTestId=…` | `lab.method.read` | методики анализа |
+| POST/PATCH | `/lab/methods`, `/lab/methods/:id` | `lab.method.manage` | завести или изменить методику |
+| GET | `/lab/specifications` | `lab.specification.read` | нормы; фильтры `labTestId`, `commodityId`, `clientId`, `contractId` |
+| POST/PATCH | `/lab/specifications`, `/lab/specifications/:id` | `lab.specification.manage` | завести или изменить норму |
+| GET | `/lab/instruments?laboratoryId=…` | `lab.instrument.read` | приборы и сроки поверки |
+| POST/PATCH | `/lab/instruments`, `/lab/instruments/:id` | `lab.instrument.manage` | завести или изменить прибор |
+| GET | `/lab/panels/:commodityId?sampleId=…` | `lab.test.read` | стандартный набор культуры и что из него уже запрошено |
+
+Версия методики не передаётся и не принимается: её поднимает триггер базы, когда меняется что-то существенное — название, стандарт, единица, пределы, область аккредитации. Правка описания версию не двигает.
+
+Работа лаборатории:
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/lab/dashboard` | `lab.test.read` | счётчики очереди; каждый — запрос по тем же строкам |
+| GET | `/lab/requests` | `lab.test.read` | рабочая очередь: пагинация, поиск, фильтры, сортировка |
+| GET | `/lab/requests/:id` | `lab.test.read` | карточка + `actions` — что можно сделать сейчас |
+| POST | `/lab/requests` | `lab.test.request` | запросить анализы: `{ sampleId, usePanel: true }` либо `{ sampleId, tests: [{ labTestId, testMethodId }] }` |
+| GET | `/lab/requests/:id/history` | `lab.test.read` | история статусов |
+| GET | `/lab/requests/:id/revisions` | `lab.test.read` | все ревизии результата, включая заменённые |
+| POST | `/lab/requests/:id/assignment` | `lab.test.assign` | назначить исполнителя |
+| **POST** | **`/lab/requests/:id/transitions`** | зависит от действия | `start`, `hold`, `resume`, `reject`, `cancel` |
+| PATCH | `/lab/requests/:id/result` | `lab.result.enter` | сохранить черновик результата |
+| POST | `/lab/requests/:id/result/submit` | `lab.result.submit` | сдать работу |
+| POST | `/lab/requests/:id/result/review` | `lab.result.review` | техническая проверка (подпись, не смена статуса) |
+| POST | `/lab/requests/:id/result/return` | `lab.result.review` | вернуть исполнителю с причиной |
+| POST | `/lab/requests/:id/result/approve` | `lab.result.approve` | утвердить |
+| POST | `/lab/requests/:id/result/release` | `lab.result.release` | выпустить |
+| POST | `/lab/requests/:id/result/amendments` | `lab.result.amend` | ревизия утверждённого результата (причина обязательна) |
+| GET | `/lab/released?jobId=…\|sampleId=…` | `lab.test.read` | **только выпущенные** результаты — единственная дверь для отчётов |
+
+`PATCH` и `DELETE` для `test_results` не существует: утверждённый результат не правят, его заменяет новая ревизия, а предыдущая остаётся ровно такой, какой её подписали.
+
+Численный результат передаётся **строкой**: `{ "numericValue": "12.40" }`. Через `JSON.parse` и `double precision` 12.40 перестало бы быть 12.40 ещё до записи.
+
+### Запрос анализов
+
+```http
+POST /api/lab/requests
+{ "sampleId": "…", "usePanel": true, "priority": "high", "dueAt": "2026-12-31T12:00:00.000Z" }
+→ 201 { "created": [ … ], "skipped": 0 }
+```
+
+Пробу должна была принять лаборатория (`accepted_by_lab`) — иначе 409. Повторный запрос того же анализа той же методикой — тоже 409, если только не передан `skipDuplicates: true`; тогда уже запрошенное просто пропускается. Норма находится **в момент запроса** и записывается в `specification_id`.
+
+### Параметры рабочей очереди
+
+| Параметр | Значения |
+|---|---|
+| `status` | любой статус жизненного цикла анализа |
+| `active` | `true` — всё, за что лаборатория ещё должна ответ |
+| `mine` | `true` — назначенное мне |
+| `unassigned` | `true` — без исполнителя |
+| `reviewed` | `true` \| `false` — есть ли у действующей ревизии техническая проверка; это и отличает «ждут проверки» от «ждут утверждения» |
+| `overdue` | `true` — срок прошёл, ответа нет |
+| `outOfSpec` | `true` — действующая ревизия вне нормы |
+| `sampleId`, `jobId`, `clientId`, `laboratoryId`, `labTestId`, `testMethodId`, `analystId`, `commodityId`, `branchId` | фильтры по связям |
+| `priority` | `low` \| `normal` \| `high` \| `urgent` |
+| `from`, `to` | период по дате запроса |
+| `search` | номер пробы, номер заявки, клиент, код и название анализа, исполнитель |
+| `sort` | `requestedAt`, `dueAt`, `priority`, `status`, `updatedAt` |
+| `dir` | `asc` \| `desc` |
+| `limit` (≤200), `offset` | страница |
+
+---
+
 ## CRM
 
 | Метод | Путь | Право |

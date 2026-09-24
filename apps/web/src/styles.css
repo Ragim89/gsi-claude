@@ -601,3 +601,33 @@ td.negative { color: var(--gsi-color-danger); }
 
 /* A closed laboratory stays on the administration list, quietly. */
 .is-muted-row td { opacity: 0.6; }
+
+/* ---- Laboratory ------------------------------------------------------------------- */
+
+/*
+ * The laboratory tiles are the dashboard and the filter at once: each one counts rows the
+ * queue beneath can show, so clicking a number never leads to a different set of facts.
+ */
+.stat--button {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  text-align: start; cursor: pointer; font: inherit;
+}
+.stat--button:hover { border-color: var(--gsi-color-primary); }
+.stat--on { border-color: var(--gsi-color-primary); box-shadow: 0 0 0 1px var(--gsi-color-primary) inset; }
+
+/* The measured value is the point of the screen, so it is printed at the size of one. */
+.result-value { font-size: 22px; font-weight: var(--gsi-font-weight-bold); }
+.overdue { color: var(--gsi-color-danger); font-size: var(--gsi-font-size-xs); }
+
+/* A superseded revision stays readable but is plainly no longer the answer. */
+.row--superseded td { opacity: 0.6; }
+
+/* Laboratory status dots, in the colours the badges already use. */
+.timeline__dot--requested { border-color: var(--gsi-color-border-strong); }
+.timeline__dot--assigned { border-color: var(--gsi-color-accent); }
+.timeline__dot--result_entered { border-color: var(--gsi-color-accent); }
+.timeline__dot--released { border-color: var(--gsi-color-success); }
+.timeline__dot--rejected { border-color: var(--gsi-color-danger); }
+
+/* The test whose methods are shown beside the catalogue list. */
+.row--selected td { background: var(--gsi-color-background); font-weight: var(--gsi-font-weight-bold); }

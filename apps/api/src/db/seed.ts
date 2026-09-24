@@ -8,6 +8,7 @@ import { Client } from 'pg';
 import { config } from '../config';
 import { wrapClient } from './db.service';
 import { seedInspection } from './seed-inspection';
+import { seedLaboratory } from './seed-laboratory';
 import { seedFinance, seedFxRates } from './seed-finance';
 import { seedReference } from './seed-reference';
 import { seedAssets, seedDepreciation } from './seed-assets';
@@ -77,6 +78,8 @@ const USERS = [
   // actually grants anything, and the two stopped being the same list at PHASE 1.
   { email: 'sampler.tr@gsi.local', name: 'Burak Şahin', role: 'sampler', legacy: 'inspector', branch: 'TR', locale: 'tr' },
   { email: 'lab.tr@gsi.local', name: 'Zeynep Arslan', role: 'lab_manager', legacy: 'lab_technician', branch: 'TR', locale: 'tr' },
+  { email: 'analyst.tr@gsi.local', name: 'Emre Doğan', role: 'lab_analyst', legacy: 'lab_technician', branch: 'TR', locale: 'tr' },
+  { email: 'analyst2.tr@gsi.local', name: 'Selin Aydın', role: 'lab_analyst', legacy: 'lab_technician', branch: 'TR', locale: 'tr' },
   { email: 'supervisor.ro@gsi.local', name: 'Andrei Popescu', role: 'supervisor', branch: 'RO', locale: 'en' },
   { email: 'inspector.ro@gsi.local', name: 'Ioana Ionescu', role: 'inspector', branch: 'RO', locale: 'en' },
   { email: 'finance.ro@gsi.local', name: 'Elena Marin', role: 'finance_controller', branch: 'RO', locale: 'en' },
@@ -261,6 +264,10 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
 
     // Commodities and ports: the references every filter and report works on.
     await seedReference(client);
+
+    // Laboratory methods, specifications and instruments. It runs after the reference data
+    // because a commodity-level specification needs its commodity to exist first.
+    await seedLaboratory(tx);
 
     // Exchange rates are needed by every posting, demo volume or not.
     await seedFxRates(client);

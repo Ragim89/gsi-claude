@@ -9,3 +9,4 @@ export * from './crm';
 export * from './job-workflow';
 export * from './inspections';
 export * from './samples';
+export * from './laboratory';

@@ -21,6 +21,7 @@ import {
 } from '@gsi/shared-types';
 import { api, blanksToNull } from '../api';
 import { useAuth } from '../auth';
+import { LabOnSample } from '../components/LabOn';
 import {
   CustodyTimeline,
   SAMPLE_ACTIONS_NEEDING_REASON,
@@ -32,7 +33,7 @@ import {
 } from '../components/SampleBits';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
-type Tab = 'overview' | 'custody' | 'attachments' | 'history';
+type Tab = 'overview' | 'laboratory' | 'custody' | 'attachments' | 'history';
 
 /** Everything a status move may carry; only the fields the chosen move needs are shown. */
 type MoveForm = {
@@ -160,6 +161,7 @@ export function SampleDetailPage() {
 
   const tabs: { key: Tab; label: string; show: boolean; count?: number }[] = [
     { key: 'overview', label: t('job.details'), show: true },
+    { key: 'laboratory', label: t('lab.title'), show: can('lab.test.read') },
     { key: 'custody', label: t('custody.title'), show: can('sample.read_custody'), count: s.custodyEventCount },
     { key: 'attachments', label: t('sample.attachments'), show: true, count: s.attachmentCount },
     { key: 'history', label: t('job.history'), show: true },
@@ -368,15 +370,10 @@ export function SampleDetailPage() {
             </>
           ) : null}
 
-          {/* Laboratory results arrive with PHASE 6; nothing is invented here in the meantime. */}
-          <h3 className="section-title">{t('sample.laboratory')}</h3>
-          <p className="muted">
-            {s.destinationLaboratoryName
-              ? t('sample.labPending', { name: s.destinationLaboratoryName })
-              : t('sample.labNone')}
-          </p>
         </Card>
       )}
+
+      {tab === 'laboratory' && <LabOnSample sample={s} />}
 
       {tab === 'custody' && <CustodyTab sample={s} events={custody.data ?? []} loading={custody.isLoading} />}
       {tab === 'attachments' && (

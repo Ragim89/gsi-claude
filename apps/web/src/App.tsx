@@ -29,6 +29,11 @@ import { RolesPage } from './pages/RolesPage';
 import { AuditPage } from './pages/AuditPage';
 import { LaboratoriesPage } from './pages/LaboratoriesPage';
 import { ContractsPage } from './pages/ContractsPage';
+import { LabQueuePage } from './pages/LabQueuePage';
+import { LabRequestDetailPage } from './pages/LabRequestDetailPage';
+import { LabCataloguePage } from './pages/LabCataloguePage';
+import { LabSpecificationsPage } from './pages/LabSpecificationsPage';
+import { LabInstrumentsPage } from './pages/LabInstrumentsPage';
 
 /**
  * Guards a route by permission. The API and Row-Level Security enforce the same rules, so
@@ -47,9 +52,12 @@ function HomeRedirect() {
   const { user, can } = useAuth();
   // A field role opens their own inspections, not a dashboard they cannot act on.
   if (user?.scope === 'own' && can('inspection.read')) return <Navigate to="/inspections" replace />;
+  // An analyst's home is the bench, not a dashboard of work that is not theirs.
+  if (can('lab.result.enter') && !can('dashboard.read')) return <Navigate to="/lab" replace />;
   if (can('dashboard.read')) return <Navigate to="/finance" replace />;
   if (can('job.read')) return <Navigate to="/jobs" replace />;
   if (can('inspection.read')) return <Navigate to="/inspections" replace />;
+  if (can('lab.test.read')) return <Navigate to="/lab" replace />;
   if (can('client.read')) return <Navigate to="/clients" replace />;
   // An account with no permissions at all: say so plainly rather than bounce between routes.
   return <NoAccess />;
@@ -93,6 +101,11 @@ export function App() {
         <Route path="/inspections/:id" element={<RequireAuth need={['inspection.read']}><InspectionDetailPage /></RequireAuth>} />
         <Route path="/samples" element={<RequireAuth need={['sample.read']}><SamplesPage /></RequireAuth>} />
         <Route path="/samples/:id" element={<RequireAuth need={['sample.read']}><SampleDetailPage /></RequireAuth>} />
+        <Route path="/lab" element={<RequireAuth need={['lab.test.read']}><LabQueuePage /></RequireAuth>} />
+        <Route path="/lab/requests/:id" element={<RequireAuth need={['lab.test.read']}><LabRequestDetailPage /></RequireAuth>} />
+        <Route path="/lab/catalogue" element={<RequireAuth need={['lab.method.read']}><LabCataloguePage /></RequireAuth>} />
+        <Route path="/lab/specifications" element={<RequireAuth need={['lab.specification.read']}><LabSpecificationsPage /></RequireAuth>} />
+        <Route path="/lab/instruments" element={<RequireAuth need={['lab.instrument.read']}><LabInstrumentsPage /></RequireAuth>} />
         <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
         <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth need={['contract.read']}><ContractsPage /></RequireAuth>} />

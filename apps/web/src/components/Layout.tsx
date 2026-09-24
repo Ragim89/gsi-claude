@@ -33,6 +33,18 @@ export function Layout() {
           {can('sample.read') && (
             <NavLink to="/samples">{user?.scope === 'own' ? t('nav.mySamples') : t('nav.samples')}</NavLink>
           )}
+          {can('lab.test.read') && (
+            <>
+              <NavLink to="/lab" end>
+                {can('lab.result.enter') && !can('lab.test.assign') ? t('nav.myAnalyses') : t('nav.labQueue')}
+              </NavLink>
+              {can('lab.method.read') && <NavLink to="/lab/catalogue">{t('nav.labCatalogue')}</NavLink>}
+              {can('lab.specification.read') && (
+                <NavLink to="/lab/specifications">{t('nav.labSpecifications')}</NavLink>
+              )}
+              {can('lab.instrument.read') && <NavLink to="/lab/instruments">{t('nav.labInstruments')}</NavLink>}
+            </>
+          )}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
           {finance && (

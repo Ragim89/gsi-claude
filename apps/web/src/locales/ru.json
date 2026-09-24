@@ -5,6 +5,8 @@
     "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
     "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
     "samples": "Пробы", "mySamples": "Мои пробы", "laboratories": "Лаборатории",
+    "labQueue": "Лаборатория", "myAnalyses": "Мои анализы", "labCatalogue": "Каталог анализов",
+    "labSpecifications": "Нормы", "labInstruments": "Приборы",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль."
   },
@@ -191,9 +193,121 @@
     "commodityFree": "Нет в списке — введите вручную", "commodityText": "Культура",
     "acceptedBy": "Принята: {{name}}, {{at}}",
     "rejectedBy": "Отклонена ({{name}}): {{reason}}",
-    "laboratory": "Лаборатория",
-    "labPending": "Отправлена в «{{name}}». Результаты анализов появятся с модулем лаборатории.",
-    "labNone": "Лаборатория пока не выбрана."
+    "laboratory": "Лаборатория"
+  },
+  "testStatus": {
+    "requested": "Запрошен", "assigned": "Назначен", "in_progress": "Выполняется",
+    "result_entered": "Результат внесён", "under_review": "На проверке", "approved": "Утверждён",
+    "released": "Выпущен", "on_hold": "Приостановлен", "rejected": "Отклонён", "cancelled": "Отменён"
+  },
+  "testAction": {
+    "assign": "Назначить исполнителя", "start": "Начать анализ", "enter": "Внести результат",
+    "submit": "Сдать работу", "review": "Техническая проверка", "return": "Вернуть исполнителю",
+    "approve": "Утвердить", "release": "Выпустить", "amend": "Выпустить ревизию",
+    "hold": "Приостановить", "resume": "Возобновить", "reject": "Отклонить", "cancel": "Отменить"
+  },
+  "evaluation": {
+    "within_spec": "В пределах нормы", "out_of_spec": "Вне нормы", "not_evaluated": "Норма не задана"
+  },
+  "lab": {
+    "title": "Лаборатория",
+    "sub": "Анализы от рабочего места до выпущенного результата",
+    "myTitle": "Мои анализы",
+    "allWork": "Все работы", "mine": "Мои",
+    "search": "Проба, заявка, клиент или анализ",
+    "found": "Анализов: {{count}}",
+    "empty": "По этим фильтрам ничего нет",
+    "metric": {
+      "samplesAwaitingTests": "Пробы без анализов", "unassigned": "Без исполнителя", "inProgress": "Выполняются",
+      "awaitingReview": "Ждут проверки", "awaitingApproval": "Ждут утверждения",
+      "awaitingRelease": "Ждут выпуска", "overdue": "Просрочены", "outOfSpec": "Вне нормы"
+    },
+    "view": {
+      "all": "Все", "unassigned": "Без исполнителя", "in_progress": "Выполняются", "awaiting_review": "Ждут проверки",
+      "awaiting_approval": "Ждут утверждения", "awaiting_release": "Ждут выпуска", "overdue": "Просрочены",
+      "out_of_spec": "Вне нормы"
+    },
+    "test": "Анализ", "method": "Методика", "methods": "Методики", "methodUsed": "Применённая методика",
+    "laboratory": "Лаборатория", "analyst": "Исполнитель", "unassignedShort": "Не назначен",
+    "value": "Результат", "specification": "Норма", "againstSpec": "Соответствие норме",
+    "due": "Срок", "overdue": "Просрочен",
+    "result": "Результат", "revisions": "Ревизии", "revision": "Рев.", "revisionNo": "Ревизия {{n}}",
+    "current": "Действующая",
+    "revisionsNotice": "Утверждённый результат не правят. Исправление — это новая ревизия, а все предыдущие остаются такими, какими были подписаны.",
+    "amendmentReason": "Причина ревизии",
+    "analysis": "Анализ",
+    "requestedBy": "Запросил", "requestedAt": "Запрошен", "startedAt": "Начат",
+    "enteredAt": "Внесён", "submittedAt": "Сдан",
+    "reviewedBy": "Техническая проверка", "approvedBy": "Утвердил", "releasedBy": "Выпустил",
+    "reviewComment": "Замечание проверяющего",
+    "enterResult": "Внести результат", "saveResult": "Сохранить результат", "unsaved": "Есть несохранённые изменения",
+    "noValue": "Значения нет", "noResultYet": "Результат ещё не внесён",
+    "detected": "Обнаружено", "notDetected": "Не обнаружено", "pass": "Соответствует", "fail": "Не соответствует",
+    "instrument": "Прибор", "noInstrument": "Прибор не указан",
+    "calibrationOverdue": "Поверка просрочена",
+    "detectionLimit": "Предел обнаружения {{value}}",
+    "outOfSpecNotice": "Результат выходит за применимую норму ({{limits}}). Значение остаётся таким, каким его измерили; что делать дальше — решают клиент и лаборатория.",
+    "instrumentOverdueNotice": "У прибора «{{name}}» на момент измерения была просрочена поверка. Это остаётся в записи результата.",
+    "amendedBecause": "Выпускается ревизия: {{reason}}",
+    "returnedBecause": "Возвращено проверяющим: {{reason}}",
+    "handedInNotice": "Вы сдали этот результат; изменить его здесь уже нельзя.",
+    "amendHint": "Действующая ревизия сохраняется, а на рабочем месте открывается новая.",
+    "chooseAnalyst": "Выберите исполнителя",
+    "specScope": "Норма относится к",
+    "scope": {
+      "contract": "Контракт", "client": "Клиент", "commodity": "Культура", "default": "По умолчанию", "none": "Нормы нет"
+    },
+    "maxOf": "не более {{value}}", "minOf": "не менее {{value}}", "targetOf": "целевое {{value}}",
+    "catalogue": "Каталог анализов",
+    "catalogueSub": "Что можно измерить и какими методиками",
+    "tests": "Анализы", "newTest": "Новый анализ", "searchTests": "Поиск анализов", "noTests": "Анализов пока нет",
+    "code": "Код", "name": "Название", "nameEn": "Название (EN)", "nameTr": "Название (TR)", "nameRu": "Название (RU)",
+    "category": "Категория", "resultType": "Тип результата", "defaultUnit": "Единица по умолчанию", "noUnit": "Без единицы",
+    "methodsFor": "Методики — {{name}}", "newMethod": "Новая методика", "noMethods": "Методики ещё не заведены",
+    "pickTest": "Выберите анализ, чтобы увидеть его методики",
+    "standard": "Стандарт", "version": "Версия", "accreditation": "Область аккредитации",
+    "effectiveFrom": "Действует с", "retire": "Вывести из обращения", "restore": "Вернуть",
+    "description": "Описание",
+    "detectionLimitShort": "Предел обнаружения", "quantificationLimit": "Предел количественного определения",
+    "versionNotice": "Изменение предела, стандарта или единицы поднимает версию методики. Уже измеренные результаты сохраняют ту версию, по которой их измеряли.",
+    "testCategory": {
+      "physical": "Физические", "chemical": "Химические", "microbiological": "Микробиологические",
+      "contaminant": "Контаминанты", "sensory": "Органолептические", "other": "Прочее"
+    },
+    "resultTypes": {
+      "numeric": "Число", "text": "Текст", "boolean": "Обнаружено / не обнаружено",
+      "qualitative": "Качественный", "pass_fail": "Соответствует / не соответствует"
+    },
+    "specifications": "Нормы",
+    "specificationsSub": "Пределы, с которыми сравнивают результат",
+    "newSpecification": "Новая норма",
+    "specificationsFound": "Норм: {{count}}",
+    "noSpecifications": "По этим фильтрам норм нет",
+    "minValue": "Минимум", "maxValue": "Максимум", "targetValue": "Целевое",
+    "qualitativeRequirement": "Требование словами",
+    "appliesTo": "Относится к", "limits": "Пределы", "scopeLabel": "Уровень", "everything": "Ко всему",
+    "chooseTest": "Выберите анализ", "anyCommodity": "Любая культура", "anyClient": "Любой клиент",
+    "scopeHint": "Оставьте пустым, чтобы норма применялась шире",
+    "specNeedsALimit": "У нормы должен быть хотя бы один предел.",
+    "resolutionOrder": "Когда подходит несколько, действует самая частная: контракт, затем клиент, затем культура, затем норма по умолчанию.",
+    "instruments": "Приборы",
+    "instrumentsSub": "Оборудование, к которому можно отнести результат",
+    "newInstrument": "Новый прибор", "instrumentsFound": "Приборов: {{count}}",
+    "noInstruments": "Приборы ещё не заведены",
+    "manufacturer": "Производитель", "model": "Модель", "serialNumber": "Серийный номер",
+    "calibrationDue": "Срок поверки",
+    "instrumentStatus": {
+      "active": "В работе", "maintenance": "Обслуживание", "out_of_service": "Не используется", "retired": "Списан"
+    },
+    "requestTests": "Запросить анализы",
+    "requestWholePanel": "Запросить стандартный набор ({{count}})",
+    "requestChosen": "Запросить выбранные ({{count}})",
+    "needsAcceptedSample": "Анализы можно запросить после того, как лаборатория примет эту пробу.",
+    "noCommodityPanel": "У пробы нет культуры из справочника, поэтому стандартного набора для неё нет.",
+    "panelAllRequested": "Всё из стандартного набора уже запрошено.",
+    "noneOnSample": "По этой пробе анализы не запрашивали",
+    "outstandingCount": "В работе: {{count}}", "releasedCount": "Выпущено: {{count}}",
+    "outOfSpecCount": "Вне нормы: {{count}}"
   },
   "inspections": {
     "title": "Инспекции", "myTitle": "Мои инспекции", "all": "Все", "mine": "Мои",
@@ -228,6 +342,7 @@
   "jobs": {
     "title": "Заявки на инспекцию", "myTitle": "Мои задания", "new": "Новая заявка", "number": "№ заявки", "client": "Клиент",
     "type": "Услуга", "location": "Место инспекции", "scheduled": "Запланировано", "inspector": "Инспектор",
+    "selectInspector": "Выберите инспектора…",
     "status": "Статус", "empty": "Заявок не найдено", "vessel": "Судно / объект", "commodity": "Культура",
     "quantity": "Количество", "instructions": "Инструкции", "unassigned": "Не назначен", "selectClient": "Выберите клиента…",
     "selectType": "Выберите услугу…", "editTitle": "Изменить заявку {{number}}",
@@ -327,6 +442,7 @@
   },
   "import": {
     "title": "Загрузка данных",
+    "commit": "Записать строк: {{count}}",
     "sub": "Перенесите то, что уже ведётся в Excel, вместо ручного ввода",
     "template": "Скачать шаблон",
     "step1": "1. Что загружаем",
@@ -421,7 +537,7 @@
     "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}"
   },
   "invoices": {
-    "title": "Счета", "new": "Новый счёт", "number": "№ счёта", "issued": "Выставлен", "due": "Срок оплаты",
+    "title": "Счета", "status": "Статус", "new": "Новый счёт", "number": "№ счёта", "issued": "Выставлен", "due": "Срок оплаты",
     "total": "Сумма", "paid": "Оплачено", "net": "Сумма без НДС", "taxRate": "Ставка НДС, %", "lines": "Позиции",
     "lineDescription": "Наименование", "qty": "Кол-во", "unitPrice": "Цена", "addLine": "Добавить позицию",
     "issue": "Выставить", "pay": "Оплата", "payPrompt": "Сумма платежа (остаток: {{amount}})",

@@ -18,11 +18,12 @@ import { api, openPdf } from '../api';
 import { useAuth } from '../auth';
 import { JobInspections } from '../components/JobInspections';
 import { SamplesOn } from '../components/SamplesOn';
+import { LabOnJob } from '../components/LabOn';
 import { ACTIONS_NEEDING_REASON, PriorityBadge, StatusTimeline } from '../components/JobBits';
 import { ReportsTable } from '../components/ReportsTable';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'assignments' | 'inspection' | 'samples' | 'reports' | 'finance' | 'history';
+type Tab = 'overview' | 'assignments' | 'inspection' | 'samples' | 'laboratory' | 'reports' | 'finance' | 'history';
 
 /**
  * The job card. Everything about one piece of work, and the only place its status changes —
@@ -154,6 +155,7 @@ export function JobDetailPage() {
     { key: 'assignments', label: t('job.assignments'), show: true, count: assignments.data?.length },
     { key: 'inspection', label: t('inspections.title'), show: can('inspection.read') },
     { key: 'samples', label: t('samples.title'), show: can('sample.read') },
+    { key: 'laboratory', label: t('lab.title'), show: can('lab.test.read') },
     { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.length },
     { key: 'finance', label: t('nav.invoices'), show: can('finance.read') },
     { key: 'history', label: t('job.history'), show: can('job.read_history', 'job.read') },
@@ -355,6 +357,7 @@ export function JobDetailPage() {
 
       {tab === 'inspection' && <JobInspections job={j} />}
       {tab === 'samples' && <SamplesOn jobId={j.id} jobStatus={j.status} locationHint={j.location} />}
+      {tab === 'laboratory' && <LabOnJob jobId={j.id} />}
 
       {tab === 'reports' && (
         <Card title={t('job.reports')}>

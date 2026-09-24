@@ -5,6 +5,8 @@
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
+    "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
+    "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
   },
@@ -191,9 +193,120 @@
     "commodityFree": "Listede yok — elle yazın", "commodityText": "Ürün",
     "acceptedBy": "{{at}} tarihinde {{name}} kabul etti",
     "rejectedBy": "{{name}} reddetti: {{reason}}",
-    "laboratory": "Laboratuvar",
-    "labPending": "{{name}} laboratuvarına gönderildi. Analiz sonuçları laboratuvar modülüyle gelecek.",
-    "labNone": "Henüz laboratuvar seçilmedi."
+    "laboratory": "Laboratuvar"
+  },
+  "testStatus": {
+    "requested": "Talep edildi", "assigned": "Atandı", "in_progress": "Devam ediyor",
+    "result_entered": "Sonuç girildi", "under_review": "İncelemede", "approved": "Onaylandı",
+    "released": "Yayımlandı", "on_hold": "Beklemede", "rejected": "Reddedildi", "cancelled": "İptal edildi"
+  },
+  "testAction": {
+    "assign": "Analist ata", "start": "Analizi başlat", "enter": "Sonuç gir", "submit": "Teslim et",
+    "review": "Teknik inceleme", "return": "Analiste geri gönder", "approve": "Onayla", "release": "Yayımla",
+    "amend": "Revize et", "hold": "Beklemeye al", "resume": "Devam ettir", "reject": "Reddet", "cancel": "İptal et"
+  },
+  "evaluation": {
+    "within_spec": "Spesifikasyona uygun", "out_of_spec": "Spesifikasyon dışı", "not_evaluated": "Limit tanımlı değil"
+  },
+  "lab": {
+    "title": "Laboratuvar",
+    "sub": "Tezgâhtan yayımlanan sonuca kadar analizler",
+    "myTitle": "Analizlerim",
+    "allWork": "Tüm işler", "mine": "Benimkiler",
+    "search": "Numune, iş, müşteri veya analiz",
+    "found": "{{count}} analiz",
+    "empty": "Bu filtrelere uyan kayıt yok",
+    "metric": {
+      "samplesAwaitingTests": "Analizi olmayan numuneler", "unassigned": "Atanmamış", "inProgress": "Devam eden",
+      "awaitingReview": "İncelemeyi bekleyen", "awaitingApproval": "Onayı bekleyen",
+      "awaitingRelease": "Yayımı bekleyen", "overdue": "Gecikmiş", "outOfSpec": "Spesifikasyon dışı"
+    },
+    "view": {
+      "all": "Tümü", "unassigned": "Atanmamış", "in_progress": "Devam eden", "awaiting_review": "İncelemeyi bekleyen",
+      "awaiting_approval": "Onayı bekleyen", "awaiting_release": "Yayımı bekleyen", "overdue": "Gecikmiş",
+      "out_of_spec": "Spesifikasyon dışı"
+    },
+    "test": "Analiz", "method": "Metot", "methods": "Metotlar", "methodUsed": "Kullanılan metot",
+    "laboratory": "Laboratuvar", "analyst": "Analist", "unassignedShort": "Atanmamış",
+    "value": "Sonuç", "specification": "Spesifikasyon", "againstSpec": "Spesifikasyona göre",
+    "due": "Termin", "overdue": "Gecikmiş",
+    "result": "Sonuç", "revisions": "Revizyonlar", "revision": "Rev.", "revisionNo": "{{n}}. revizyon",
+    "current": "Geçerli",
+    "revisionsNotice": "Onaylanmış bir sonuç düzeltilmez. Düzeltme yeni bir revizyondur; önceki revizyonlar imzalandıkları hâliyle kalır.",
+    "amendmentReason": "Revizyon gerekçesi",
+    "analysis": "Analiz",
+    "requestedBy": "Talep eden", "requestedAt": "Talep tarihi", "startedAt": "Başlangıç",
+    "enteredAt": "Girildi", "submittedAt": "Teslim edildi",
+    "reviewedBy": "Teknik inceleme", "approvedBy": "Onaylayan", "releasedBy": "Yayımlayan",
+    "reviewComment": "İnceleme notu",
+    "enterResult": "Sonucu girin", "saveResult": "Sonucu kaydet", "unsaved": "Kaydedilmemiş değişiklik",
+    "noValue": "Değer yok", "noResultYet": "Henüz sonuç girilmedi",
+    "detected": "Tespit edildi", "notDetected": "Tespit edilmedi", "pass": "Uygun", "fail": "Uygun değil",
+    "instrument": "Cihaz", "noInstrument": "Cihaz kaydedilmedi",
+    "calibrationOverdue": "Kalibrasyonu geçmiş",
+    "detectionLimit": "Tespit limiti {{value}}",
+    "outOfSpecNotice": "Bu sonuç kendisine uygulanan spesifikasyonun dışında ({{limits}}). Değer ölçüldüğü gibi kalır; bundan sonrası müşteri ile laboratuvarın kararıdır.",
+    "instrumentOverdueNotice": "{{name}} bu ölçüm kaydedildiğinde kalibrasyon tarihini geçmişti. Bu bilgi sonuçta kalır.",
+    "amendedBecause": "Revize ediliyor: {{reason}}",
+    "returnedBecause": "İnceleyen geri gönderdi: {{reason}}",
+    "handedInNotice": "Bu sonucu teslim ettiniz; buradan artık değiştirilemez.",
+    "amendHint": "Geçerli revizyon saklanır ve tezgâhta yeni bir revizyon açılır.",
+    "chooseAnalyst": "Analist seçin",
+    "specScope": "Limitin kapsamı",
+    "scope": {
+      "contract": "Sözleşme", "client": "Müşteri", "commodity": "Ürün", "default": "Varsayılan", "none": "Limit yok"
+    },
+    "maxOf": "en çok {{value}}", "minOf": "en az {{value}}", "targetOf": "hedef {{value}}",
+    "catalogue": "Analiz kataloğu",
+    "catalogueSub": "Neler ölçülebilir ve hangi metotlarla",
+    "tests": "Analizler", "newTest": "Yeni analiz", "searchTests": "Analiz ara", "noTests": "Henüz analiz yok",
+    "code": "Kod", "name": "Ad", "nameEn": "Ad (EN)", "nameTr": "Ad (TR)", "nameRu": "Ad (RU)",
+    "category": "Kategori", "resultType": "Sonuç tipi", "defaultUnit": "Varsayılan birim", "noUnit": "Birimsiz",
+    "methodsFor": "Metotlar — {{name}}", "newMethod": "Yeni metot", "noMethods": "Henüz metot tanımlanmadı",
+    "pickTest": "Metotlarını görmek için bir analiz seçin",
+    "standard": "Standart", "version": "Sürüm", "accreditation": "Akreditasyon kapsamı",
+    "effectiveFrom": "Geçerlilik başlangıcı", "retire": "Kullanımdan kaldır", "restore": "Geri al",
+    "description": "Açıklama",
+    "detectionLimitShort": "Tespit limiti", "quantificationLimit": "Tayin limiti",
+    "versionNotice": "Limit, standart veya birim değişince metot sürümü yükselir. Ölçülmüş sonuçlar ölçüldükleri sürümü korur.",
+    "testCategory": {
+      "physical": "Fiziksel", "chemical": "Kimyasal", "microbiological": "Mikrobiyolojik",
+      "contaminant": "Kontaminant", "sensory": "Duyusal", "other": "Diğer"
+    },
+    "resultTypes": {
+      "numeric": "Sayı", "text": "Metin", "boolean": "Tespit edildi / edilmedi",
+      "qualitative": "Niteliksel", "pass_fail": "Uygun / uygun değil"
+    },
+    "specifications": "Spesifikasyonlar",
+    "specificationsSub": "Sonucun karşılaştırıldığı limitler",
+    "newSpecification": "Yeni spesifikasyon",
+    "specificationsFound": "{{count}} spesifikasyon",
+    "noSpecifications": "Bu filtrelere uyan spesifikasyon yok",
+    "minValue": "En az", "maxValue": "En çok", "targetValue": "Hedef",
+    "qualitativeRequirement": "Sözel gereklilik",
+    "appliesTo": "Kapsam", "limits": "Limitler", "scopeLabel": "Düzey", "everything": "Her şey",
+    "chooseTest": "Analiz seçin", "anyCommodity": "Tüm ürünler", "anyClient": "Tüm müşteriler",
+    "scopeHint": "Daha geniş uygulanması için boş bırakın",
+    "specNeedsALimit": "Bir spesifikasyonda en az bir limit olmalıdır.",
+    "resolutionOrder": "Birden fazlası uyduğunda en özel olan geçerlidir: önce sözleşme, sonra müşteri, sonra ürün, en sonda varsayılan.",
+    "instruments": "Cihazlar",
+    "instrumentsSub": "Sonucun ilişkilendirilebileceği ekipman",
+    "newInstrument": "Yeni cihaz", "instrumentsFound": "{{count}} cihaz",
+    "noInstruments": "Henüz cihaz kaydedilmedi",
+    "manufacturer": "Üretici", "model": "Model", "serialNumber": "Seri numarası",
+    "calibrationDue": "Kalibrasyon tarihi",
+    "instrumentStatus": {
+      "active": "Kullanımda", "maintenance": "Bakımda", "out_of_service": "Devre dışı", "retired": "Kullanımdan kaldırıldı"
+    },
+    "requestTests": "Analiz talep et",
+    "requestWholePanel": "Standart paneli talep et ({{count}})",
+    "requestChosen": "Seçilenleri talep et ({{count}})",
+    "needsAcceptedSample": "Analizler, laboratuvar bu numuneyi kabul ettikten sonra talep edilebilir.",
+    "noCommodityPanel": "Bu numunenin referans listesinden bir ürünü yok; bu nedenle standart paneli de yok.",
+    "panelAllRequested": "Standart paneldeki her şey zaten talep edilmiş.",
+    "noneOnSample": "Bu numune için analiz talep edilmedi",
+    "outstandingCount": "{{count}} bekleyen", "releasedCount": "{{count}} yayımlandı",
+    "outOfSpecCount": "{{count}} spesifikasyon dışı"
   },
   "inspections": {
     "title": "Muayeneler", "myTitle": "Muayenelerim", "all": "Tümü", "mine": "Benim",
@@ -228,6 +341,7 @@
   "jobs": {
     "title": "Muayene işleri", "myTitle": "İşlerim", "new": "Yeni iş", "number": "İş no.", "client": "Müşteri",
     "type": "Hizmet", "location": "Muayene yeri", "scheduled": "Planlanan", "inspector": "Eksper",
+    "selectInspector": "Eksper seçin…",
     "status": "Durum", "empty": "İş bulunamadı", "vessel": "Gemi / obje", "commodity": "Ürün",
     "quantity": "Miktar", "instructions": "Talimatlar", "unassigned": "Atanmadı", "selectClient": "Müşteri seçin…",
     "selectType": "Hizmet seçin…", "editTitle": "{{number}} işini düzenle",
@@ -327,6 +441,7 @@
   },
   "import": {
     "title": "Veri yükleme",
+    "commit": "{{count}} satırı yaz",
     "sub": "Elle girmek yerine Excel'de tuttuğunuz verileri aktarın",
     "template": "Şablonu indir",
     "step1": "1. Ne yükleniyor?",
@@ -418,7 +533,7 @@
     "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper"
   },
   "invoices": {
-    "title": "Faturalar", "new": "Yeni fatura", "number": "Fatura no.", "issued": "Düzenlendi", "due": "Vade",
+    "title": "Faturalar", "status": "Durum", "new": "Yeni fatura", "number": "Fatura no.", "issued": "Düzenlendi", "due": "Vade",
     "total": "Genel toplam", "paid": "Ödenen", "net": "Ara toplam", "taxRate": "KDV oranı, %", "lines": "Kalemler",
     "lineDescription": "Açıklama", "qty": "Miktar", "unitPrice": "Birim fiyat", "addLine": "Kalem ekle",
     "issue": "Düzenle", "pay": "Ödeme", "payPrompt": "Ödeme tutarı (kalan: {{amount}})",

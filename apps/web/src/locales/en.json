@@ -5,6 +5,8 @@
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
     "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
+    "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
+    "labSpecifications": "Specifications", "labInstruments": "Instruments",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
   },
@@ -190,9 +192,120 @@
     "commodityFree": "Not in the list — type it", "commodityText": "Commodity",
     "acceptedBy": "Accepted by {{name}} on {{at}}",
     "rejectedBy": "Rejected by {{name}}: {{reason}}",
-    "laboratory": "Laboratory",
-    "labPending": "Sent to {{name}}. Test results arrive with the laboratory module.",
-    "labNone": "No laboratory chosen yet."
+    "laboratory": "Laboratory"
+  },
+  "testStatus": {
+    "requested": "Requested", "assigned": "Assigned", "in_progress": "In progress",
+    "result_entered": "Result entered", "under_review": "Under review", "approved": "Approved",
+    "released": "Released", "on_hold": "On hold", "rejected": "Rejected", "cancelled": "Cancelled"
+  },
+  "testAction": {
+    "assign": "Assign analyst", "start": "Start analysis", "enter": "Enter result", "submit": "Hand in",
+    "review": "Technical review", "return": "Return to analyst", "approve": "Approve", "release": "Release",
+    "amend": "Amend", "hold": "Put on hold", "resume": "Resume", "reject": "Reject", "cancel": "Cancel"
+  },
+  "evaluation": {
+    "within_spec": "Within specification", "out_of_spec": "Out of specification", "not_evaluated": "No limit set"
+  },
+  "lab": {
+    "title": "Laboratory",
+    "sub": "Analyses from the bench to the released result",
+    "myTitle": "My analyses",
+    "allWork": "All work", "mine": "Mine",
+    "search": "Sample, job, client or test",
+    "found": "{{count}} analyses",
+    "empty": "Nothing matches these filters",
+    "metric": {
+      "samplesAwaitingTests": "Samples with no tests", "unassigned": "Unassigned", "inProgress": "In progress",
+      "awaitingReview": "Awaiting review", "awaitingApproval": "Awaiting approval",
+      "awaitingRelease": "Awaiting release", "overdue": "Overdue", "outOfSpec": "Out of specification"
+    },
+    "view": {
+      "all": "All", "unassigned": "Unassigned", "in_progress": "In progress", "awaiting_review": "Awaiting review",
+      "awaiting_approval": "Awaiting approval", "awaiting_release": "Awaiting release", "overdue": "Overdue",
+      "out_of_spec": "Out of specification"
+    },
+    "test": "Test", "method": "Method", "methods": "Methods", "methodUsed": "Method used",
+    "laboratory": "Laboratory", "analyst": "Analyst", "unassignedShort": "Unassigned",
+    "value": "Result", "specification": "Specification", "againstSpec": "Against specification",
+    "due": "Due", "overdue": "Overdue",
+    "result": "Result", "revisions": "Revisions", "revision": "Rev.", "revisionNo": "Revision {{n}}",
+    "current": "Current",
+    "revisionsNotice": "An approved result is never edited. A correction is a new revision, and every earlier one stays exactly as it was signed.",
+    "amendmentReason": "Reason for the amendment",
+    "analysis": "Analysis",
+    "requestedBy": "Requested by", "requestedAt": "Requested", "startedAt": "Started",
+    "enteredAt": "Entered", "submittedAt": "Handed in",
+    "reviewedBy": "Technically reviewed by", "approvedBy": "Approved by", "releasedBy": "Released by",
+    "reviewComment": "Review comment",
+    "enterResult": "Enter the result", "saveResult": "Save result", "unsaved": "Unsaved changes",
+    "noValue": "No value", "noResultYet": "No result has been entered yet",
+    "detected": "Detected", "notDetected": "Not detected", "pass": "Pass", "fail": "Fail",
+    "instrument": "Instrument", "noInstrument": "No instrument recorded",
+    "calibrationOverdue": "Calibration overdue",
+    "detectionLimit": "Detection limit {{value}}",
+    "outOfSpecNotice": "This result is outside the specification that applies to it ({{limits}}). The value stands as measured; what happens next is a decision for the client and the laboratory.",
+    "instrumentOverdueNotice": "{{name}} was past its calibration date when this measurement was recorded. The fact stays on the result.",
+    "amendedBecause": "Being amended: {{reason}}",
+    "returnedBecause": "Returned by the reviewer: {{reason}}",
+    "handedInNotice": "You have handed this result in; it can no longer be changed here.",
+    "amendHint": "The current revision is kept and a new one opens on the bench.",
+    "chooseAnalyst": "Choose an analyst",
+    "specScope": "Limit applies to",
+    "scope": {
+      "contract": "Contract", "client": "Client", "commodity": "Commodity", "default": "Default", "none": "No limit"
+    },
+    "maxOf": "max {{value}}", "minOf": "min {{value}}", "targetOf": "target {{value}}",
+    "catalogue": "Test catalogue",
+    "catalogueSub": "What can be measured, and the methods it is measured by",
+    "tests": "Tests", "newTest": "New test", "searchTests": "Search tests", "noTests": "No tests yet",
+    "code": "Code", "name": "Name", "nameEn": "Name (EN)", "nameTr": "Name (TR)", "nameRu": "Name (RU)",
+    "category": "Category", "resultType": "Result type", "defaultUnit": "Default unit", "noUnit": "No unit",
+    "methodsFor": "Methods — {{name}}", "newMethod": "New method", "noMethods": "No method declared yet",
+    "pickTest": "Choose a test to see its methods",
+    "standard": "Standard", "version": "Version", "accreditation": "Accreditation scope",
+    "effectiveFrom": "Effective from", "retire": "Retire", "restore": "Restore",
+    "description": "Description",
+    "detectionLimitShort": "Detection limit", "quantificationLimit": "Quantification limit",
+    "versionNotice": "Changing a limit, a standard or a unit raises the method version. Results already measured keep the version they were measured with.",
+    "testCategory": {
+      "physical": "Physical", "chemical": "Chemical", "microbiological": "Microbiological",
+      "contaminant": "Contaminant", "sensory": "Sensory", "other": "Other"
+    },
+    "resultTypes": {
+      "numeric": "Number", "text": "Text", "boolean": "Detected / not detected",
+      "qualitative": "Qualitative", "pass_fail": "Pass / fail"
+    },
+    "specifications": "Specifications",
+    "specificationsSub": "The limits a result is judged against",
+    "newSpecification": "New specification",
+    "specificationsFound": "{{count}} specifications",
+    "noSpecifications": "No specification matches these filters",
+    "minValue": "Minimum", "maxValue": "Maximum", "targetValue": "Target",
+    "qualitativeRequirement": "Requirement in words",
+    "appliesTo": "Applies to", "limits": "Limits", "scopeLabel": "Level", "everything": "Everything",
+    "chooseTest": "Choose a test", "anyCommodity": "Any commodity", "anyClient": "Any client",
+    "scopeHint": "Leave empty to make it apply more widely",
+    "specNeedsALimit": "A specification needs at least one limit.",
+    "resolutionOrder": "When several apply, the most specific wins: contract, then client, then commodity, then the default.",
+    "instruments": "Instruments",
+    "instrumentsSub": "Equipment a result can be attributed to",
+    "newInstrument": "New instrument", "instrumentsFound": "{{count}} instruments",
+    "noInstruments": "No instrument recorded yet",
+    "manufacturer": "Manufacturer", "model": "Model", "serialNumber": "Serial number",
+    "calibrationDue": "Calibration due",
+    "instrumentStatus": {
+      "active": "In service", "maintenance": "Maintenance", "out_of_service": "Out of service", "retired": "Retired"
+    },
+    "requestTests": "Request analyses",
+    "requestWholePanel": "Request the standard panel ({{count}})",
+    "requestChosen": "Request the chosen ones ({{count}})",
+    "needsAcceptedSample": "Analyses can be requested once the laboratory has accepted this sample.",
+    "noCommodityPanel": "This sample has no commodity from the reference list, so there is no standard panel for it.",
+    "panelAllRequested": "Everything in the standard panel has already been requested.",
+    "noneOnSample": "No analysis has been requested on this sample",
+    "outstandingCount": "{{count}} outstanding", "releasedCount": "{{count}} released",
+    "outOfSpecCount": "{{count}} out of specification"
   },
   "inspections": {
     "title": "Inspections", "myTitle": "My inspections", "all": "All", "mine": "Mine",
@@ -226,6 +339,7 @@
   "jobs": {
     "title": "Inspection jobs", "myTitle": "My jobs", "new": "New job", "number": "Job no.", "client": "Client",
     "type": "Service", "location": "Place of inspection", "scheduled": "Scheduled", "inspector": "Inspector",
+    "selectInspector": "Select inspector…",
     "status": "Status", "empty": "No jobs found", "vessel": "Vessel / object", "commodity": "Commodity / culture",
     "quantity": "Quantity", "instructions": "Instructions", "unassigned": "Unassigned", "selectClient": "Select client…",
     "selectType": "Select service…", "editTitle": "Edit job {{number}}",
@@ -325,6 +439,7 @@
   },
   "import": {
     "title": "Data import",
+    "commit": "Write {{count}} rows",
     "sub": "Load what you already keep in Excel instead of typing it in",
     "template": "Download template",
     "step1": "1. What are you loading?",
@@ -416,7 +531,7 @@
     "inspectorLoad": "Jobs per inspector", "activeInspectors": "{{count}} active inspectors"
   },
   "invoices": {
-    "title": "Invoices", "new": "New invoice", "number": "Invoice no.", "issued": "Issued", "due": "Due date",
+    "title": "Invoices", "status": "Status", "new": "New invoice", "number": "Invoice no.", "issued": "Issued", "due": "Due date",
     "total": "Total", "paid": "Paid", "net": "Net total", "taxRate": "VAT rate, %", "lines": "Lines",
     "lineDescription": "Description", "qty": "Qty", "unitPrice": "Unit price", "addLine": "Add line",
     "issue": "Issue", "pay": "Payment", "payPrompt": "Payment amount (outstanding: {{amount}})",

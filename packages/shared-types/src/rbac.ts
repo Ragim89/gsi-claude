@@ -20,6 +20,12 @@ export const PERMISSIONS = [
   'sample.dispatch', 'sample.receive', 'sample.accept_lab', 'sample.reject_lab',
   'sample.archive', 'sample.restore', 'sample.read_custody', 'sample.add_attachment',
   'sample.print_label',
+  // Laboratory
+  'lab.test.read', 'lab.test.request', 'lab.test.assign', 'lab.test.start',
+  'lab.result.enter', 'lab.result.submit', 'lab.result.review', 'lab.result.approve',
+  'lab.result.release', 'lab.result.amend', 'lab.result.self_approve',
+  'lab.method.read', 'lab.method.manage', 'lab.specification.read', 'lab.specification.manage',
+  'lab.instrument.read', 'lab.instrument.manage',
   // CRM
   'client.read', 'client.create', 'client.update', 'client.archive',
   // Documents

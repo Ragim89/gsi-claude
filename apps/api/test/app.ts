@@ -56,6 +56,8 @@ export const ACCOUNTS = {
   inspector2Tr: 'inspector2.tr@gsi.local',
   samplerTr: 'sampler.tr@gsi.local',
   labTr: 'lab.tr@gsi.local',
+  analystTr: 'analyst.tr@gsi.local',
+  analyst2Tr: 'analyst2.tr@gsi.local',
   supervisorRo: 'supervisor.ro@gsi.local',
   inspectorRo: 'inspector.ro@gsi.local',
 };

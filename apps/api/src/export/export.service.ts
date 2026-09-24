@@ -158,6 +158,108 @@ export class ExportService {
       ],
     },
 
+    lab_requests: {
+      permission: 'lab.test.read',
+      load: (tx, f) =>
+        tx.many(
+          `SELECT s.sample_number, j.job_number, b.code AS branch, c.name AS client,
+                  t.code AS test_code, t.name AS test_name, m.code AS method_code,
+                  m.standard_reference, r.status::text, r.priority::text,
+                  u.full_name AS analyst, l.name AS laboratory,
+                  to_char(r.requested_at, 'YYYY-MM-DD') AS requested,
+                  to_char(r.due_at, 'YYYY-MM-DD') AS due
+           FROM test_requests r
+           JOIN samples s ON s.id = r.sample_id
+           JOIN inspection_jobs j ON j.id = s.job_id
+           JOIN clients c ON c.id = s.client_id
+           JOIN branches b ON b.id = r.branch_id
+           JOIN lab_tests t ON t.id = r.lab_test_id
+           JOIN test_methods m ON m.id = r.test_method_id
+           JOIN laboratories l ON l.id = r.laboratory_id
+           LEFT JOIN users u ON u.id = r.assigned_analyst_id
+           WHERE ($1::uuid IS NULL OR r.branch_id = $1::uuid)
+             AND ($2::date IS NULL OR r.requested_at::date >= $2::date)
+             AND ($3::date IS NULL OR r.requested_at::date <= $3::date)
+             AND ($4::uuid IS NULL OR s.client_id = $4::uuid)
+           ORDER BY r.requested_at DESC LIMIT 20000`,
+          [f.branchId ?? null, f.from ?? null, f.to ?? null, f.clientId ?? null],
+        ),
+      columns: (locale) => [
+        col('Sample no.', 'sample_number'),
+        col('Job no.', 'job_number'),
+        col('Branch', 'branch'),
+        col('Client', 'client'),
+        col('Test code', 'test_code'),
+        { header: 'Test', value: (r) => (r.test_name ? localize(r.test_name as never, locale) : '') },
+        col('Method', 'method_code'),
+        col('Standard', 'standard_reference'),
+        col('Laboratory', 'laboratory'),
+        col('Status', 'status'),
+        col('Priority', 'priority'),
+        col('Analyst', 'analyst'),
+        col('Requested', 'requested'),
+        col('Due', 'due'),
+      ],
+    },
+
+    /**
+     * Released results only. An export is a document that leaves the building, and so is
+     * bound by the same rule as a report: nothing the laboratory has not cleared.
+     */
+    lab_results: {
+      permission: 'lab.test.read',
+      load: (tx, f) =>
+        tx.many(
+          `SELECT s.sample_number, j.job_number, b.code AS branch, c.name AS client,
+                  t.code AS test_code, t.name AS test_name,
+                  x.method_snapshot->>'code' AS method_code,
+                  x.method_snapshot->>'standardReference' AS standard_reference,
+                  (x.method_snapshot->>'version') AS method_version,
+                  x.revision,
+                  COALESCE(x.numeric_value::text, x.text_value, x.qualitative_value,
+                           CASE WHEN x.boolean_value THEN 'pass' WHEN NOT x.boolean_value THEN 'fail' END) AS result,
+                  x.unit, x.evaluation::text,
+                  an.full_name AS analyst, ap.full_name AS approved_by,
+                  to_char(x.approved_at, 'YYYY-MM-DD') AS approved,
+                  to_char(x.released_at, 'YYYY-MM-DD') AS released
+           FROM test_results x
+           JOIN test_requests r ON r.id = x.test_request_id
+           JOIN samples s ON s.id = r.sample_id
+           JOIN inspection_jobs j ON j.id = s.job_id
+           JOIN clients c ON c.id = s.client_id
+           JOIN branches b ON b.id = r.branch_id
+           JOIN lab_tests t ON t.id = r.lab_test_id
+           LEFT JOIN users an ON an.id = x.analyst_id
+           LEFT JOIN users ap ON ap.id = x.approved_by
+           WHERE x.released_at IS NOT NULL
+             AND ($1::uuid IS NULL OR r.branch_id = $1::uuid)
+             AND ($2::date IS NULL OR x.released_at::date >= $2::date)
+             AND ($3::date IS NULL OR x.released_at::date <= $3::date)
+             AND ($4::uuid IS NULL OR s.client_id = $4::uuid)
+           ORDER BY x.released_at DESC LIMIT 20000`,
+          [f.branchId ?? null, f.from ?? null, f.to ?? null, f.clientId ?? null],
+        ),
+      columns: (locale) => [
+        col('Sample no.', 'sample_number'),
+        col('Job no.', 'job_number'),
+        col('Branch', 'branch'),
+        col('Client', 'client'),
+        col('Test code', 'test_code'),
+        { header: 'Test', value: (r) => (r.test_name ? localize(r.test_name as never, locale) : '') },
+        col('Method', 'method_code'),
+        col('Standard', 'standard_reference'),
+        col('Method version', 'method_version'),
+        col('Revision', 'revision'),
+        col('Result', 'result'),
+        col('Unit', 'unit'),
+        col('Against specification', 'evaluation'),
+        col('Analyst', 'analyst'),
+        col('Approved by', 'approved_by'),
+        col('Approved', 'approved'),
+        col('Released', 'released'),
+      ],
+    },
+
     clients: {
       permission: 'client.read',
       load: (tx, f) =>
