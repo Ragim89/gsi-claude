@@ -5,11 +5,19 @@ import { JobStatus, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shar
 import { ApiError } from '../api';
 
 const STATUS_TONE: Record<JobStatus, BadgeTone> = {
-  new: 'neutral',
+  draft: 'neutral',
+  confirmed: 'info',
   assigned: 'info',
-  in_progress: 'warning',
-  under_review: 'accent',
+  in_progress: 'accent',
+  sampling: 'accent',
+  lab: 'accent',
+  report_preparation: 'accent',
+  under_review: 'warning',
   approved: 'success',
+  completed: 'success',
+  invoiced: 'success',
+  closed: 'neutral',
+  on_hold: 'warning',
   cancelled: 'danger',
 };
 

@@ -461,3 +461,42 @@ td.negative { color: var(--gsi-color-danger); }
   font-size: var(--gsi-font-size-sm); cursor: pointer;
 }
 .form-grid__wide { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; }
+
+/* ---- Jobs: sortable columns, status head, timeline ---------------------------------- */
+.gsi-table th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.gsi-table th.sortable:hover { color: var(--gsi-color-primary); }
+.sort-arrow { margin-inline-start: 4px; font-size: 11px; }
+
+.job-head { display: flex; align-items: center; gap: var(--gsi-space-2); flex-wrap: wrap; }
+.section-title {
+  margin: var(--gsi-space-4) 0 var(--gsi-space-2); font-size: var(--gsi-font-size-xs);
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--gsi-color-text-muted);
+}
+.prewrap { white-space: pre-wrap; margin: 0; }
+
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline__item {
+  position: relative; padding-inline-start: 28px; padding-block-end: var(--gsi-space-4);
+  border-inline-start: 2px solid var(--gsi-color-border); margin-inline-start: 7px;
+}
+.timeline__item--last { border-inline-start-color: transparent; padding-block-end: 0; }
+.timeline__dot {
+  position: absolute; inset-inline-start: -9px; inset-block-start: 2px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--gsi-color-surface); border: 3px solid var(--gsi-color-border);
+}
+.timeline__dot--approved, .timeline__dot--completed, .timeline__dot--invoiced { border-color: var(--gsi-color-success); }
+.timeline__dot--cancelled { border-color: var(--gsi-color-danger); }
+.timeline__dot--on_hold, .timeline__dot--under_review { border-color: var(--gsi-color-warning); }
+.timeline__dot--in_progress, .timeline__dot--sampling, .timeline__dot--lab,
+.timeline__dot--report_preparation { border-color: var(--gsi-color-accent); }
+.timeline__head { display: flex; gap: var(--gsi-space-2); align-items: baseline; flex-wrap: wrap; }
+.timeline__reason {
+  margin-block-start: 4px; padding: 6px 10px; border-radius: var(--gsi-radius-md);
+  background: var(--gsi-color-background); font-size: var(--gsi-font-size-sm);
+}
+
+@media (max-width: 900px) {
+  .timeline__item { padding-inline-start: 22px; }
+  .job-head { gap: 6px; }
+}

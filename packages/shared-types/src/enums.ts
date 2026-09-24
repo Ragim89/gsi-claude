@@ -30,26 +30,49 @@ export const SERVICE_TYPES = [
 ] as const;
 export type ServiceType = (typeof SERVICE_TYPES)[number];
 
+/**
+ * The job lifecycle (docs/WORKFLOWS.md). `under_review` is the review stage — the name
+ * predates the rest of the vocabulary and reads better than "review" on screen, so it stayed.
+ * The value `new` was renamed to `confirmed` in migration 012.
+ */
 export const JOB_STATUSES = [
-  'new',
+  'draft',
+  'confirmed',
   'assigned',
   'in_progress',
+  'sampling',
+  'lab',
+  'report_preparation',
   'under_review',
   'approved',
+  'completed',
+  'invoiced',
+  'closed',
+  'on_hold',
   'cancelled',
 ] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
 /**
- * Job lifecycle (docs/01-architecture.md, module 2):
- * Заявка → назначение инспектора → чек-лист + фото → проверка супервайзером → утверждённый отчёт (PDF).
+ * Which statuses may follow which. Derived from the workflow table in `job-workflow.ts`,
+ * which is the single definition — this shape is kept for the checks that only need to ask
+ * "is this move legal at all".
  */
 export const JOB_TRANSITIONS: Record<JobStatus, readonly JobStatus[]> = {
-  new: ['assigned', 'cancelled'],
-  assigned: ['in_progress', 'cancelled'],
-  in_progress: ['under_review', 'cancelled'],
-  under_review: ['in_progress', 'approved'],
-  approved: [],
+  draft: ['confirmed', 'cancelled'],
+  confirmed: ['assigned', 'on_hold', 'cancelled'],
+  assigned: ['assigned', 'in_progress', 'on_hold', 'cancelled'],
+  in_progress: ['sampling', 'report_preparation', 'under_review', 'on_hold', 'cancelled'],
+  sampling: ['lab', 'report_preparation', 'under_review', 'on_hold', 'cancelled'],
+  lab: ['report_preparation', 'under_review', 'on_hold', 'cancelled'],
+  report_preparation: ['under_review', 'on_hold', 'cancelled'],
+  under_review: ['in_progress', 'approved', 'on_hold'],
+  approved: ['completed'],
+  completed: ['invoiced', 'closed'],
+  invoiced: ['closed'],
+  // Resuming returns the job to the status it was in before the hold.
+  on_hold: ['confirmed', 'assigned', 'in_progress', 'sampling', 'lab', 'report_preparation', 'under_review', 'cancelled'],
+  closed: [],
   cancelled: [],
 };
 
@@ -58,7 +81,14 @@ export function canTransition(from: JobStatus, to: JobStatus): boolean {
 }
 
 /** Statuses in which checklist items and media may still be changed. */
-export const EDITABLE_JOB_STATUSES: readonly JobStatus[] = ['assigned', 'in_progress', 'under_review'];
+export const EDITABLE_JOB_STATUSES: readonly JobStatus[] = [
+  'assigned',
+  'in_progress',
+  'sampling',
+  'lab',
+  'report_preparation',
+  'under_review',
+];
 
 export const CHECKLIST_RESULTS = ['ok', 'deviation', 'na'] as const;
 export type ChecklistResult = (typeof CHECKLIST_RESULTS)[number];

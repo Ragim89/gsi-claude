@@ -7,7 +7,9 @@
 export const PERMISSIONS = [
   // Operations
   'job.read', 'job.create', 'job.update', 'job.assign', 'job.start', 'job.submit',
-  'job.approve', 'job.cancel', 'job.delete', 'checklist.update', 'media.upload', 'media.delete',
+  'job.approve', 'job.cancel', 'job.archive', 'job.restore', 'job.change_status', 'job.close',
+  'job.read_history', 'job.read_finance',
+  'checklist.update', 'media.upload', 'media.delete',
   // CRM
   'client.read', 'client.create', 'client.update', 'client.archive',
   // Documents

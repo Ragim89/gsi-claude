@@ -47,8 +47,32 @@
     "finance_controller": "Финконтролёр", "cfo": "CFO / HQ", "client": "Клиент", "admin": "Администратор"
   },
   "status": {
-    "new": "Новая", "assigned": "Назначена", "in_progress": "В работе", "under_review": "На проверке",
-    "approved": "Утверждена", "cancelled": "Отменена"
+    "draft": "Черновик", "confirmed": "Подтверждена", "assigned": "Назначена", "in_progress": "В работе",
+    "sampling": "Отбор проб", "lab": "Лаборатория", "report_preparation": "Подготовка отчёта",
+    "under_review": "На проверке", "approved": "Утверждена", "completed": "Завершена",
+    "invoiced": "Выставлен счёт", "closed": "Закрыта", "on_hold": "Приостановлена", "cancelled": "Отменена"
+  },
+  "priority": { "low": "Низкий", "normal": "Обычный", "high": "Высокий", "urgent": "Срочно" },
+  "objectKind": {
+    "vessel": "Судно", "warehouse": "Склад", "terminal": "Терминал", "truck": "Автотранспорт",
+    "rail": "Ж/д", "container": "Контейнер", "other": "Другое"
+  },
+  "assignmentRole": {
+    "lead_inspector": "Ведущий инспектор", "inspector": "Инспектор", "sampler": "Пробоотборщик",
+    "lab_coordinator": "Координатор лаборатории", "report_reviewer": "Проверяющий отчёт",
+    "operations_coordinator": "Координатор операций"
+  },
+  "jobAction": {
+    "confirm": "Подтвердить", "assign": "Назначить", "start": "Начать работу", "sample": "К отбору проб",
+    "send_to_lab": "Передать в лабораторию", "prepare_report": "К подготовке отчёта", "submit": "На проверку",
+    "return": "Вернуть на доработку", "approve": "Утвердить и выпустить отчёт", "complete": "Завершить",
+    "invoice": "Отметить выставленным", "close": "Закрыть заявку", "hold": "Приостановить", "resume": "Возобновить",
+    "cancel": "Отменить заявку",
+    "reasonFor": {
+      "hold": "Почему заявка приостанавливается?",
+      "cancel": "Почему заявка отменяется?",
+      "return": "Что инспектору нужно исправить?"
+    }
   },
   "result": { "ok": "Норма", "deviation": "Отклонение", "na": "Н/П" },
   "login": {
@@ -65,7 +89,10 @@
     "volumeTo": "Объём до", "selectCommodity": "Выберите культуру…", "selectPort": "Выберите порт…",
     "commodityHint": "Справочник — по нему работают фильтры и отчёты", "quantityNote": "Количество по номинации",
     "quantityNoteHint": "Текст от клиента, например 25 000 т ±10%", "found": "Найдено заявок: {{count}}",
-    "totalVolume": "Суммарный объём: {{value}}"
+    "totalVolume": "Суммарный объём: {{value}}",
+    "priority": "Приоритет", "lead": "Ведущий", "updated": "Обновлена", "overdue": "Просрочена",
+    "clientReference": "Номер у клиента", "allJobs": "Все заявки", "mine": "Мои заявки",
+    "search": "Номер, клиент, ссылка, судно…"
   },
   "job": {
     "details": "Детали", "assign": "Назначить", "selectInspector": "Выберите инспектора…", "start": "Начать инспекцию",
@@ -74,7 +101,27 @@
     "approve": "Утвердить и выпустить отчёт", "approveConfirm": "Утвердить заявку и выпустить PDF-отчёт на бланке филиала?",
     "cancel": "Отменить заявку", "cancelConfirm": "Отменить заявку?", "previewPdf": "Предпросмотр PDF (черновик)",
     "reviewComment": "Комментарий супервайзера", "reports": "Отчёты", "approvedIssued": "Утверждено — выпущен отчёт {{number}}",
-    "noReports": "Отчёт ещё не выпущен"
+    "noReports": "Отчёт ещё не выпущен",
+    "assignments": "Исполнители", "assignmentsHint": "На заявке может работать целая команда",
+    "assignmentRole": "Роль", "assignedAt": "Назначен", "unassign": "Снять", "selectPerson": "Выберите сотрудника…",
+    "noAssignments": "Исполнители не назначены", "inspection": "Полевые работы", "history": "История",
+    "timeline": "Хронология статусов", "noHistory": "Записей пока нет", "noInvoices": "Счетов по заявке нет",
+    "contact": "Контактное лицо", "contract": "Контракт", "contractTerms": "Отсрочка платежа: {{days}} дн.",
+    "contractExpired": "Срок контракта истёк — проверьте перед подтверждением заявки",
+    "city": "Город", "objectKind": "Объект инспекции", "containerNo": "Номер контейнера",
+    "transportRef": "Транспортная ссылка", "transportRefHint": "Букинг, накладная или номер вагона",
+    "requestedDate": "Запрошено на", "requestedDateHint": "Дата, о которой просил клиент",
+    "internalNotes": "Внутренние заметки", "internalNotesHint": "Клиенту никогда не печатаются",
+    "instructionsHint": "Что клиент просил сделать",
+    "clientReferenceHint": "Номер этой заявки у клиента",
+    "createdBy": "Создал", "createdAt": "Создана",
+    "sectionClient": "1. Клиент", "sectionService": "2. Услуга", "sectionLocation": "3. Место",
+    "sectionSchedule": "4. Сроки и исполнители", "sectionInstructions": "5. Инструкции",
+    "newHint": "Сохраните черновиком, пока детали уточняются; при подтверждении система проверит полноту",
+    "saveDraft": "Сохранить черновик", "createConfirmed": "Создать и подтвердить",
+    "heldFrom": "приостановлена, вернётся в «{{status}}»",
+    "archive": "В архив", "archiveConfirm": "Отправить заявку в архив? Она исчезнет из списков, администратор сможет её восстановить.",
+    "closeConfirm": "Закрыть заявку? Она станет доступной только для чтения."
   },
   "checklist": {
     "title": "Полевой чек-лист", "progress": "Проверено {{done}} из {{total}}", "value": "Значение / замер",

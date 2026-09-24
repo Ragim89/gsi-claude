@@ -151,7 +151,7 @@ export class BranchesController {
              (SELECT count(*) FROM clients WHERE branch_id = $1)::int AS "clientCount",
              (SELECT count(*) FROM inspection_jobs WHERE branch_id = $1)::int AS "jobCount",
              (SELECT count(*) FROM inspection_jobs WHERE branch_id = $1
-                AND status NOT IN ('approved', 'cancelled'))::int AS "openJobCount",
+                AND status NOT IN ('approved', 'completed', 'invoiced', 'closed', 'cancelled'))::int AS "openJobCount",
              (SELECT count(*) FROM reports WHERE branch_id = $1)::int AS "reportCount",
              (SELECT count(*) FROM users WHERE branch_id = $1 AND is_active)::int AS "activeUserCount"`,
           [id],

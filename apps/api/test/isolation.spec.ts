@@ -71,7 +71,7 @@ describe('branch isolation and role gating', () => {
   });
 
   it('gives an inspector only their own jobs', async () => {
-    const jobs = (await as(app, inspectorTr).get('/api/jobs').expect(200)).body;
+    const jobs = (await as(app, inspectorTr).get('/api/jobs').expect(200)).body.rows;
     for (const job of jobs) expect(job.assignedInspectorId).toBe(inspectorTr.user.id);
   });
 

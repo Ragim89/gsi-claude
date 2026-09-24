@@ -155,24 +155,72 @@ export async function seedFinance(client: ClientBase): Promise<void> {
         const inspector = inspectors.length ? inspectors[Math.floor(rand() * inspectors.length)] : null;
         const locations = LOCATIONS[branch.code];
 
+        // Most demo history is finished work, with a realistic tail of jobs still running —
+        // an operations screen that only ever shows approved jobs teaches nobody anything.
+        const roll = rand();
+        const status =
+          roll < 0.72 ? 'approved'
+          : roll < 0.78 ? 'completed'
+          : roll < 0.84 ? 'invoiced'
+          : roll < 0.88 ? 'closed'
+          : roll < 0.92 ? 'in_progress'
+          : roll < 0.95 ? 'assigned'
+          : roll < 0.97 ? 'under_review'
+          : roll < 0.985 ? 'confirmed'
+          : 'on_hold';
+        const finished = ['approved', 'completed', 'invoiced', 'closed'].includes(status);
+        const priorityRoll = rand();
+        const priority =
+          priorityRoll < 0.08 ? 'urgent' : priorityRoll < 0.25 ? 'high' : priorityRoll < 0.9 ? 'normal' : 'low';
+
         const job = await tx.one<{ id: string }>(
-          `INSERT INTO inspection_jobs (branch_id, job_number, client_id, type, status, assigned_inspector_id,
-              location, vessel_or_object, commodity, quantity, scheduled_at, created_at, submitted_at,
-              approved_at, approved_by, created_by)
-           VALUES ($1, next_doc_number($1, 'J'), $2, $3, 'approved', $4, $5, $6, $7, $8,
-                   $9::timestamptz, $9::timestamptz, $9::timestamptz + interval '1 day',
-                   $9::timestamptz + interval '2 day', $10, $10)
+          `INSERT INTO inspection_jobs (branch_id, job_number, client_id, type, status, priority,
+              assigned_inspector_id, location, vessel_or_object, commodity, quantity, scheduled_at,
+              requested_date, created_at, submitted_at, approved_at, approved_by, created_by,
+              status_before_hold)
+           VALUES ($1, next_doc_number($1, 'J'), $2, $3, $11::job_status, $12::job_priority, $4, $5, $6, $7, $8,
+                   $9::timestamptz, ($9::timestamptz - interval '2 day')::date, $9::timestamptz,
+                   CASE WHEN $13 THEN $9::timestamptz + interval '1 day' END,
+                   CASE WHEN $13 THEN $9::timestamptz + interval '2 day' END,
+                   CASE WHEN $13 THEN $10::uuid END, $10,
+                   CASE WHEN $11 = 'on_hold' THEN 'in_progress'::job_status END)
            RETURNING id`,
           [branch.id, clientId, type, inspector?.id ?? null, locations[Math.floor(rand() * locations.length)],
            VESSELS[Math.floor(rand() * VESSELS.length)], COMMODITIES[Math.floor(rand() * COMMODITIES.length)],
-           `${(5 + Math.floor(rand() * 45)) * 1000} MT`, date.toISOString(), supervisor.id],
+           `${(5 + Math.floor(rand() * 45)) * 1000} MT`, date.toISOString(), supervisor.id, status, priority, finished],
         );
         await seedChecklist(tx, job!.id, type);
+        if (finished || status === 'under_review') {
+          await tx.exec(
+            `UPDATE job_checklist_items SET result = 'ok', updated_by = $2 WHERE job_id = $1`,
+            [job!.id, inspector?.id ?? supervisor.id],
+          );
+        }
+        // The inspector on the job is its lead; some jobs also carry a second pair of hands.
+        if (inspector) {
+          await tx.exec(
+            `INSERT INTO job_assignments (job_id, branch_id, user_id, role, assigned_by, assigned_at)
+             VALUES ($1, $2, $3, 'lead_inspector', $4, $5::timestamptz) ON CONFLICT DO NOTHING`,
+            [job!.id, branch.id, inspector.id, supervisor.id, date.toISOString()],
+          );
+          const second = inspectors.find((i) => i.id !== inspector.id);
+          if (second && rand() < 0.3) {
+            await tx.exec(
+              `INSERT INTO job_assignments (job_id, branch_id, user_id, role, assigned_by, assigned_at)
+               VALUES ($1, $2, $3, 'sampler', $4, $5::timestamptz) ON CONFLICT DO NOTHING`,
+              [job!.id, branch.id, second.id, supervisor.id, date.toISOString()],
+            );
+          }
+        }
         await tx.exec(
-          `UPDATE job_checklist_items SET result = 'ok', updated_by = $2 WHERE job_id = $1`,
-          [job!.id, inspector?.id ?? supervisor.id],
+          `INSERT INTO job_status_history (job_id, branch_id, from_status, to_status, changed_by, created_at, metadata)
+           VALUES ($1, $2, NULL, $3::job_status, $4, $5::timestamptz, '{"seed": true}'::jsonb)`,
+          [job!.id, branch.id, status, supervisor.id, date.toISOString()],
         );
         jobs++;
+
+        // Only finished work gets invoiced in the demo history.
+        if (!finished) continue;
 
         // Invoice for the job: issued a day after approval, most of them already paid.
         const net = round2(profile.avgInvoice * (0.55 + rand()));
@@ -182,7 +230,7 @@ export async function seedFinance(client: ClientBase): Promise<void> {
         const dueDate = new Date(issueDate.getTime() + 30 * 86400000);
         const paidRoll = rand();
         const paid = paidRoll < 0.78 ? net + tax : paidRoll < 0.88 ? round2((net + tax) * 0.4) : 0;
-        const status = paid >= net + tax ? 'paid' : paid > 0 ? 'partially_paid' : 'issued';
+        const invoiceStatus = paid >= net + tax ? 'paid' : paid > 0 ? 'partially_paid' : 'issued';
 
         const inv = await tx.one<{ id: string }>(
           `INSERT INTO invoices (branch_id, client_id, job_id, invoice_number, status, currency, amount_net,
@@ -190,7 +238,7 @@ export async function seedFinance(client: ClientBase): Promise<void> {
            VALUES ($1, $2, $3, next_doc_number($1, 'I'), $4::invoice_status, $5, $6, $7, $8, $9, $10, $11::date, $12::date,
                    CASE WHEN $4::invoice_status = 'paid' THEN $13::timestamptz END, $14, $11::date)
            RETURNING id`,
-          [branch.id, clientId, job!.id, status, branch.currency, net, profile.vat, tax, round2(net + tax),
+          [branch.id, clientId, job!.id, invoiceStatus, branch.currency, net, profile.vat, tax, round2(net + tax),
            paid, iso(issueDate), iso(dueDate), new Date(Math.min(issueDate.getTime() + 20 * 86400000, today.getTime())).toISOString(),
            supervisor.id],
         );

@@ -47,8 +47,32 @@
     "finance_controller": "Finance controller", "cfo": "CFO / HQ", "client": "Client", "admin": "Administrator"
   },
   "status": {
-    "new": "New", "assigned": "Assigned", "in_progress": "In progress", "under_review": "Under review",
-    "approved": "Approved", "cancelled": "Cancelled"
+    "draft": "Draft", "confirmed": "Confirmed", "assigned": "Assigned", "in_progress": "In progress",
+    "sampling": "Sampling", "lab": "Laboratory", "report_preparation": "Report preparation",
+    "under_review": "Under review", "approved": "Approved", "completed": "Completed",
+    "invoiced": "Invoiced", "closed": "Closed", "on_hold": "On hold", "cancelled": "Cancelled"
+  },
+  "priority": { "low": "Low", "normal": "Normal", "high": "High", "urgent": "Urgent" },
+  "objectKind": {
+    "vessel": "Vessel", "warehouse": "Warehouse", "terminal": "Terminal", "truck": "Truck",
+    "rail": "Rail", "container": "Container", "other": "Other"
+  },
+  "assignmentRole": {
+    "lead_inspector": "Lead inspector", "inspector": "Inspector", "sampler": "Sampler",
+    "lab_coordinator": "Laboratory coordinator", "report_reviewer": "Report reviewer",
+    "operations_coordinator": "Operations coordinator"
+  },
+  "jobAction": {
+    "confirm": "Confirm", "assign": "Assign", "start": "Start work", "sample": "Move to sampling",
+    "send_to_lab": "Send to laboratory", "prepare_report": "Prepare report", "submit": "Submit for review",
+    "return": "Return for rework", "approve": "Approve & issue report", "complete": "Mark completed",
+    "invoice": "Mark invoiced", "close": "Close job", "hold": "Put on hold", "resume": "Resume",
+    "cancel": "Cancel job",
+    "reasonFor": {
+      "hold": "Why is this job being put on hold?",
+      "cancel": "Why is this job being cancelled?",
+      "return": "What must the inspector fix?"
+    }
   },
   "result": { "ok": "OK", "deviation": "Deviation", "na": "N/A" },
   "login": {
@@ -65,7 +89,10 @@
     "volumeTo": "Volume to", "selectCommodity": "Select commodity…", "selectPort": "Select port…",
     "commodityHint": "Reference list — used by filters and reports", "quantityNote": "Quantity as nominated",
     "quantityNoteHint": "Free text from the client, e.g. 25,000 MT ±10%", "found": "{{count}} jobs",
-    "totalVolume": "Total volume: {{value}}"
+    "totalVolume": "Total volume: {{value}}",
+    "priority": "Priority", "lead": "Lead", "updated": "Updated", "overdue": "Overdue",
+    "clientReference": "Client reference", "allJobs": "All jobs", "mine": "My jobs",
+    "search": "Number, client, reference, vessel…"
   },
   "job": {
     "details": "Details", "assign": "Assign", "selectInspector": "Select inspector…", "start": "Start inspection",
@@ -74,7 +101,27 @@
     "approve": "Approve & issue report", "approveConfirm": "Approve this job and issue the PDF report on the branch letterhead?",
     "cancel": "Cancel job", "cancelConfirm": "Cancel this job?", "previewPdf": "Preview PDF (draft)",
     "reviewComment": "Supervisor comment", "reports": "Reports", "approvedIssued": "Approved — report {{number}} issued",
-    "noReports": "No report issued yet"
+    "noReports": "No report issued yet",
+    "assignments": "Assignments", "assignmentsHint": "A job can have a whole team on it",
+    "assignmentRole": "Role", "assignedAt": "Assigned", "unassign": "Remove", "selectPerson": "Select person…",
+    "noAssignments": "Nobody is assigned yet", "inspection": "Field work", "history": "History",
+    "timeline": "Status timeline", "noHistory": "Nothing recorded yet", "noInvoices": "No invoices for this job",
+    "contact": "Client contact", "contract": "Contract", "contractTerms": "Payment terms: {{days}} days",
+    "contractExpired": "This contract has expired — check before confirming the job",
+    "city": "City", "objectKind": "Inspected object", "containerNo": "Container no.",
+    "transportRef": "Transport reference", "transportRefHint": "Booking, waybill or wagon number",
+    "requestedDate": "Requested for", "requestedDateHint": "The day the client asked for",
+    "internalNotes": "Internal notes", "internalNotesHint": "Never printed for the client",
+    "instructionsHint": "What the client asked us to do",
+    "clientReferenceHint": "The client's own number for this job",
+    "createdBy": "Created by", "createdAt": "Created",
+    "sectionClient": "1. Client", "sectionService": "2. Service", "sectionLocation": "3. Location",
+    "sectionSchedule": "4. Schedule and assignment", "sectionInstructions": "5. Instructions",
+    "newHint": "Save as a draft while details are still coming in; confirming checks it is complete",
+    "saveDraft": "Save as draft", "createConfirmed": "Create and confirm",
+    "heldFrom": "on hold, will return to {{status}}",
+    "archive": "Archive", "archiveConfirm": "Archive this job? It disappears from the lists and can be restored by an administrator.",
+    "closeConfirm": "Close this job? It becomes read-only."
   },
   "checklist": {
     "title": "Field checklist", "progress": "{{done}} of {{total}} checked", "value": "Value / reading",

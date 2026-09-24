@@ -1,6 +1,7 @@
 import type { ChecklistResult, JobStatus, MediaType, ReportStatus, Role, ServiceType } from './enums';
 import type { LocalizedText, ChecklistInputKind } from './checklist-templates';
 import type { AccessScope, Permission } from './rbac';
+import type { AssignmentRole, JobAction, JobObjectKind, JobPriority } from './job-workflow';
 
 /** ISO-8601 timestamp string as returned by the API. */
 export type Timestamp = string;
@@ -107,12 +108,30 @@ export interface InspectionJob {
   jobNumber: string;
   clientId: string;
   clientName?: string;
+  countryId?: string;
   type: ServiceType;
   status: JobStatus;
+  priority: JobPriority;
+  /** The lead of the job; everyone else working on it is in `assignees`. */
   assignedInspectorId: string | null;
   assignedInspectorName?: string | null;
+  assignees?: { id: string; userId: string; userName: string; role: AssignmentRole }[];
+  /** The person at the client this job is agreed with. */
+  clientContactId?: string | null;
+  clientContactName?: string | null;
+  /** The office that asked for the work, when it is not the one performing it. */
+  requestingBranchId?: string | null;
+  requestingBranchCode?: string | null;
+  /** The client's own reference for this job. */
+  clientReference?: string | null;
+  /** Ours to see, never printed for the client. */
+  internalNotes?: string | null;
   location: string;
+  city?: string | null;
   vesselOrObject: string | null;
+  objectKind?: JobObjectKind | null;
+  containerNo?: string | null;
+  transportRef?: string | null;
   /** Free text from the client's nomination; the structured value is commodityId. */
   commodity: string | null;
   quantity: string | null;
@@ -130,12 +149,25 @@ export interface InspectionJob {
   contractRef?: string | null;
   quantityValue: number | null;
   quantityUnit: string;
+  /** The day the client asked for (a calendar date, not an instant). */
+  requestedDate?: string | null;
   scheduledAt: Timestamp | null;
   instructions: string | null;
   reviewComment: string | null;
+  /** Where a job on hold came from, so resuming puts it back. */
+  statusBeforeHold?: JobStatus | null;
+  /** Bumped on every save; a form loaded with an older one is refused. */
+  version?: number;
+  /** Computed, never stored: scheduled in the past while the work is still open. */
+  overdue?: boolean;
   submittedAt: Timestamp | null;
   approvedAt: Timestamp | null;
   approvedBy: string | null;
+  archivedAt?: Timestamp | null;
+  /** What this user may do with the job right now; only the single-job endpoint fills it. */
+  actions?: JobAction[];
+  createdBy?: string | null;
+  createdByName?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

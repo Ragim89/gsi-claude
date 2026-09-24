@@ -47,8 +47,32 @@
     "finance_controller": "Mali kontrolör", "cfo": "CFO / Merkez", "client": "Müşteri", "admin": "Sistem yöneticisi"
   },
   "status": {
-    "new": "Yeni", "assigned": "Atandı", "in_progress": "Devam ediyor", "under_review": "İncelemede",
-    "approved": "Onaylandı", "cancelled": "İptal edildi"
+    "draft": "Taslak", "confirmed": "Onaylandı (iş emri)", "assigned": "Atandı", "in_progress": "Devam ediyor",
+    "sampling": "Numune alma", "lab": "Laboratuvar", "report_preparation": "Rapor hazırlığı",
+    "under_review": "İncelemede", "approved": "Rapor onaylandı", "completed": "Tamamlandı",
+    "invoiced": "Faturalandı", "closed": "Kapatıldı", "on_hold": "Beklemede", "cancelled": "İptal edildi"
+  },
+  "priority": { "low": "Düşük", "normal": "Normal", "high": "Yüksek", "urgent": "Acil" },
+  "objectKind": {
+    "vessel": "Gemi", "warehouse": "Depo", "terminal": "Terminal", "truck": "Kamyon",
+    "rail": "Demiryolu", "container": "Konteyner", "other": "Diğer"
+  },
+  "assignmentRole": {
+    "lead_inspector": "Baş eksper", "inspector": "Eksper", "sampler": "Numune alıcı",
+    "lab_coordinator": "Laboratuvar koordinatörü", "report_reviewer": "Rapor kontrolörü",
+    "operations_coordinator": "Operasyon koordinatörü"
+  },
+  "jobAction": {
+    "confirm": "Onayla", "assign": "Ata", "start": "İşe başla", "sample": "Numune almaya geç",
+    "send_to_lab": "Laboratuvara gönder", "prepare_report": "Rapor hazırlığına geç", "submit": "İncelemeye gönder",
+    "return": "Düzeltmeye iade et", "approve": "Onayla ve rapor düzenle", "complete": "Tamamlandı işaretle",
+    "invoice": "Faturalandı işaretle", "close": "İşi kapat", "hold": "Beklemeye al", "resume": "Devam ettir",
+    "cancel": "İşi iptal et",
+    "reasonFor": {
+      "hold": "Bu iş neden beklemeye alınıyor?",
+      "cancel": "Bu iş neden iptal ediliyor?",
+      "return": "Eksperin neyi düzeltmesi gerekiyor?"
+    }
   },
   "result": { "ok": "Uygun", "deviation": "Uygunsuzluk", "na": "Uygulanamaz" },
   "login": {
@@ -65,7 +89,10 @@
     "volumeTo": "Tonaj (maks.)", "selectCommodity": "Ürün seçin…", "selectPort": "Liman seçin…",
     "commodityHint": "Referans listesi — filtreler ve raporlar bunu kullanır", "quantityNote": "Nominasyondaki miktar",
     "quantityNoteHint": "Müşterinin yazdığı serbest metin, örn. 25.000 MT ±%10", "found": "{{count}} iş bulundu",
-    "totalVolume": "Toplam tonaj: {{value}}"
+    "totalVolume": "Toplam tonaj: {{value}}",
+    "priority": "Öncelik", "lead": "Baş eksper", "updated": "Güncellendi", "overdue": "Gecikti",
+    "clientReference": "Müşteri referansı", "allJobs": "Tüm işler", "mine": "İşlerim",
+    "search": "Numara, müşteri, referans, gemi…"
   },
   "job": {
     "details": "Ayrıntılar", "assign": "Ata", "selectInspector": "Eksper seçin…", "start": "Muayeneye başla",
@@ -74,7 +101,27 @@
     "approve": "Onayla ve rapor düzenle", "approveConfirm": "Bu iş onaylanıp şube antetli PDF raporu düzenlensin mi?",
     "cancel": "İşi iptal et", "cancelConfirm": "Bu iş iptal edilsin mi?", "previewPdf": "PDF önizleme (taslak)",
     "reviewComment": "Süpervizör açıklaması", "reports": "Raporlar", "approvedIssued": "Onaylandı — {{number}} raporu düzenlendi",
-    "noReports": "Henüz rapor düzenlenmedi"
+    "noReports": "Henüz rapor düzenlenmedi",
+    "assignments": "Görevliler", "assignmentsHint": "Bir işte bütün bir ekip çalışabilir",
+    "assignmentRole": "Rol", "assignedAt": "Atandı", "unassign": "Çıkar", "selectPerson": "Kişi seçin…",
+    "noAssignments": "Henüz kimse atanmadı", "inspection": "Saha çalışması", "history": "Geçmiş",
+    "timeline": "Durum akışı", "noHistory": "Henüz kayıt yok", "noInvoices": "Bu işe ait fatura yok",
+    "contact": "İlgili kişi", "contract": "Sözleşme", "contractTerms": "Ödeme vadesi: {{days}} gün",
+    "contractExpired": "Bu sözleşmenin süresi dolmuş — işi onaylamadan kontrol edin",
+    "city": "Şehir", "objectKind": "Muayene nesnesi", "containerNo": "Konteyner no.",
+    "transportRef": "Taşıma referansı", "transportRefHint": "Booking, irsaliye veya vagon numarası",
+    "requestedDate": "Talep edilen tarih", "requestedDateHint": "Müşterinin istediği gün",
+    "internalNotes": "Dahili notlar", "internalNotesHint": "Müşteriye asla basılmaz",
+    "instructionsHint": "Müşterinin bizden istediği iş",
+    "clientReferenceHint": "Müşterinin bu işe verdiği numara",
+    "createdBy": "Oluşturan", "createdAt": "Oluşturuldu",
+    "sectionClient": "1. Müşteri", "sectionService": "2. Hizmet", "sectionLocation": "3. Yer",
+    "sectionSchedule": "4. Planlama ve görevlendirme", "sectionInstructions": "5. Talimatlar",
+    "newHint": "Ayrıntılar gelirken taslak olarak kaydedin; onaylarken sistem eksikleri kontrol eder",
+    "saveDraft": "Taslak olarak kaydet", "createConfirmed": "Oluştur ve onayla",
+    "heldFrom": "beklemede, «{{status}}» durumuna dönecek",
+    "archive": "Arşivle", "archiveConfirm": "Bu iş arşivlensin mi? Listelerden kalkar, yönetici geri alabilir.",
+    "closeConfirm": "Bu iş kapatılsın mı? Salt okunur hâle gelir."
   },
   "checklist": {
     "title": "Saha kontrol listesi", "progress": "{{total}} maddeden {{done}} tamamlandı", "value": "Değer / okuma",
