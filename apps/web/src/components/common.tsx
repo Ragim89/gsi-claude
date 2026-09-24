@@ -27,10 +27,14 @@ export function useFormatDate() {
   const { i18n } = useTranslation();
   return (value: string | null | undefined, withTime = true) => {
     if (!value) return '—';
+    // A plain YYYY-MM-DD is a calendar day, not an instant: parsing it as UTC and then
+    // printing it locally would shift contract dates by a day in half the group's offices.
+    const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const date = dateOnly ? new Date(`${value}T12:00:00`) : new Date(value);
     return new Intl.DateTimeFormat(i18n.language, {
       dateStyle: 'medium',
-      ...(withTime ? { timeStyle: 'short' } : {}),
-    }).format(new Date(value));
+      ...(withTime && !dateOnly ? { timeStyle: 'short' } : {}),
+    }).format(date);
   };
 }
 

@@ -145,7 +145,7 @@ describe('hierarchy, permissions and audit', () => {
 
     // Gone from every list and from the record itself…
     await as(app, admin).get(`/api/clients/${created.body.id}`).expect(404);
-    const list = (await as(app, admin).get('/api/clients?search=Archive me').expect(200)).body;
+    const list = (await as(app, admin).get('/api/clients?search=Archive me').expect(200)).body.rows;
     expect(list).toHaveLength(0);
 
     // …but still in the database, and the archiving is on record.

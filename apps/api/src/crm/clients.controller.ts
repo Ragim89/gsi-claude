@@ -12,7 +12,8 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { IsEmail, IsOptional, IsString, IsUUID, Length, MaxLength, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsEmail, IsInt, IsOptional, IsString, IsUUID, Length, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { AuthUser } from '@gsi/shared-types';
 import { CurrentUser, RequirePermission } from '../common/decorators';
 import { DbService, Tx } from '../db/db.service';
@@ -44,6 +45,13 @@ class CreateClientDto extends ClientFields {
 
 class UpdateClientDto extends ClientFields {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(300) name?: string;
+}
+
+class ClientQueryDto {
+  @IsOptional() @IsString() @MaxLength(100) search?: string;
+  @IsOptional() @IsUUID() branchId?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) offset?: number;
 }
 
 const UPDATABLE = {
@@ -83,26 +91,49 @@ async function getClient(tx: Tx, id: string) {
 export class ClientsController {
   constructor(private readonly db: DbService, private readonly audit: AuditService) {}
 
-  /** `branchId` lets an HQ user narrow the group view down to one branch. */
+  /**
+   * `branchId` lets an HQ user narrow the group view down to one branch.
+   *
+   * Paginated: the group already has hundreds of clients and a list screen has no business
+   * pulling all of them. The response carries the total so the interface can show "1 of 12".
+   */
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query('search') search?: string, @Query('branchId') branchId?: string) {
-    const q = search?.trim() || null;
-    return this.db.tx(user, (tx) =>
-      tx.many(
-        `SELECT ${CLIENT_COLUMNS},
-                (SELECT count(*)::int FROM inspection_jobs j WHERE j.client_id = c.id) AS "jobCount"
-         FROM clients c JOIN branches b ON b.id = c.branch_id
-         WHERE ($1::text IS NULL
-                OR c.name ILIKE '%' || $1 || '%'
-                OR c.gafta_fosfa_ref ILIKE '%' || $1 || '%'
-                OR c.tax_id ILIKE '%' || $1 || '%')
-           AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
-           AND c.deleted_at IS NULL
-         ORDER BY c.name
-         LIMIT 500`,
-        [q, branchId || null],
-      ),
-    );
+  @RequirePermission('client.read')
+  list(@CurrentUser() user: AuthUser, @Query() q: ClientQueryDto) {
+    const search = q.search?.trim() || null;
+    const limit = q.limit ?? 50;
+    const offset = q.offset ?? 0;
+    const params = [search, q.branchId || null];
+    const where = `
+      WHERE ($1::text IS NULL
+             OR c.name ILIKE '%' || $1 || '%'
+             OR c.gafta_fosfa_ref ILIKE '%' || $1 || '%'
+             OR c.tax_id ILIKE '%' || $1 || '%')
+        AND ($2::uuid IS NULL OR c.branch_id = $2::uuid)
+        AND c.deleted_at IS NULL`;
+
+    return this.db.tx(user, async (tx) => {
+      const [rows, total] = await Promise.all([
+        tx.many(
+          `SELECT ${CLIENT_COLUMNS},
+                  (SELECT count(*)::int FROM inspection_jobs j WHERE j.client_id = c.id) AS "jobCount",
+                  (SELECT count(*)::int FROM contracts ct WHERE ct.client_id = c.id AND ct.deleted_at IS NULL
+                     AND ct.status = 'active') AS "activeContracts",
+                  (SELECT p.full_name FROM client_contacts p
+                    WHERE p.client_id = c.id AND p.is_primary AND p.deleted_at IS NULL) AS "primaryContact"
+           FROM clients c JOIN branches b ON b.id = c.branch_id
+           ${where}
+           ORDER BY c.name
+           LIMIT ${limit} OFFSET ${offset}`,
+          params,
+        ),
+        tx.one<{ n: number }>(
+          `SELECT count(*)::int AS n FROM clients c JOIN branches b ON b.id = c.branch_id ${where}`,
+          params,
+        ),
+      ]);
+      return { rows, total: total?.n ?? 0, limit, offset };
+    });
   }
 
   @Get(':id')
@@ -125,6 +156,14 @@ export class ClientsController {
          dto.address ?? null, dto.contactName ?? null, dto.contactEmail ?? null, dto.contactPhone ?? null,
          dto.notes ?? null, user.id],
       );
+      await this.audit.record(tx, user, {
+        action: 'client.create',
+        entityType: 'client',
+        entityId: row!.id,
+        entityLabel: dto.name.trim(),
+        branchId,
+        after: { name: dto.name.trim(), country: dto.country ?? null, taxId: dto.taxId ?? null },
+      });
       return getClient(tx, row!.id);
     });
   }
@@ -137,8 +176,31 @@ export class ClientsController {
     const { sql, params } = buildSet(dto as Record<string, unknown>, UPDATABLE, 2);
     if (!sql) throw new BadRequestException('Nothing to update');
     return this.db.tx(user, async (tx) => {
+      const before = await tx.one<Record<string, unknown>>(
+        `SELECT name, gafta_fosfa_ref, tax_id, country, address, contact_name, contact_email, contact_phone, notes
+         FROM clients WHERE id = $1`,
+        [id],
+      );
       const n = await tx.exec(`UPDATE clients SET ${sql} WHERE id = $1`, [id, ...params]);
       if (!n) throw new NotFoundException('Client not found');
+      const after = await tx.one<Record<string, unknown>>(
+        `SELECT name, gafta_fosfa_ref, tax_id, country, address, contact_name, contact_email, contact_phone, notes,
+                branch_id
+         FROM clients WHERE id = $1`,
+        [id],
+      );
+      const changed = AuditService.diff(before, after);
+      if (changed) {
+        await this.audit.record(tx, user, {
+          action: 'client.update',
+          entityType: 'client',
+          entityId: id,
+          entityLabel: String(after?.name ?? ''),
+          branchId: String(after?.branch_id ?? ''),
+          before: changed.before,
+          after: changed.after,
+        });
+      }
       return getClient(tx, id);
     });
   }

@@ -3,6 +3,7 @@
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
+    "contracts": "Contracts",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
   },
@@ -84,11 +85,36 @@
     "title": "Clients", "new": "New client", "name": "Name", "gafta": "GAFTA / FOSFA ref.", "taxId": "Tax ID",
     "country": "Country (ISO-2)", "address": "Address", "contactName": "Contact person", "contactEmail": "Contact email",
     "contactPhone": "Contact phone", "notes": "Notes", "jobs": "Jobs", "empty": "No clients found",
-    "reports": "Reports", "noReports": "No reports yet", "info": "Client details"
+    "reports": "Reports", "noReports": "No reports yet", "info": "Client details",
+    "activity": "Activity", "activityHint": "Everything that happened to this client and its records",
+    "archive": "Archive", "confirmArchive": "Archive this client? It disappears from the lists; its jobs, reports and invoices stay."
   },
   "reports": {
     "number": "Report no.", "version": "Rev.", "issued": "Issued", "approvedBy": "Approved by",
     "download": "Download PDF", "job": "Job", "service": "Service"
+  },
+  "contacts": {
+    "title": "Contacts", "new": "Add contact", "fullName": "Name", "position": "Position",
+    "email": "Email", "phone": "Phone", "primary": "Primary", "makePrimary": "Write to this person by default",
+    "empty": "No contacts yet", "confirmDelete": "Remove {{name}} from the contacts?"
+  },
+  "contracts": {
+    "title": "Contracts", "sub": "What the work is performed under", "new": "New contract",
+    "number": "Contract no.", "subject": "Subject", "status": "Status", "signedOn": "Signed",
+    "validFrom": "Valid from", "validTo": "Valid to", "validity": "Validity", "currency": "Currency",
+    "value": "Contract value", "paymentTerms": "Payment terms", "paymentTermsHint": "Days from invoice to due date",
+    "incoterms": "Incoterms", "services": "Services covered", "document": "Document",
+    "attach": "Attach file", "replaceFile": "Replace file", "active": "Active contracts",
+    "empty": "No contracts yet", "search": "Number, subject or client", "allStatuses": "Any status",
+    "anyExpiry": "Any expiry", "expiringIn": "Expiring within {{days}} days",
+    "expiresIn": "expires in {{days}} days", "expiredAgo": "expired", "days": "{{days}} days",
+    "confirmDelete": "Archive contract {{number}}?",
+    "statuses": {
+      "draft": "Draft", "active": "Active", "suspended": "Suspended", "expired": "Expired", "terminated": "Terminated"
+    }
+  },
+  "pagination": {
+    "range": "{{from}}–{{to}} of {{total}}", "page": "page {{page}} of {{pages}}"
   },
   "users": {
     "title": "Users", "new": "New user", "fullName": "Full name", "email": "Email", "role": "Role",

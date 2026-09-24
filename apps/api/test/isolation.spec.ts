@@ -42,8 +42,8 @@ describe('branch isolation and role gating', () => {
   });
 
   it('does not leak clients of another branch', async () => {
-    const trClients = (await as(app, supervisorTr).get('/api/clients').expect(200)).body;
-    const roClients = (await as(app, supervisorRo).get('/api/clients').expect(200)).body;
+    const trClients = (await as(app, supervisorTr).get('/api/clients').expect(200)).body.rows;
+    const roClients = (await as(app, supervisorRo).get('/api/clients').expect(200)).body.rows;
     expect(trClients.length).toBeGreaterThan(0);
     expect(roClients.length).toBeGreaterThan(0);
     const trNames = new Set(trClients.map((c: { name: string }) => c.name));
@@ -55,7 +55,7 @@ describe('branch isolation and role gating', () => {
     const tr = branches.find((b) => b.code === 'TR')!;
     const res = await as(app, supervisorRo).get(`/api/clients?branchId=${tr.id}`).expect(200);
     // RLS filters the rows regardless of what the query string asks for.
-    for (const client of res.body) expect(client.branchCode).toBe('RO');
+    for (const client of res.body.rows) expect(client.branchCode).toBe('RO');
   });
 
   it('refuses to create a client in another branch', async () => {
@@ -106,7 +106,7 @@ describe('branch isolation and role gating', () => {
   });
 
   it('lets HQ see the whole group', async () => {
-    const clients = (await as(app, admin).get('/api/clients').expect(200)).body;
+    const clients = (await as(app, admin).get('/api/clients').expect(200)).body.rows;
     const codes = new Set(clients.map((c: { branchCode: string }) => c.branchCode));
     expect(codes.size).toBeGreaterThan(1);
   });

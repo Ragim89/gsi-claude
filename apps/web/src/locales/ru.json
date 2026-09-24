@@ -3,6 +3,7 @@
   "nav": {
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
     "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
+    "contracts": "Контракты",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль."
   },
@@ -84,11 +85,36 @@
     "title": "Контрагенты", "new": "Новый клиент", "name": "Название", "gafta": "Номер GAFTA / FOSFA", "taxId": "ИНН / Tax ID",
     "country": "Страна (ISO-2)", "address": "Адрес", "contactName": "Контактное лицо", "contactEmail": "Email контакта",
     "contactPhone": "Телефон контакта", "notes": "Примечания", "jobs": "Заявки", "empty": "Клиентов не найдено",
-    "reports": "Отчёты", "noReports": "Отчётов пока нет", "info": "Карточка клиента"
+    "reports": "Отчёты", "noReports": "Отчётов пока нет", "info": "Карточка клиента",
+    "activity": "История", "activityHint": "Всё, что происходило с клиентом и его записями",
+    "archive": "В архив", "confirmArchive": "Отправить контрагента в архив? Он исчезнет из списков; заявки, отчёты и счета останутся."
   },
   "reports": {
     "number": "№ отчёта", "version": "Ред.", "issued": "Выпущен", "approvedBy": "Утвердил",
     "download": "Скачать PDF", "job": "Заявка", "service": "Услуга"
+  },
+  "contacts": {
+    "title": "Контактные лица", "new": "Добавить контакт", "fullName": "ФИО", "position": "Должность",
+    "email": "Email", "phone": "Телефон", "primary": "Основной", "makePrimary": "Писать этому человеку по умолчанию",
+    "empty": "Контактов пока нет", "confirmDelete": "Удалить {{name}} из контактов?"
+  },
+  "contracts": {
+    "title": "Контракты", "sub": "На основании чего выполняются работы", "new": "Новый контракт",
+    "number": "№ контракта", "subject": "Предмет", "status": "Статус", "signedOn": "Подписан",
+    "validFrom": "Действует с", "validTo": "Действует по", "validity": "Срок действия", "currency": "Валюта",
+    "value": "Сумма контракта", "paymentTerms": "Отсрочка платежа", "paymentTermsHint": "Дней от счёта до срока оплаты",
+    "incoterms": "Инкотермс", "services": "Покрываемые услуги", "document": "Документ",
+    "attach": "Прикрепить файл", "replaceFile": "Заменить файл", "active": "Действующих",
+    "empty": "Контрактов пока нет", "search": "Номер, предмет или клиент", "allStatuses": "Любой статус",
+    "anyExpiry": "Любой срок", "expiringIn": "Истекают в течение {{days}} дней",
+    "expiresIn": "истекает через {{days}} дн.", "expiredAgo": "истёк", "days": "{{days}} дн.",
+    "confirmDelete": "Отправить контракт {{number}} в архив?",
+    "statuses": {
+      "draft": "Черновик", "active": "Действует", "suspended": "Приостановлен", "expired": "Истёк", "terminated": "Расторгнут"
+    }
+  },
+  "pagination": {
+    "range": "{{from}}–{{to}} из {{total}}", "page": "страница {{page}} из {{pages}}"
   },
   "users": {
     "title": "Пользователи", "new": "Новый пользователь", "fullName": "ФИО", "email": "Email", "role": "Роль",

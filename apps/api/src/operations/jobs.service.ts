@@ -34,6 +34,8 @@ export interface CreateJobInput {
   commodityId?: string | null;
   portId?: string | null;
   contractNo?: string | null;
+  /** The contract on file this job belongs to; the free-text number above stays either way. */
+  contractId?: string | null;
   quantityValue?: number | null;
   quantityUnit?: string | null;
   vesselOrObject?: string | null;
@@ -109,15 +111,16 @@ export class JobsService {
       const row = await tx.one<{ id: string }>(
         `INSERT INTO inspection_jobs (branch_id, job_number, client_id, type, status, assigned_inspector_id,
                                       location, vessel_or_object, commodity, quantity, scheduled_at, instructions,
-                                      commodity_id, port_id, contract_no, quantity_value, quantity_unit, created_by)
+                                      commodity_id, port_id, contract_no, quantity_value, quantity_unit,
+                                      contract_id, created_by)
          VALUES ($1, next_doc_number($1, 'J'), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-                 COALESCE($16, 'MT'), $17)
+                 COALESCE($16, 'MT'), $17, $18)
          RETURNING id`,
         [client.branch_id, input.clientId, input.type, input.assignedInspectorId ? 'assigned' : 'new',
          input.assignedInspectorId ?? null, input.location.trim(), input.vesselOrObject ?? null, input.commodity ?? null,
          input.quantity ?? null, input.scheduledAt ?? null, input.instructions ?? null,
          input.commodityId ?? null, input.portId ?? null, input.contractNo?.trim() || null,
-         input.quantityValue ?? null, input.quantityUnit ?? null, user.id],
+         input.quantityValue ?? null, input.quantityUnit ?? null, input.contractId ?? null, user.id],
       );
       await seedChecklist(tx, row!.id, input.type);
       const job = await this.load(tx, row!.id);
@@ -142,6 +145,7 @@ export class JobsService {
       commodityId: 'commodity_id',
       portId: 'port_id',
       contractNo: 'contract_no',
+      contractId: 'contract_id',
       quantityValue: 'quantity_value',
       quantityUnit: 'quantity_unit',
       scheduledAt: 'scheduled_at',

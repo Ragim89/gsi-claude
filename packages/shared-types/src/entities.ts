@@ -92,6 +92,10 @@ export interface Client {
   contactPhone: string | null;
   notes: string | null;
   jobCount?: number;
+  /** Contracts currently in force — what the list screen shows at a glance. */
+  activeContracts?: number;
+  /** Name of the contact marked as primary, when there is one. */
+  primaryContact?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -120,6 +124,10 @@ export interface InspectionJob {
   portName?: string | null;
   portCountry?: string | null;
   contractNo: string | null;
+  /** The contract record this job belongs to, when one is on file. */
+  contractId?: string | null;
+  /** Its number, for showing the link without a second request. */
+  contractRef?: string | null;
   quantityValue: number | null;
   quantityUnit: string;
   scheduledAt: Timestamp | null;

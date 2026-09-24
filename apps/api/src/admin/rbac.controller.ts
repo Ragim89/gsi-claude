@@ -26,6 +26,8 @@ class SetRolesDto {
 class AuditQueryDto {
   @IsOptional() @IsUUID() userId?: string;
   @IsOptional() @IsUUID() branchId?: string;
+  /** Everything that happened around one client: the client, its contacts, contracts, jobs and invoices. */
+  @IsOptional() @IsUUID() clientId?: string;
   @IsOptional() @IsString() @MaxLength(60) action?: string;
   @IsOptional() @IsString() @MaxLength(40) entityType?: string;
   @IsOptional() @IsUUID() entityId?: string;
@@ -176,6 +178,7 @@ export class RbacController {
         q.from ?? null,
         q.to ?? null,
         q.search?.trim() || null,
+        q.clientId ?? null,
       ];
       const where = `
         WHERE ($1::uuid IS NULL OR a.user_id = $1::uuid)
@@ -185,7 +188,15 @@ export class RbacController {
           AND ($5::uuid IS NULL OR a.entity_id = $5::uuid)
           AND ($6::date IS NULL OR a.occurred_at >= $6::date)
           AND ($7::date IS NULL OR a.occurred_at < $7::date + 1)
-          AND ($8::text IS NULL OR a.entity_label ILIKE '%' || $8 || '%' OR a.user_email ILIKE '%' || $8 || '%')`;
+          AND ($8::text IS NULL OR a.entity_label ILIKE '%' || $8 || '%' OR a.user_email ILIKE '%' || $8 || '%')
+          -- The history of a client is everything that happened to the records hanging off it.
+          AND ($9::uuid IS NULL OR a.entity_id = $9::uuid
+               OR EXISTS (SELECT 1 FROM client_contacts x WHERE x.id = a.entity_id AND x.client_id = $9::uuid)
+               OR EXISTS (SELECT 1 FROM contracts x WHERE x.id = a.entity_id AND x.client_id = $9::uuid)
+               OR EXISTS (SELECT 1 FROM inspection_jobs x WHERE x.id = a.entity_id AND x.client_id = $9::uuid)
+               OR EXISTS (SELECT 1 FROM invoices x WHERE x.id = a.entity_id AND x.client_id = $9::uuid)
+               OR EXISTS (SELECT 1 FROM reports r JOIN inspection_jobs x ON x.id = r.job_id
+                          WHERE r.id = a.entity_id AND x.client_id = $9::uuid))`;
 
       const [rows, total] = await Promise.all([
         tx.many(

@@ -26,6 +26,7 @@ export function Layout() {
             <NavLink to="/jobs">{user?.scope === 'own' ? t('nav.myJobs') : t('nav.jobs')}</NavLink>
           )}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
+          {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
           {finance && (
             <>
               <NavLink to="/finance/invoices">{t('nav.invoices')}</NavLink>

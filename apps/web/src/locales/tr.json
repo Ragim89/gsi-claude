@@ -3,6 +3,7 @@
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
+    "contracts": "Sözleşmeler",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
   },
@@ -84,7 +85,32 @@
     "title": "Müşteriler", "new": "Yeni müşteri", "name": "Unvan", "gafta": "GAFTA / FOSFA ref.", "taxId": "Vergi no.",
     "country": "Ülke (ISO-2)", "address": "Adres", "contactName": "İlgili kişi", "contactEmail": "İlgili e-posta",
     "contactPhone": "İlgili telefon", "notes": "Notlar", "jobs": "İşler", "empty": "Müşteri bulunamadı",
-    "reports": "Raporlar", "noReports": "Henüz rapor yok", "info": "Müşteri kartı"
+    "reports": "Raporlar", "noReports": "Henüz rapor yok", "info": "Müşteri kartı",
+    "activity": "Geçmiş", "activityHint": "Bu müşteri ve kayıtlarıyla ilgili her şey",
+    "archive": "Arşivle", "confirmArchive": "Bu müşteri arşivlensin mi? Listelerden kalkar; işleri, raporları ve faturaları kalır."
+  },
+  "contacts": {
+    "title": "İlgili kişiler", "new": "Kişi ekle", "fullName": "Ad soyad", "position": "Görev",
+    "email": "E-posta", "phone": "Telefon", "primary": "Birincil", "makePrimary": "Varsayılan olarak bu kişiye yazılsın",
+    "empty": "Henüz kişi yok", "confirmDelete": "{{name}} kişilerden kaldırılsın mı?"
+  },
+  "contracts": {
+    "title": "Sözleşmeler", "sub": "İşlerin hangi sözleşme kapsamında yapıldığı", "new": "Yeni sözleşme",
+    "number": "Sözleşme no.", "subject": "Konu", "status": "Durum", "signedOn": "İmza tarihi",
+    "validFrom": "Başlangıç", "validTo": "Bitiş", "validity": "Geçerlilik", "currency": "Para birimi",
+    "value": "Sözleşme bedeli", "paymentTerms": "Ödeme vadesi", "paymentTermsHint": "Faturadan vadeye kadar gün",
+    "incoterms": "Incoterms", "services": "Kapsanan hizmetler", "document": "Belge",
+    "attach": "Dosya ekle", "replaceFile": "Dosyayı değiştir", "active": "Yürürlükte",
+    "empty": "Henüz sözleşme yok", "search": "Numara, konu veya müşteri", "allStatuses": "Tüm durumlar",
+    "anyExpiry": "Tüm vadeler", "expiringIn": "{{days}} gün içinde bitenler",
+    "expiresIn": "{{days}} gün içinde bitiyor", "expiredAgo": "süresi doldu", "days": "{{days}} gün",
+    "confirmDelete": "{{number}} sözleşmesi arşivlensin mi?",
+    "statuses": {
+      "draft": "Taslak", "active": "Yürürlükte", "suspended": "Askıda", "expired": "Süresi doldu", "terminated": "Feshedildi"
+    }
+  },
+  "pagination": {
+    "range": "{{total}} kayıttan {{from}}–{{to}}", "page": "sayfa {{page}} / {{pages}}"
   },
   "reports": {
     "number": "Rapor no.", "version": "Rev.", "issued": "Düzenlendi", "approvedBy": "Onaylayan",

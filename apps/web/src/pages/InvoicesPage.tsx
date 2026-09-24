@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, BadgeTone, Button, Card, EmptyState, Field, Input, Select, Table, TextArea } from '@gsi/ui-kit/react';
-import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus, InvoiceSummary } from '@gsi/shared-types';
+import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus, InvoiceSummary, Page } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
@@ -405,7 +405,7 @@ function InvoiceForm({ onDone }: { onDone(): void }) {
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([{ description: '', quantity: '1', unitPrice: '' }]);
 
-  const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Client[]>('/clients') });
+  const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Page<Client>>('/clients?limit=200').then((p) => p.rows) });
 
   const create = useMutation({
     mutationFn: () =>

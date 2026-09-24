@@ -35,6 +35,8 @@ class JobFieldsDto {
   @IsOptional() @IsUUID() commodityId?: string | null;
   @IsOptional() @IsUUID() portId?: string | null;
   @IsOptional() @IsString() @MaxLength(100) contractNo?: string | null;
+  /** The contract this job is performed under, when there is one on file. */
+  @IsOptional() @IsUUID() contractId?: string | null;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) quantityValue?: number | null;
   @IsOptional() @IsString() @MaxLength(10) quantityUnit?: string | null;
   @IsOptional() @IsString() @MaxLength(200) vesselOrObject?: string | null;
@@ -58,6 +60,7 @@ class CreateJobDto {
   @IsOptional() @IsUUID() commodityId?: string | null;
   @IsOptional() @IsUUID() portId?: string | null;
   @IsOptional() @IsString() @MaxLength(100) contractNo?: string | null;
+  @IsOptional() @IsUUID() contractId?: string | null;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) quantityValue?: number | null;
   @IsOptional() @IsString() @MaxLength(10) quantityUnit?: string | null;
 }

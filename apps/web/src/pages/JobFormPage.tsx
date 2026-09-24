@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Field, Input, Select, TextArea } from '@gsi/ui-kit/react';
-import { Client, Commodity, InspectionJob, localize, Port, SERVICE_TYPES, ServiceType, User } from '@gsi/shared-types';
+import { Client, Commodity, InspectionJob, localize, Page, Port, SERVICE_TYPES, ServiceType, User } from '@gsi/shared-types';
 import { api, blanksToNull } from '../api';
 import { ErrorBox, fromLocalInput, Loading, PageHead, toLocalInput, useServiceLabel } from '../components/common';
 
@@ -57,7 +57,7 @@ export function JobFormPage() {
     queryFn: () => api.get<InspectionJob>(`/jobs/${id}`),
     enabled: isEdit,
   });
-  const clients = useQuery({ queryKey: ['clients', ''], queryFn: () => api.get<Client[]>('/clients'), enabled: !isEdit });
+  const clients = useQuery({ queryKey: ['clients', ''], queryFn: () => api.get<Page<Client>>('/clients?limit=200').then((p) => p.rows), enabled: !isEdit });
   const inspectors = useQuery({
     queryKey: ['users', 'inspector'],
     queryFn: () => api.get<User[]>('/users?role=inspector'),

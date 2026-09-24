@@ -427,3 +427,37 @@ td.negative { color: var(--gsi-color-danger); }
 @media (max-width: 900px) {
   .roles-layout { grid-template-columns: 1fr; }
 }
+
+/* ---- Tabs on a record card ---------------------------------------------------------- */
+.tabs {
+  display: flex; gap: 2px; flex-wrap: wrap;
+  border-block-end: 1px solid var(--gsi-color-border);
+}
+.tab {
+  border: 0; background: transparent; cursor: pointer; font-family: inherit;
+  font-size: var(--gsi-font-size-sm); color: var(--gsi-color-text-muted);
+  padding: 10px 14px; border-block-end: 2px solid transparent; margin-block-end: -1px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tab:hover { color: var(--gsi-color-text); }
+.tab--on {
+  color: var(--gsi-color-primary); border-block-end-color: var(--gsi-color-primary);
+  font-weight: var(--gsi-font-weight-medium);
+}
+.tab__count {
+  background: var(--gsi-color-background); border-radius: 999px; padding: 1px 7px;
+  font-size: var(--gsi-font-size-xs);
+}
+
+/* ---- Pagination --------------------------------------------------------------------- */
+.pagination {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--gsi-space-3);
+  flex-wrap: wrap; margin-block-start: var(--gsi-space-3);
+}
+
+/* ---- Inline checkbox in a form ------------------------------------------------------ */
+.checkbox {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--gsi-font-size-sm); cursor: pointer;
+}
+.form-grid__wide { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; }

@@ -19,6 +19,8 @@ export const PERMISSIONS = [
   'asset.read', 'asset.create', 'asset.update', 'asset.delete', 'asset.depreciate',
   // Reference data
   'reference.read', 'reference.manage',
+  // Contracts
+  'contract.read', 'contract.manage',
   // Administration
   'branch.read', 'branch.manage', 'org.manage', 'user.read', 'user.manage', 'role.manage',
   'audit.read',

@@ -23,6 +23,7 @@ import { AssetDetailPage } from './pages/AssetDetailPage';
 import { ImportPage } from './pages/ImportPage';
 import { RolesPage } from './pages/RolesPage';
 import { AuditPage } from './pages/AuditPage';
+import { ContractsPage } from './pages/ContractsPage';
 
 /**
  * Guards a route by permission. The API and Row-Level Security enforce the same rules, so
@@ -82,6 +83,7 @@ export function App() {
         <Route path="/jobs/:id/edit" element={<RequireAuth need={['job.update']}><JobFormPage /></RequireAuth>} />
         <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
         <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
+        <Route path="/contracts" element={<RequireAuth need={['contract.read']}><ContractsPage /></RequireAuth>} />
         <Route path="/import" element={<RequireAuth need={['import.run']}><ImportPage /></RequireAuth>} />
         <Route path="/users" element={<RequireAuth need={['user.read']}><UsersPage /></RequireAuth>} />
         <Route path="/admin/roles" element={<RequireAuth need={['role.manage']}><RolesPage /></RequireAuth>} />
