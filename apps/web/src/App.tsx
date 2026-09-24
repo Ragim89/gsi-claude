@@ -27,6 +27,7 @@ import { AssetDetailPage } from './pages/AssetDetailPage';
 import { ImportPage } from './pages/ImportPage';
 import { RolesPage } from './pages/RolesPage';
 import { AuditPage } from './pages/AuditPage';
+import { LaboratoriesPage } from './pages/LaboratoriesPage';
 import { ContractsPage } from './pages/ContractsPage';
 
 /**
@@ -99,6 +100,7 @@ export function App() {
         <Route path="/users" element={<RequireAuth need={['user.read']}><UsersPage /></RequireAuth>} />
         <Route path="/admin/roles" element={<RequireAuth need={['role.manage']}><RolesPage /></RequireAuth>} />
         <Route path="/admin/audit" element={<RequireAuth need={['audit.read']}><AuditPage /></RequireAuth>} />
+        <Route path="/admin/laboratories" element={<RequireAuth need={['org.manage']}><LaboratoriesPage /></RequireAuth>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Card, EmptyState, Input, Select, Table } from '@gsi/ui-kit/react';
+import { Button, Card, EmptyState, Input, Select, Table } from '@gsi/ui-kit/react';
 import {
+  Client,
+  Commodity,
   Laboratory,
   Page,
   SAMPLE_STATUSES,
@@ -11,6 +13,7 @@ import {
   Sample,
   SampleStatus,
   SampleType,
+  User,
   localize,
 } from '@gsi/shared-types';
 import { api } from '../api';
@@ -47,6 +50,10 @@ export function SamplesPage() {
   const [status, setStatus] = useState<SampleStatus | ''>('');
   const [sampleType, setSampleType] = useState<SampleType | ''>('');
   const [laboratoryId, setLaboratoryId] = useState('');
+  const [clientId, setClientId] = useState('');
+  const [samplerId, setSamplerId] = useState('');
+  const [commodityId, setCommodityId] = useState('');
+  const [more, setMore] = useState(false);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<Sort>('sampledAt');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
@@ -68,10 +75,47 @@ export function SamplesPage() {
     staleTime: 300_000,
   });
 
+  // Only loaded once the extra filters are opened; nobody pays for a list they never see.
+  const clients = useQuery({
+    queryKey: ['clients', 'filter'],
+    queryFn: () => api.get<Page<Client>>('/clients?limit=200'),
+    staleTime: 300_000,
+    enabled: more && can('client.read'),
+  });
+  const commodities = useQuery({
+    queryKey: ['commodities'],
+    queryFn: () => api.get<Commodity[]>('/reference/commodities'),
+    staleTime: 300_000,
+    enabled: more,
+  });
+  const people = useQuery({
+    queryKey: ['users', 'assignable'],
+    queryFn: () => api.get<User[]>('/users'),
+    staleTime: 300_000,
+    enabled: more && can('user.read'),
+  });
+
+  const filtered = Boolean(
+    range.from || range.to || status || sampleType || laboratoryId || clientId || samplerId || commodityId || search,
+  );
+  const reset = () => {
+    setRange({ from: '', to: '' });
+    setStatus('');
+    setSampleType('');
+    setLaboratoryId('');
+    setClientId('');
+    setSamplerId('');
+    setCommodityId('');
+    setSearch('');
+  };
+
   const params = new URLSearchParams(rangeParams(range));
   if (status) params.set('status', status);
   if (sampleType) params.set('sampleType', sampleType);
   if (laboratoryId) params.set('laboratoryId', laboratoryId);
+  if (clientId) params.set('clientId', clientId);
+  if (samplerId) params.set('samplerId', samplerId);
+  if (commodityId) params.set('commodityId', commodityId);
   if (search.trim()) params.set('search', search.trim());
   if (branchId) params.set('branchId', branchId);
   if (mine) params.set('mine', 'true');
@@ -90,7 +134,11 @@ export function SamplesPage() {
   params.set('offset', String(offset));
   const key = params.toString();
 
-  useEffect(() => setOffset(0), [status, sampleType, laboratoryId, search, branchId, mine, quick, range.from, range.to, sort, dir]);
+  useEffect(
+    () => setOffset(0),
+    [status, sampleType, laboratoryId, clientId, samplerId, commodityId, search, branchId, mine, quick,
+     range.from, range.to, sort, dir],
+  );
 
   const list = useQuery({
     queryKey: ['samples', key],
@@ -188,7 +236,46 @@ export function SamplesPage() {
                 </option>
               ))}
             </Select>
+            <Button variant="secondary" onClick={() => setMore((v) => !v)}>
+              {more ? t('filters.less') : t('filters.more')}
+            </Button>
+            {filtered && (
+              <Button variant="ghost" onClick={reset}>
+                {t('filters.reset')}
+              </Button>
+            )}
           </div>
+
+          {more && (
+            <div className="filter-row">
+              <Select value={clientId} onChange={(e) => setClientId(e.target.value)}>
+                <option value="">{t('jobs.client')}: {t('common.all')}</option>
+                {(clients.data?.rows ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+              <Select value={commodityId} onChange={(e) => setCommodityId(e.target.value)}>
+                <option value="">{t('jobs.commodity')}: {t('common.all')}</option>
+                {(commodities.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {localize(c.name, i18n.language)}
+                  </option>
+                ))}
+              </Select>
+              <Select value={samplerId} onChange={(e) => setSamplerId(e.target.value)}>
+                <option value="">{t('sample.sampledBy')}: {t('common.all')}</option>
+                {(people.data ?? [])
+                  .filter((u) => u.isActive)
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+          )}
         </div>
       </Card>
 

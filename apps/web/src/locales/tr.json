@@ -4,7 +4,7 @@
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
-    "samples": "Numuneler", "mySamples": "Numunelerim",
+    "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
   },
@@ -105,6 +105,16 @@
   "checklistSection": {
     "general": "Genel", "documents": "Belgeler", "vessel": "Gemi / nesne", "cargo": "Yük",
     "operations": "Operasyonlar", "observations": "Gözlemler"
+  },
+  "laboratories": {
+    "title": "Laboratuvarlar",
+    "sub": "Numunelerin gönderildiği yerler. Yeni bir kurulumda siz girene kadar hiçbiri yoktur.",
+    "new": "Yeni laboratuvar", "code": "Kod", "codeHint": "Kısa ve kalıcı, örneğin TR-LAB",
+    "name": "Ad", "office": "Ofis", "officeHint": "Bağımsız laboratuvar için boş bırakın",
+    "externalOption": "— bağımsız laboratuvar —", "external": "Harici",
+    "contact": "İletişim", "found": "{{count}} laboratuvar", "empty": "Henüz laboratuvar yok",
+    "active": "Açık", "closed": "Kapalı", "close": "Kapat", "reopen": "Yeniden aç",
+    "closeHint": "Kapatılan laboratuvar gönderim listesinden kalkar. Oraya gönderilmiş numunelerin kaydı korunur."
   },
   "sampleStatus": {
     "draft": "Taslak", "collected": "Alındı", "registered": "Kaydedildi", "sealed": "Mühürlendi",

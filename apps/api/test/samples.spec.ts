@@ -74,7 +74,57 @@ describe('sample lifecycle and chain of custody', () => {
   it('offers the laboratories a sample can be sent to', async () => {
     const labs = (await as(app, supervisor).get('/api/samples/laboratories').expect(200)).body;
     expect(labs.length).toBeGreaterThan(0);
-    expect(labs[0].code).toMatch(/-LAB$/);
+    expect(labs.every((l: { isActive: boolean }) => l.isActive)).toBe(true);
+  });
+
+  it('lets an administrator enter a laboratory, and closing one takes it off the dispatch list', async () => {
+    const code = `TST-${Date.now().toString().slice(-6)}`;
+    const created = await as(app, admin)
+      .post('/api/samples/laboratories')
+      .send({ code, name: 'Test Laboratory', city: 'İzmir', isExternal: true, contactEmail: 'lab@test.example' })
+      .expect(201);
+    expect(created.body.code).toBe(code);
+    expect(created.body.isActive).toBe(true);
+
+    // Entering one is administration, not operations.
+    const refused = await as(app, supervisor)
+      .post('/api/samples/laboratories')
+      .send({ code: `${code}-X`, name: 'Nope' });
+    expect(refused.status).toBe(403);
+
+    const open = (await as(app, supervisor).get('/api/samples/laboratories').expect(200)).body;
+    expect(open.map((l: { id: string }) => l.id)).toContain(created.body.id);
+
+    await as(app, admin)
+      .patch(`/api/samples/laboratories/${created.body.id}`)
+      .send({ isActive: false })
+      .expect(200);
+
+    const afterClose = (await as(app, supervisor).get('/api/samples/laboratories').expect(200)).body;
+    expect(afterClose.map((l: { id: string }) => l.id)).not.toContain(created.body.id);
+
+    // A closed laboratory is still visible to whoever administers them, or it could never reopen.
+    const all = (await as(app, admin).get('/api/samples/laboratories?includeInactive=true').expect(200)).body;
+    expect(all.map((l: { id: string }) => l.id)).toContain(created.body.id);
+  });
+
+  it('will not dispatch to a laboratory that has been closed', async () => {
+    const code = `CLD-${Date.now().toString().slice(-6)}`;
+    const closed = await as(app, admin)
+      .post('/api/samples/laboratories')
+      .send({ code, name: 'Closed Laboratory', isExternal: true })
+      .expect(201);
+    await as(app, admin).patch(`/api/samples/laboratories/${closed.body.id}`).send({ isActive: false }).expect(200);
+
+    const fresh = await as(app, inspector)
+      .post('/api/samples')
+      .send({ inspectionId, commodity: 'Wheat', quantity: 1, unit: 'kg' })
+      .expect(201);
+    const res = await as(app, supervisor)
+      .patch(`/api/samples/${fresh.body.id}`)
+      .send({ destinationLaboratoryId: closed.body.id });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/not active/i);
   });
 
   it('records a sample taken during the inspection', async () => {

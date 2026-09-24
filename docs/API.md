@@ -173,8 +173,10 @@ PATCH /api/inspections/{id}/checklist
 | Метод | Путь | Право | Описание |
 |---|---|---|---|
 | GET | `/samples` | `sample.read` | список: пагинация, поиск, фильтры, сортировка |
-| GET | `/samples/laboratories` | `sample.read` | куда можно отправить пробу |
+| GET | `/samples/laboratories` | `sample.read` | куда можно отправить пробу (только работающие) |
+| GET | `/samples/laboratories?includeInactive=true` | `org.manage` | включая закрытые — для экрана администрирования |
 | POST | `/samples/laboratories` | `org.manage` | добавить лабораторию |
+| PATCH | `/samples/laboratories/:labId` | `org.manage` | изменить или закрыть (`isActive: false`) |
 | GET | `/samples/:id` | `sample.read` | карточка + `actions` — что этот пользователь может сделать сейчас |
 | POST | `/samples` | `sample.create` | запись пробы: `{ inspectionId \| jobId, sampleType?, commodity?, quantity?, unit?, … }` |
 | PATCH | `/samples/:id` | `sample.update` | изменение; `version` для защиты от перезаписи |
@@ -219,7 +221,7 @@ POST /api/samples/{id}/transitions
 | `status` | любой статус жизненного цикла |
 | `active` | `true` — всё, что не принято лабораторией и не отменено |
 | `mine` | `true` — пробы, которые я отобрал или записал |
-| `jobId`, `inspectionId`, `clientId`, `samplerId`, `commodityId`, `laboratoryId`, `branchId`, `countryId` | фильтры по связям |
+| `jobId`, `inspectionId`, `clientId`, `samplerId`, `commodityId`, `laboratoryId`, `branchId`, `countryId` | фильтры по связям; все выведены на экран (страна и офис — через переключатель филиала) |
 | `sampleType` | тип пробы |
 | `from`, `to` | период по дате отбора |
 | `search` | номер пробы, номер заявки, клиент, культура, **номер пломбы**, партия/лот, ссылка на контейнер |

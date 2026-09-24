@@ -109,6 +109,18 @@ const UPDATABLE = {
   destinationLaboratoryId: 'destination_laboratory_id',
 };
 
+/** The code, the office and whether it is ours are settled when a laboratory is entered. */
+const LAB_UPDATABLE = {
+  name: 'name',
+  city: 'city',
+  address: 'address',
+  timezone: 'timezone',
+  contactEmail: 'contact_email',
+  contactPhone: 'contact_phone',
+  notes: 'notes',
+  isActive: 'is_active',
+};
+
 const COLUMNS = `
   s.id, s.branch_id AS "branchId", b.code AS "branchCode", s.job_id AS "jobId", j.job_number AS "jobNumber",
   s.inspection_id AS "inspectionId", i.inspection_number AS "inspectionNumber",
@@ -573,7 +585,11 @@ export class SamplesService {
 
   // ---- Laboratories ----------------------------------------------------------------------
 
-  laboratories(user: AuthUser): Promise<Laboratory[]> {
+  /**
+   * The dispatch list carries only the laboratories still open; the administration screen asks
+   * for all of them, because a closed one has to be visible to be reopened.
+   */
+  laboratories(user: AuthUser, includeInactive = false): Promise<Laboratory[]> {
     return this.db.tx(user, (tx) =>
       tx.many<Laboratory>(
         `SELECT l.id, l.branch_id AS "branchId", b.code AS "branchCode", l.country_id AS "countryId",
@@ -581,7 +597,9 @@ export class SamplesService {
                 l.is_active AS "isActive", l.contact_email AS "contactEmail",
                 l.contact_phone AS "contactPhone", l.notes
          FROM laboratories l LEFT JOIN branches b ON b.id = l.branch_id
-         WHERE l.is_active ORDER BY l.is_external, l.name`,
+         WHERE ($1::boolean IS TRUE OR l.is_active)
+         ORDER BY l.is_active DESC, l.is_external, l.name`,
+        [includeInactive],
       ),
     );
   }
@@ -606,8 +624,49 @@ export class SamplesService {
         branchId: input.branchId ?? user.branchId,
         after: { code: input.code, isExternal: input.isExternal ?? false },
       });
-      return (await this.laboratories(user)).find((l) => l.id === row!.id)!;
+      // Read back inside this transaction: a second one would not yet see the row.
+      return this.laboratoryIn(tx, row!.id);
     });
+  }
+
+  /**
+   * A laboratory is closed rather than deleted: samples already sent there keep pointing at a
+   * row that still says what it was. `isActive: false` only takes it off the dispatch list.
+   */
+  updateLaboratory(user: AuthUser, id: string, input: UpdateLaboratoryInput) {
+    const { sql, params } = buildSet(input as Record<string, unknown>, LAB_UPDATABLE, 2);
+    if (!sql) throw new BadRequestException('Nothing to update');
+
+    return this.db.tx(user, async (tx) => {
+      const before = await tx.one<{ name: string; branch_id: string | null }>(
+        'SELECT name, branch_id FROM laboratories WHERE id = $1',
+        [id],
+      );
+      if (!before) throw new NotFoundException('Laboratory not found');
+
+      await tx.exec(`UPDATE laboratories SET ${sql} WHERE id = $1`, [id, ...params]);
+      await this.audit.record(tx, user, {
+        action: 'laboratory.update',
+        entityType: 'laboratory',
+        entityId: id,
+        entityLabel: before.name,
+        branchId: before.branch_id ?? user.branchId,
+        after: input as Record<string, unknown>,
+      });
+      // The list only carries active ones, so a closed laboratory is fetched on its own.
+      return this.laboratoryIn(tx, id);
+    });
+  }
+
+  private laboratoryIn(tx: Tx, id: string): Promise<Laboratory | null> {
+    return tx.one<Laboratory>(
+      `SELECT l.id, l.branch_id AS "branchId", b.code AS "branchCode", l.country_id AS "countryId",
+              l.code, l.name, l.city, l.address, l.timezone, l.is_external AS "isExternal",
+              l.is_active AS "isActive", l.contact_email AS "contactEmail",
+              l.contact_phone AS "contactPhone", l.notes
+       FROM laboratories l LEFT JOIN branches b ON b.id = l.branch_id WHERE l.id = $1`,
+      [id],
+    );
   }
 
   // ---- Internals -------------------------------------------------------------------------
@@ -852,6 +911,10 @@ export interface HandoverInput {
   condition?: SampleCondition | null;
   notes?: string | null;
 }
+
+export type UpdateLaboratoryInput = Partial<Omit<LaboratoryInput, 'code' | 'branchId' | 'isExternal'>> & {
+  isActive?: boolean;
+};
 
 export interface LaboratoryInput {
   code: string;

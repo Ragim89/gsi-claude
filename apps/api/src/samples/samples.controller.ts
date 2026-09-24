@@ -166,6 +166,18 @@ class LaboratoryDto {
   @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
 }
 
+class UpdateLaboratoryDto {
+  @IsOptional() @IsString() @MaxLength(200) name?: string;
+  @IsOptional() @IsString() @MaxLength(120) city?: string | null;
+  @IsOptional() @IsString() @MaxLength(300) address?: string | null;
+  @IsOptional() @IsString() @MaxLength(60) timezone?: string | null;
+  @IsOptional() @IsString() @MaxLength(200) contactEmail?: string | null;
+  @IsOptional() @IsString() @MaxLength(60) contactPhone?: string | null;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
+  /** Closing a laboratory hides it from the dispatch list without touching its history. */
+  @IsOptional() @Type(() => Boolean) @IsBoolean() isActive?: boolean;
+}
+
 class SampleQueryDto {
   @IsOptional() @IsUUID() jobId?: string;
   @IsOptional() @IsUUID() inspectionId?: string;
@@ -210,8 +222,8 @@ export class SamplesController {
   /** The destinations a sample can be dispatched to; needed before one can be. */
   @Get('laboratories')
   @RequirePermission('sample.read')
-  laboratories(@CurrentUser() user: AuthUser) {
-    return this.samples.laboratories(user);
+  laboratories(@CurrentUser() user: AuthUser, @Query('includeInactive') includeInactive?: string) {
+    return this.samples.laboratories(user, includeInactive === 'true' && (user.permissions?.includes('org.manage') ?? false));
   }
 
   /**
@@ -222,6 +234,20 @@ export class SamplesController {
   @RequirePermission('org.manage')
   createLaboratory(@CurrentUser() user: AuthUser, @Body() dto: LaboratoryDto) {
     return this.samples.createLaboratory(user, dto);
+  }
+
+  /**
+   * Declared before `PATCH :id`, or "laboratories" would be read as a sample id — route order
+   * is how Nest tells the two apart.
+   */
+  @Patch('laboratories/:labId')
+  @RequirePermission('org.manage')
+  updateLaboratory(
+    @CurrentUser() user: AuthUser,
+    @Param('labId', ParseUUIDPipe) labId: string,
+    @Body() dto: UpdateLaboratoryDto,
+  ) {
+    return this.samples.updateLaboratory(user, labId, dto);
   }
 
   @Get(':id')

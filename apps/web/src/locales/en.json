@@ -4,7 +4,7 @@
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
     "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
-    "samples": "Samples", "mySamples": "My samples",
+    "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
   },
@@ -105,6 +105,16 @@
   "checklistSection": {
     "general": "General", "documents": "Documents", "vessel": "Vessel / object", "cargo": "Cargo",
     "operations": "Operations", "observations": "Observations"
+  },
+  "laboratories": {
+    "title": "Laboratories",
+    "sub": "Where samples are sent. A new installation has none until you enter them.",
+    "new": "New laboratory", "code": "Code", "codeHint": "Short and permanent, e.g. TR-LAB",
+    "name": "Name", "office": "Office", "officeHint": "Leave empty for an independent laboratory",
+    "externalOption": "— independent laboratory —", "external": "External",
+    "contact": "Contact", "found": "{{count}} laboratories", "empty": "No laboratories yet",
+    "active": "Open", "closed": "Closed", "close": "Close", "reopen": "Reopen",
+    "closeHint": "A closed laboratory disappears from the dispatch list. Samples already sent there keep their record."
   },
   "sampleStatus": {
     "draft": "Draft", "collected": "Collected", "registered": "Registered", "sealed": "Sealed",

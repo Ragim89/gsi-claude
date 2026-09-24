@@ -598,3 +598,6 @@ td.negative { color: var(--gsi-color-danger); }
   background: var(--gsi-color-background); color: var(--gsi-color-text-muted);
   font-weight: var(--gsi-font-weight-bold); font-size: var(--gsi-font-size-sm);
 }
+
+/* A closed laboratory stays on the administration list, quietly. */
+.is-muted-row td { opacity: 0.6; }

@@ -45,6 +45,7 @@ export function Layout() {
           {can('import.run') && <NavLink to="/import">{t('nav.import')}</NavLink>}
           {can('user.read') && <NavLink to="/users">{t('nav.users')}</NavLink>}
           {can('role.manage') && <NavLink to="/admin/roles">{t('nav.roles')}</NavLink>}
+          {can('org.manage') && <NavLink to="/admin/laboratories">{t('nav.laboratories')}</NavLink>}
           {can('audit.read') && <NavLink to="/admin/audit">{t('nav.audit')}</NavLink>}
         </nav>
         <div className="sidebar__footer">
