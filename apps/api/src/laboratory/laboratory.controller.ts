@@ -1,4 +1,17 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -29,9 +42,11 @@ import {
   TestRequestStatus,
 } from '@gsi/shared-types';
 import { CurrentUser, RequirePermission } from '../common/decorators';
+import { config } from '../config';
 import { LabCatalogueService } from './lab-catalogue.service';
 import { LabRequestsService, RequestSort } from './lab-requests.service';
 import { LabResultsService } from './lab-results.service';
+import { LabMediaService } from './lab-media.service';
 
 class TestDto {
   @IsString() @MinLength(2) @MaxLength(60) code: string;
@@ -174,6 +189,10 @@ class ReasonDto {
   @IsString() @MinLength(3) @MaxLength(2000) reason: string;
 }
 
+class AttachmentMetaDto {
+  @IsOptional() @IsString() @MaxLength(500) caption?: string;
+}
+
 class RequestQueryDto {
   @IsOptional() @IsUUID() sampleId?: string;
   @IsOptional() @IsUUID() jobId?: string;
@@ -220,6 +239,7 @@ export class LaboratoryController {
     private readonly catalogue: LabCatalogueService,
     private readonly requests: LabRequestsService,
     private readonly results: LabResultsService,
+    private readonly media: LabMediaService,
   ) {}
 
   // ---- Reference data --------------------------------------------------------------------
@@ -338,8 +358,17 @@ export class LaboratoryController {
 
   @Get('dashboard')
   @RequirePermission('lab.test.read')
-  dashboard(@CurrentUser() user: AuthUser, @Query('laboratoryId') laboratoryId?: string) {
-    return this.requests.dashboard(user, laboratoryId);
+  dashboard(
+    @CurrentUser() user: AuthUser,
+    @Query('laboratoryId') laboratoryId?: string,
+    @Query('branchId') branchId?: string,
+    @Query('mine') mine?: string,
+  ) {
+    return this.requests.dashboard(user, {
+      laboratoryId,
+      branchId,
+      analystId: mine === 'true' ? user.id : undefined,
+    });
   }
 
   /** Released results — the only laboratory data a report may quote. */
@@ -449,5 +478,26 @@ export class LaboratoryController {
   @RequirePermission('lab.result.amend')
   amend(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: ReasonDto) {
     return this.results.amend(user, id, dto.reason);
+  }
+
+  // ---- The paper behind the result -------------------------------------------------------
+
+  /** Instrument printouts, weighing records, worksheets — attached to the revision they belong to. */
+  @Get('requests/:id/attachments')
+  @RequirePermission('lab.test.read')
+  attachments(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.media.list(user, id);
+  }
+
+  @Post('requests/:id/attachments')
+  @RequirePermission('lab.result.enter')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: config.maxUploadBytes, files: 1 } }))
+  addAttachment(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() meta: AttachmentMetaDto,
+  ) {
+    return this.media.add(user, id, file, meta.caption);
   }
 }

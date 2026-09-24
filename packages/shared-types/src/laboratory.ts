@@ -1,3 +1,4 @@
+import type { InspectionPhoto } from './inspections';
 import type { Permission } from './rbac';
 import type { JobPriority } from './job-workflow';
 import type { LocalizedText } from './checklist-templates';
@@ -452,4 +453,14 @@ export interface TestPanel {
     /** True when this analysis is already requested on the sample. */
     alreadyRequested?: boolean;
   }>;
+}
+
+/**
+ * A worksheet, weighing record or instrument printout attached to a result.
+ *
+ * It carries the revision it belongs to: when a result is amended, the superseded revision
+ * keeps the printout that was actually read when it was signed.
+ */
+export interface LabAttachment extends InspectionPhoto {
+  revision: number;
 }

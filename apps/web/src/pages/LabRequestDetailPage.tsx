@@ -2,8 +2,21 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Alert, Badge, Button, Card, EmptyState, Field, Input, Select, Table, TextArea } from '@gsi/ui-kit/react';
 import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  Spinner,
+  Table,
+  TextArea,
+} from '@gsi/ui-kit/react';
+import {
+  LabAttachment,
   LabInstrument,
   TestRequest,
   TestRequestAction,
@@ -25,7 +38,7 @@ import {
 } from '../components/LabBits';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
-type Tab = 'result' | 'revisions' | 'history';
+type Tab = 'result' | 'attachments' | 'revisions' | 'history';
 
 /** The draft an analyst is typing. The numeric value stays a string: 12.40 is not 12.4. */
 type Draft = {
@@ -202,6 +215,7 @@ export function LabRequestDetailPage() {
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: 'result', label: t('lab.result') },
+    { key: 'attachments', label: t('lab.worksheets'), count: r.attachmentCount },
     { key: 'revisions', label: t('lab.revisions'), count: r.revisionCount },
     { key: 'history', label: t('job.history') },
   ];
@@ -475,6 +489,8 @@ export function LabRequestDetailPage() {
         </>
       )}
 
+      {tab === 'attachments' && <Worksheets requestId={r.id} canAdd={editable} />}
+
       {tab === 'revisions' && (
         <Card title={t('lab.revisions')}>
           <ErrorBox error={revisions.error} />
@@ -547,5 +563,91 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
       <dt>{label}</dt>
       <dd>{value || '—'}</dd>
     </div>
+  );
+}
+
+/**
+ * The paper behind the result: instrument printouts, weighing records, worksheets.
+ *
+ * They belong to the revision, so once the analyst has handed the result in they can no longer
+ * be changed — an amendment opens a new revision with its own paperwork, and the superseded
+ * revision keeps the printout that was actually read when it was signed.
+ */
+function Worksheets({ requestId, canAdd }: { requestId: string; canAdd: boolean }) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const fmt = useFormatDate();
+  const [caption, setCaption] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+
+  const list = useQuery({
+    queryKey: ['lab-attachments', requestId],
+    queryFn: () => api.get<LabAttachment[]>(`/lab/requests/${requestId}/attachments`),
+  });
+
+  async function onFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (!files.length) return;
+    setBusy(true);
+    setError(null);
+    try {
+      for (const file of files) {
+        const form = new FormData();
+        form.append('file', file);
+        if (caption.trim()) form.append('caption', caption.trim());
+        await api.upload<LabAttachment>(`/lab/requests/${requestId}/attachments`, form);
+      }
+      setCaption('');
+      qc.invalidateQueries({ queryKey: ['lab-attachments', requestId] });
+      qc.invalidateQueries({ queryKey: ['lab-request', requestId] });
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const rows = list.data ?? [];
+
+  return (
+    <Card title={t('lab.worksheets')}>
+      <ErrorBox error={error ?? list.error} />
+      <p className="muted">{t('lab.worksheetsHint')}</p>
+      {canAdd && (
+        <div className="filter-row" style={{ marginBlockEnd: 'var(--gsi-space-4)' }}>
+          <Input placeholder={t('inspection.caption')} value={caption} onChange={(e) => setCaption(e.target.value)} />
+          <label className="photo-add photo-add--inline">
+            {busy ? <Spinner /> : <span>📎 {t('lab.attachWorksheet')}</span>}
+            <input type="file" accept="image/*,application/pdf" multiple onChange={onFiles} disabled={busy} />
+          </label>
+        </div>
+      )}
+
+      {list.isLoading ? (
+        <Loading />
+      ) : !rows.length ? (
+        <EmptyState>{t('lab.noWorksheets')}</EmptyState>
+      ) : (
+        <div className="photos">
+          {rows.map((p) => (
+            <div key={p.id} className="photo photo--lg">
+              <a href={p.url} target="_blank" rel="noreferrer" title={p.caption ?? p.originalName ?? ''}>
+                {p.mimeType === 'application/pdf' ? (
+                  <span className="photo__doc">PDF</span>
+                ) : (
+                  <img src={p.previewUrl} alt={p.caption ?? ''} loading="lazy" />
+                )}
+              </a>
+              <div className="photo__cap">
+                {p.revision ? <Badge tone="neutral">{t('lab.revisionNo', { n: p.revision })}</Badge> : null}{' '}
+                {p.caption || fmt(p.createdAt)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }

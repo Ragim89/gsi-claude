@@ -711,3 +711,489 @@ describe('the laboratory leaves the rest of the system alone', () => {
     expect(sections).toContain('lab_results');
   });
 });
+
+/**
+ * The parts of the record that have to survive time: the method that was used, the limits that
+ * applied, the revision that was signed — and the answers that are not numbers.
+ */
+describe('laboratory snapshots, result types and boundaries', () => {
+  let app: INestApplication;
+  let supervisor: Session;
+  let inspector: Session;
+  let labManager: Session;
+  let analyst: Session;
+  let analyst2: Session;
+  let finance: Session;
+  let supervisorRo: Session;
+
+  let clientId: string;
+  let laboratoryId: string;
+  let commodityId: string;
+  let sampleId: string;
+
+  async function acceptedSample() {
+    const job = await as(app, supervisor)
+      .post('/api/jobs')
+      .send({ clientId, type: 'sampling', location: 'Port of Derince, Berth 9', commodityId })
+      .expect(201);
+    const inspectionId = (await as(app, supervisor).get(`/api/inspections?jobId=${job.body.id}`).expect(200))
+      .body.rows[0].id;
+    await as(app, supervisor)
+      .post(`/api/inspections/${inspectionId}/assignments`)
+      .send({ userId: inspector.user.id, role: 'lead_inspector' })
+      .expect(201);
+    await as(app, inspector).post(`/api/inspections/${inspectionId}/transitions`).send({ action: 'start' }).expect(200);
+    const sample = await as(app, inspector)
+      .post('/api/samples')
+      .send({ inspectionId, commodityId, quantity: 2, unit: 'kg' })
+      .expect(201);
+    const id = sample.body.id;
+    await as(app, inspector).post(`/api/samples/${id}/transitions`).send({ action: 'collect' }).expect(200);
+    await as(app, supervisor).post(`/api/samples/${id}/transitions`).send({ action: 'register' }).expect(200);
+    await as(app, inspector)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'seal', sealNumber: `SNAP-${Date.now().toString().slice(-8)}` })
+      .expect(200);
+    await as(app, supervisor)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'dispatch', destinationLaboratoryId: laboratoryId })
+      .expect(200);
+    await as(app, labManager)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'receive', sealState: 'intact', condition: 'good' })
+      .expect(200);
+    await as(app, labManager).post(`/api/samples/${id}/transitions`).send({ action: 'accept' }).expect(200);
+    return id;
+  }
+
+  /** Asks for one analysis and puts it on the analyst's bench. */
+  async function requestAndStart(sample: string, labTestId: string, testMethodId: string) {
+    const created = (await as(app, supervisor)
+      .post('/api/lab/requests')
+      .send({ sampleId: sample, tests: [{ labTestId, testMethodId }] })
+      .expect(201)).body.created[0];
+    await as(app, labManager)
+      .post(`/api/lab/requests/${created.id}/assignment`)
+      .send({ analystId: analyst.user.id })
+      .expect(200);
+    await as(app, analyst).post(`/api/lab/requests/${created.id}/transitions`).send({ action: 'start' }).expect(200);
+    return created;
+  }
+
+  /** Carries an entered result all the way to released; the laboratory reviews, never the bench. */
+  async function releaseIt(requestId: string) {
+    await as(app, analyst).post(`/api/lab/requests/${requestId}/result/submit`).expect(200);
+    await as(app, labManager).post(`/api/lab/requests/${requestId}/result/review`).send({}).expect(200);
+    await as(app, labManager).post(`/api/lab/requests/${requestId}/result/approve`).expect(200);
+    return (await as(app, labManager).post(`/api/lab/requests/${requestId}/result/release`).expect(200)).body;
+  }
+
+  beforeAll(async () => {
+    app = await createTestApp();
+    supervisor = await login(app, ACCOUNTS.supervisorTr);
+    inspector = await login(app, ACCOUNTS.inspectorTr);
+    labManager = await login(app, ACCOUNTS.labTr);
+    analyst = await login(app, ACCOUNTS.analystTr);
+    analyst2 = await login(app, ACCOUNTS.analyst2Tr);
+    finance = await login(app, ACCOUNTS.financeTr);
+    supervisorRo = await login(app, ACCOUNTS.supervisorRo);
+
+    clientId = (await as(app, supervisor)
+      .post('/api/clients')
+      .send({ name: `Snapshot Trading ${Date.now()}`, country: 'TR' })
+      .expect(201)).body.id;
+    laboratoryId = (await as(app, supervisor).get('/api/samples/laboratories').expect(200)).body
+      .find((l: { code: string }) => l.code === 'TR-LAB').id;
+    commodityId = (await as(app, supervisor).get('/api/reference/commodities').expect(200)).body
+      .find((c: { code: string }) => c.code === 'wheat_milling').id;
+    sampleId = await acceptedSample();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  // ---- Method versioning -----------------------------------------------------------------
+
+  it('keeps the method version a result was measured with, and gives new work the new one', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const protein = tests.find((t: { code: string }) => t.code === 'protein');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${protein.id}`).expect(200)).body[0];
+    const versionBefore = method.version;
+
+    const first = await requestAndStart(sampleId, protein.id, method.id);
+    const measured = (await as(app, analyst)
+      .patch(`/api/lab/requests/${first.id}/result`)
+      .send({ numericValue: '12.7', unit: '%' })
+      .expect(200)).body;
+    expect(measured.result.methodSnapshot.version).toBe(versionBefore);
+    await releaseIt(first.id);
+
+    // The laboratory revises the method: a new detection limit is a substantive change.
+    const bumped = await as(app, labManager)
+      .patch(`/api/lab/methods/${method.id}`)
+      .send({ detectionLimit: 0.05 })
+      .expect(200);
+    expect(bumped.body.version).toBe(versionBefore + 1);
+
+    // The released result still says what it was actually measured with.
+    const historical = (await as(app, labManager).get(`/api/lab/requests/${first.id}`).expect(200)).body;
+    expect(historical.result.methodSnapshot.version).toBe(versionBefore);
+    expect(historical.methodVersion).toBe(versionBefore + 1); // the method itself has moved on
+
+    // …and the next analysis measured with it records the new version.
+    const second = await requestAndStart(await acceptedSample(), protein.id, method.id);
+    const later = (await as(app, analyst)
+      .patch(`/api/lab/requests/${second.id}/result`)
+      .send({ numericValue: '13.1', unit: '%' })
+      .expect(200)).body;
+    expect(later.result.methodSnapshot.version).toBe(versionBefore + 1);
+    expect(later.result.methodSnapshot.detectionLimit).toBe(0.05);
+  });
+
+  // ---- Specification snapshot ------------------------------------------------------------
+
+  it('judges a result by the limits that applied then, not the limits that apply now', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const gluten = tests.find((t: { code: string }) => t.code === 'gluten');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${gluten.id}`).expect(200)).body[0];
+    const spec = (await as(app, labManager)
+      .get(`/api/lab/specifications?labTestId=${gluten.id}&commodityId=${commodityId}`)
+      .expect(200)).body[0];
+    expect(spec.minValue).toBe(23);
+
+    const first = await requestAndStart(sampleId, gluten.id, method.id);
+    const measured = (await as(app, analyst)
+      .patch(`/api/lab/requests/${first.id}/result`)
+      .send({ numericValue: '24.5', unit: '%' })
+      .expect(200)).body;
+    expect(measured.result.specificationSnapshot.minValue).toBe(23);
+    expect(measured.result.evaluation).toBe('within_spec');
+    await releaseIt(first.id);
+
+    // The client renegotiates: milling wheat now has to reach 26 % gluten.
+    await as(app, labManager).patch(`/api/lab/specifications/${spec.id}`).send({ minValue: 26 }).expect(200);
+
+    // The released result keeps the limit it was judged against and stays within specification.
+    const historical = (await as(app, labManager).get(`/api/lab/requests/${first.id}`).expect(200)).body;
+    expect(historical.result.specificationSnapshot.minValue).toBe(23);
+    expect(historical.result.evaluation).toBe('within_spec');
+
+    // The next analysis is judged by the new limit, and the same 24.5 now fails it.
+    const second = await requestAndStart(await acceptedSample(), gluten.id, method.id);
+    const later = (await as(app, analyst)
+      .patch(`/api/lab/requests/${second.id}/result`)
+      .send({ numericValue: '24.5', unit: '%' })
+      .expect(200)).body;
+    expect(later.result.specificationSnapshot.minValue).toBe(26);
+    expect(later.result.evaluation).toBe('out_of_spec');
+    expect(later.result.numericValue).toBe(24.5);
+
+    await as(app, labManager).patch(`/api/lab/specifications/${spec.id}`).send({ minValue: 23 }).expect(200);
+  });
+
+  // ---- Result types other than numbers ----------------------------------------------------
+
+  it('carries a pass/fail answer through the same path as a number', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const gmo = tests.find((t: { code: string }) => t.code === 'gmo');
+    expect(gmo.resultType).toBe('pass_fail');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${gmo.id}`).expect(200)).body[0];
+
+    const request = await requestAndStart(sampleId, gmo.id, method.id);
+    const saved = (await as(app, analyst)
+      .patch(`/api/lab/requests/${request.id}/result`)
+      .send({ booleanValue: false, comments: 'No GM event detected above 0.1 %' })
+      .expect(200)).body;
+    expect(saved.result.resultType).toBe('pass_fail');
+    expect(saved.result.booleanValue).toBe(false);
+    expect(saved.result.numericValue).toBeNull();
+    // No numeric limit applies to a pass/fail answer, and the record says so rather than guessing.
+    expect(saved.result.evaluation).toBe('not_evaluated');
+
+    const released = await releaseIt(request.id);
+    expect(released.status).toBe('released');
+    const forReport = (await as(app, labManager).get(`/api/lab/released?sampleId=${sampleId}`).expect(200)).body;
+    const quoted = forReport.find((x: { testCode: string }) => x.testCode === 'gmo');
+    expect(quoted.booleanValue).toBe(false);
+    expect(quoted.resultType).toBe('pass_fail');
+  });
+
+  it('carries a qualitative answer in words, and does not invent a number for it', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const colour = tests.find((t: { code: string }) => t.code === 'colour');
+    expect(colour.resultType).toBe('qualitative');
+
+    // The reference data lists the analysis, but no laboratory had declared a method for it.
+    const method = await as(app, labManager)
+      .post('/api/lab/methods')
+      .send({
+        labTestId: colour.id,
+        code: `SOP-COLOUR-${Date.now().toString().slice(-5)}`,
+        name: 'Visual colour assessment against reference samples',
+        standardReference: 'Internal SOP COLOUR-01',
+      })
+      .expect(201);
+
+    const request = await requestAndStart(sampleId, colour.id, method.body.id);
+    const saved = (await as(app, analyst)
+      .patch(`/api/lab/requests/${request.id}/result`)
+      .send({ qualitativeValue: 'Light amber, uniform' })
+      .expect(200)).body;
+    expect(saved.result.qualitativeValue).toBe('Light amber, uniform');
+    expect(saved.result.numericValue).toBeNull();
+    expect(saved.result.evaluation).toBe('not_evaluated');
+
+    await releaseIt(request.id);
+    const quoted = (await as(app, labManager).get(`/api/lab/released?sampleId=${sampleId}`).expect(200)).body
+      .find((x: { testCode: string }) => x.testCode === 'colour');
+    expect(quoted.qualitativeValue).toBe('Light amber, uniform');
+  });
+
+  // ---- Decimal precision ------------------------------------------------------------------
+
+  it('stores every digit the analyst typed, however small or large the number', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const aflatoxin = tests.find((t: { code: string }) => t.code === 'aflatoxin');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${aflatoxin.id}`).expect(200)).body[0];
+    const request = await requestAndStart(sampleId, aflatoxin.id, method.id);
+
+    for (const value of ['0.001', '12345.6789', '12.40']) {
+      const res = await as(app, analyst)
+        .patch(`/api/lab/requests/${request.id}/result`)
+        .send({ numericValue: value })
+        .expect(200);
+      expect(res.body.result.numericValue).toBe(Number(value));
+    }
+
+    const stored = (await as(app, labManager).get(`/api/lab/requests/${request.id}/revisions`).expect(200)).body[0];
+    expect(stored.numericValue).toBe(12.4);
+  });
+
+  // ---- The paper behind the result ---------------------------------------------------------
+
+  it('takes the worksheet that belongs to the revision, and stops taking it once handed in', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const testWeight = tests.find((t: { code: string }) => t.code === 'test_weight');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${testWeight.id}`).expect(200)).body[0];
+    const request = await requestAndStart(sampleId, testWeight.id, method.id);
+
+    // There is nothing to attach a worksheet to until there is a revision.
+    const tooEarly = await as(app, analyst)
+      .post(`/api/lab/requests/${request.id}/attachments`)
+      .attach('file', Buffer.from('%PDF-1.4 worksheet'), { filename: 'worksheet.pdf', contentType: 'application/pdf' });
+    expect(tooEarly.status).toBe(409);
+
+    await as(app, analyst)
+      .patch(`/api/lab/requests/${request.id}/result`)
+      .send({ numericValue: '78.2', unit: 'kg/hl' })
+      .expect(200);
+
+    const added = await as(app, analyst)
+      .post(`/api/lab/requests/${request.id}/attachments`)
+      .field('caption', 'Chondrometer printout')
+      .attach('file', Buffer.from('%PDF-1.4 worksheet'), { filename: 'worksheet.pdf', contentType: 'application/pdf' })
+      .expect(201);
+    expect(added.body.revision).toBe(1);
+    expect(added.body.sha256).toHaveLength(64);
+
+    const listed = (await as(app, labManager).get(`/api/lab/requests/${request.id}/attachments`).expect(200)).body;
+    expect(listed).toHaveLength(1);
+    expect(listed[0].caption).toBe('Chondrometer printout');
+
+    const onRequest = (await as(app, labManager).get(`/api/lab/requests/${request.id}`).expect(200)).body;
+    expect(onRequest.attachmentCount).toBe(1);
+
+    // Once the work is handed in, the paperwork is fixed with it.
+    await as(app, analyst).post(`/api/lab/requests/${request.id}/result/submit`).expect(200);
+    const tooLate = await as(app, analyst)
+      .post(`/api/lab/requests/${request.id}/attachments`)
+      .attach('file', Buffer.from('%PDF-1.4 second'), { filename: 'again.pdf', contentType: 'application/pdf' });
+    expect(tooLate.status).toBe(409);
+  });
+
+  // ---- Reviewer, approver, and who may not be either ---------------------------------------
+
+  it('insists the reviewer says why work is going back to the bench', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const falling = tests.find((t: { code: string }) => t.code === 'falling_number');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${falling.id}`).expect(200)).body[0];
+    const request = await requestAndStart(sampleId, falling.id, method.id);
+    await as(app, analyst)
+      .patch(`/api/lab/requests/${request.id}/result`)
+      .send({ numericValue: '280', unit: 's' })
+      .expect(200);
+    await as(app, analyst).post(`/api/lab/requests/${request.id}/result/submit`).expect(200);
+
+    const noReason = await as(app, labManager).post(`/api/lab/requests/${request.id}/result/return`).send({});
+    expect(noReason.status).toBe(400);
+    const tooShort = await as(app, labManager)
+      .post(`/api/lab/requests/${request.id}/result/return`)
+      .send({ reason: 'no' });
+    expect(tooShort.status).toBe(400);
+
+    const returned = await as(app, labManager)
+      .post(`/api/lab/requests/${request.id}/result/return`)
+      .send({ reason: 'Duplicate determination differs by more than the method allows; please repeat' })
+      .expect(200);
+    expect(returned.body.status).toBe('in_progress');
+    expect(returned.body.result.reviewComment).toMatch(/repeat/i);
+    // The analyst can write again, and the value they entered is still there to correct.
+    expect(returned.body.result.numericValue).toBe(280);
+  });
+
+  it('refuses self-approval in the API, not merely in the interface', async () => {
+    const tests = (await as(app, labManager).get('/api/lab/tests').expect(200)).body;
+    const impurities = tests.find((t: { code: string }) => t.code === 'impurities');
+    const method = (await as(app, labManager).get(`/api/lab/methods?labTestId=${impurities.id}`).expect(200)).body[0];
+    const request = await requestAndStart(sampleId, impurities.id, method.id);
+    await as(app, analyst)
+      .patch(`/api/lab/requests/${request.id}/result`)
+      .send({ numericValue: '1.2', unit: '%' })
+      .expect(200);
+    await as(app, analyst).post(`/api/lab/requests/${request.id}/result/submit`).expect(200);
+
+    // The analyst holds neither right, and the API says so rather than the screen hiding a button.
+    expect((await as(app, analyst).post(`/api/lab/requests/${request.id}/result/review`).send({})).status).toBe(403);
+    expect((await as(app, analyst).post(`/api/lab/requests/${request.id}/result/approve`)).status).toBe(403);
+
+    // A second analyst cannot approve either — the right belongs to the laboratory, not the bench.
+    expect((await as(app, analyst2).post(`/api/lab/requests/${request.id}/result/approve`)).status).toBe(403);
+
+    // Even a manager cannot approve before somebody has technically reviewed it.
+    const unreviewed = await as(app, labManager).post(`/api/lab/requests/${request.id}/result/approve`);
+    expect(unreviewed.status).toBe(400);
+    expect(unreviewed.body.message).toMatch(/review/i);
+
+    await as(app, labManager).post(`/api/lab/requests/${request.id}/result/review`).send({}).expect(200);
+    const approved = await as(app, labManager).post(`/api/lab/requests/${request.id}/result/approve`).expect(200);
+    expect(approved.body.result.approvedBy).toBe(labManager.user.id);
+    expect(approved.body.result.approvedBy).not.toBe(approved.body.result.analystId);
+  });
+
+  // ---- Who sees the laboratory at all -------------------------------------------------------
+
+  it('keeps laboratory work inside the office that is doing it', async () => {
+    const mine = (await as(app, labManager).get(`/api/lab/requests?sampleId=${sampleId}`).expect(200)).body;
+    expect(mine.total).toBeGreaterThan(0);
+    const one = mine.rows[0].id;
+
+    // Another country's office sees none of it, and cannot open one by guessing its id.
+    const theirs = (await as(app, supervisorRo).get('/api/lab/requests?limit=200').expect(200)).body;
+    expect(theirs.rows.map((r: { id: string }) => r.id)).not.toContain(one);
+    await as(app, supervisorRo).get(`/api/lab/requests/${one}`).expect(404);
+
+    // Whoever may see a sample may see what the laboratory is doing with it — that is how the
+    // rights were derived — but reading is all a finance controller can do here.
+    expect((await as(app, finance).get('/api/lab/requests')).status).toBe(200);
+    expect((await as(app, finance).post('/api/lab/requests')
+      .send({ sampleId, usePanel: true })).status).toBe(403);
+    expect((await as(app, finance).patch(`/api/lab/requests/${one}/result`)
+      .send({ numericValue: '1' })).status).toBe(403);
+    expect((await as(app, finance).post(`/api/lab/requests/${one}/result/approve`)).status).toBe(403);
+    expect((await as(app, finance).post('/api/lab/methods')
+      .send({ labTestId: mine.rows[0].labTestId, code: 'X', name: 'X' })).status).toBe(403);
+
+    // An analyst may read the queue but not hand out work or sign anything.
+    expect((await as(app, analyst).get('/api/lab/requests?mine=true')).status).toBe(200);
+    expect((await as(app, analyst).post(`/api/lab/requests/${one}/assignment`)
+      .send({ analystId: analyst2.user.id })).status).toBe(403);
+    expect((await as(app, analyst).post(`/api/lab/requests/${one}/result/release`)).status).toBe(403);
+    expect((await as(app, analyst).post(`/api/lab/requests/${one}/result/amendments`)
+      .send({ reason: 'I would like to change my own released result' })).status).toBe(403);
+  });
+
+
+  it('opens the work to the laboratory doing it, even when that is another office', async () => {
+    // A Turkish sample sent to the Romanian laboratory: the office that owns the job keeps it,
+    // and the office that will actually run the analysis has to be able to see it too.
+    const roLab = (await as(app, supervisor).get('/api/samples/laboratories').expect(200)).body
+      .find((l: { code: string }) => l.code === 'RO-LAB');
+    expect(roLab).toBeTruthy();
+
+    const job = await as(app, supervisor)
+      .post('/api/jobs')
+      .send({ clientId, type: 'sampling', location: 'Port of Derince, Berth 11', commodityId })
+      .expect(201);
+    const inspectionId = (await as(app, supervisor).get(`/api/inspections?jobId=${job.body.id}`).expect(200))
+      .body.rows[0].id;
+    await as(app, supervisor)
+      .post(`/api/inspections/${inspectionId}/assignments`)
+      .send({ userId: inspector.user.id, role: 'lead_inspector' })
+      .expect(201);
+    await as(app, inspector).post(`/api/inspections/${inspectionId}/transitions`).send({ action: 'start' }).expect(200);
+    const sample = await as(app, inspector)
+      .post('/api/samples')
+      .send({ inspectionId, commodityId, quantity: 2, unit: 'kg' })
+      .expect(201);
+    const id = sample.body.id;
+    await as(app, inspector).post(`/api/samples/${id}/transitions`).send({ action: 'collect' }).expect(200);
+    await as(app, supervisor).post(`/api/samples/${id}/transitions`).send({ action: 'register' }).expect(200);
+    await as(app, inspector)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'seal', sealNumber: `XLAB-${Date.now().toString().slice(-8)}` })
+      .expect(200);
+    await as(app, supervisor)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'dispatch', destinationLaboratoryId: roLab.id })
+      .expect(200);
+
+    // The office that owns the job keeps the sample and the analyses on it, and the request
+    // records which laboratory is expected to run them.
+    await as(app, labManager)
+      .post(`/api/samples/${id}/transitions`)
+      .send({ action: 'receive', sealState: 'intact', condition: 'good' })
+      .expect(200);
+    await as(app, labManager).post(`/api/samples/${id}/transitions`).send({ action: 'accept' }).expect(200);
+
+    const created = (await as(app, supervisor)
+      .post('/api/lab/requests')
+      .send({ sampleId: id, usePanel: true })
+      .expect(201)).body.created;
+    expect(created.length).toBeGreaterThan(0);
+    const request = created[0];
+    expect(request.laboratoryId).toBe(roLab.id);
+    expect(request.laboratoryName).toMatch(/Constan/);
+    expect((await as(app, supervisor).get(`/api/lab/requests/${request.id}`).expect(200)).body.id).toBe(request.id);
+
+    // Whoever runs it must work where the laboratory is: an Istanbul analyst cannot be given
+    // work standing on a bench in Constanța.
+    const wrongOffice = await as(app, labManager)
+      .post(`/api/lab/requests/${request.id}/assignment`)
+      .send({ analystId: analyst.user.id });
+    expect(wrongOffice.status).toBe(400);
+    expect(wrongOffice.body.message).toMatch(/office|laborator/i);
+  });
+  it('counts the dashboard for exactly the rows the queue is showing', async () => {
+    for (const scope of ['', `?laboratoryId=${laboratoryId}`]) {
+      const d = (await as(app, labManager).get(`/api/lab/dashboard${scope}`).expect(200)).body;
+      const q = (s: string) => `/api/lab/requests?limit=200${scope ? `&laboratoryId=${laboratoryId}` : ''}&${s}`;
+
+      const unassigned = (await as(app, labManager).get(q('unassigned=true')).expect(200)).body;
+      const inProgress = (await as(app, labManager).get(q('status=in_progress')).expect(200)).body;
+      const toReview = (await as(app, labManager).get(q('status=under_review&reviewed=false')).expect(200)).body;
+      const toApprove = (await as(app, labManager).get(q('status=under_review&reviewed=true')).expect(200)).body;
+      const toRelease = (await as(app, labManager).get(q('status=approved')).expect(200)).body;
+      const overdue = (await as(app, labManager).get(q('overdue=true')).expect(200)).body;
+      const oos = (await as(app, labManager).get(q('outOfSpec=true')).expect(200)).body;
+
+      expect(d.unassigned).toBe(unassigned.total);
+      expect(d.inProgress).toBe(inProgress.total);
+      expect(d.awaitingReview).toBe(toReview.total);
+      expect(d.awaitingApproval).toBe(toApprove.total);
+      expect(d.awaitingRelease).toBe(toRelease.total);
+      expect(d.overdue).toBe(overdue.total);
+      expect(d.outOfSpec).toBe(oos.total);
+    }
+  });
+
+  it("counts an analyst's own bench the same way the analyst's queue does", async () => {
+    const d = (await as(app, analyst).get('/api/lab/dashboard?mine=true').expect(200)).body;
+    const mine = (await as(app, analyst).get('/api/lab/requests?mine=true&limit=200').expect(200)).body;
+    const count = (status: string) => mine.rows.filter((r: { status: string }) => r.status === status).length;
+    expect(d.inProgress).toBe(count('in_progress'));
+    expect(d.awaitingRelease).toBe(count('approved'));
+    // Work assigned to somebody is by definition not unassigned work.
+    expect(d.unassigned).toBe(0);
+  });
+});

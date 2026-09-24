@@ -5,6 +5,7 @@ import { LabCatalogueService } from './lab-catalogue.service';
 import { LabRequestsService } from './lab-requests.service';
 import { LabResultsService } from './lab-results.service';
 import { LabWorkflowService } from './lab-workflow.service';
+import { LabMediaService } from './lab-media.service';
 
 /**
  * Laboratory information management (docs/WORKFLOWS.md).
@@ -16,7 +17,7 @@ import { LabWorkflowService } from './lab-workflow.service';
 @Module({
   imports: [OperationsModule],
   controllers: [LaboratoryController],
-  providers: [LabCatalogueService, LabRequestsService, LabResultsService, LabWorkflowService],
+  providers: [LabCatalogueService, LabRequestsService, LabResultsService, LabWorkflowService, LabMediaService],
   exports: [LabResultsService, LabRequestsService],
 })
 export class LaboratoryModule {}

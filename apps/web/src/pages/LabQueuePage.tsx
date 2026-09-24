@@ -166,9 +166,17 @@ export function LabQueuePage() {
      range.from, range.to, sort, dir],
   );
 
+  // The tiles answer with the same office, laboratory and bench the list is looking at:
+  // a count nobody can reproduce by clicking it is worse than no count.
+  const scope = new URLSearchParams();
+  if (laboratoryId) scope.set('laboratoryId', laboratoryId);
+  if (branchId) scope.set('branchId', branchId);
+  if (mine) scope.set('mine', 'true');
+  const scopeKey = scope.toString();
+
   const dashboard = useQuery({
-    queryKey: ['lab-dashboard', branchId ?? '', laboratoryId],
-    queryFn: () => api.get<LabDashboard>(`/lab/dashboard${laboratoryId ? `?laboratoryId=${laboratoryId}` : ''}`),
+    queryKey: ['lab-dashboard', scopeKey],
+    queryFn: () => api.get<LabDashboard>(`/lab/dashboard?${scopeKey}`),
   });
 
   const list = useQuery({

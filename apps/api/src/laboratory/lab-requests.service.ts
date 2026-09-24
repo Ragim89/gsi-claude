@@ -51,6 +51,16 @@ export interface RequestFilters {
   offset?: number;
 }
 
+/**
+ * The dashboard answers with the same filters the queue is looking at. A tile that counted a
+ * wider set than the list beneath it would be a number nobody could check by clicking it.
+ */
+export interface DashboardFilters {
+  laboratoryId?: string;
+  branchId?: string;
+  analystId?: string;
+}
+
 export interface CreateRequestsInput {
   sampleId: string;
   laboratoryId?: string;
@@ -394,12 +404,14 @@ export class LabRequestsService {
   }
 
   /** Every figure is a query against the same rows the queue shows; none is an estimate. */
-  dashboard(user: AuthUser, laboratoryId?: string): Promise<LabDashboard> {
+  dashboard(user: AuthUser, f: DashboardFilters = {}): Promise<LabDashboard> {
     return this.db.tx(user, async (tx) => {
       const row = await tx.one<LabDashboard>(
         `SELECT
            (SELECT count(*)::int FROM samples sa
             WHERE sa.status = 'accepted_by_lab' AND sa.deleted_at IS NULL
+              AND ($2::uuid IS NULL OR sa.branch_id = $2::uuid)
+              AND ($1::uuid IS NULL OR sa.destination_laboratory_id = $1::uuid)
               AND NOT EXISTS (SELECT 1 FROM test_requests q WHERE q.sample_id = sa.id
                               AND q.status NOT IN ('cancelled','rejected'))) AS "samplesAwaitingTests",
            count(*) FILTER (WHERE r.assigned_analyst_id IS NULL
@@ -421,8 +433,10 @@ export class LabRequestsService {
                                           WHERE v.test_request_id = r.id AND v.is_current
                                             AND v.evaluation = 'out_of_spec'))::int AS "outOfSpec"
          FROM test_requests r
-         WHERE ($1::uuid IS NULL OR r.laboratory_id = $1::uuid)`,
-        [laboratoryId ?? null],
+         WHERE ($1::uuid IS NULL OR r.laboratory_id = $1::uuid)
+           AND ($2::uuid IS NULL OR r.branch_id = $2::uuid)
+           AND ($3::uuid IS NULL OR r.assigned_analyst_id = $3::uuid)`,
+        [f.laboratoryId ?? null, f.branchId ?? null, f.analystId ?? null],
       );
       return row!;
     });

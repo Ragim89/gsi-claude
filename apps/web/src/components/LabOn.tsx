@@ -7,6 +7,7 @@ import {
   JOB_PRIORITIES,
   JobPriority,
   Page,
+  ReleasedResult,
   Sample,
   TestPanel,
   TestRequest,
@@ -14,7 +15,7 @@ import {
 } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import { EvaluationBadge, ResultValue, TestStatusBadge, useTestName } from './LabBits';
+import { EvaluationBadge, ResultValue, TestStatusBadge, useSpecText, useTestName } from './LabBits';
 import { ErrorBox, Loading, useFormatDate, useMediaQuery } from './common';
 
 /**
@@ -227,11 +228,19 @@ export function LabOnJob({ jobId }: { jobId: string }) {
   const { t } = useTranslation();
   const { can } = useAuth();
   const nameOf = useTestName();
+  const fmt = useFormatDate();
+  const specs = useSpecText();
   const navigate = useNavigate();
 
   const list = useQuery({
     queryKey: ['job-lab', jobId],
     queryFn: () => api.get<Page<TestRequest>>(`/lab/requests?jobId=${jobId}&limit=200`),
+    enabled: can('lab.test.read'),
+  });
+  // The read model a report is allowed through, shown here as the report will see it.
+  const released = useQuery({
+    queryKey: ['job-lab-released', jobId],
+    queryFn: () => api.get<ReleasedResult[]>(`/lab/released?jobId=${jobId}`),
     enabled: can('lab.test.read'),
   });
 
@@ -242,21 +251,70 @@ export function LabOnJob({ jobId }: { jobId: string }) {
   const outstanding = rows.filter((r) =>
     ['requested', 'assigned', 'in_progress', 'result_entered', 'under_review', 'approved', 'on_hold'].includes(r.status),
   ).length;
-  const released = rows.filter((r) => r.status === 'released').length;
+  const releasedRows = released.data ?? [];
   const outOfSpec = rows.filter((r) => r.result?.evaluation === 'out_of_spec').length;
 
   return (
-    <Card title={t('lab.title')}>
-      <ErrorBox error={list.error} />
-      {list.isLoading ? (
-        <Loading />
-      ) : (
-        <>
+    <div className="stack">
+      <Card title={t('lab.releasedForReport')}>
+        <ErrorBox error={released.error} />
+        <p className="muted">{t('lab.releasedForReportHint')}</p>
+        {released.isLoading ? (
+          <Loading />
+        ) : !releasedRows.length ? (
+          <EmptyState>{t('lab.noneReleased')}</EmptyState>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <th>{t('samples.number')}</th>
+                <th>{t('lab.test')}</th>
+                <th>{t('lab.methodUsed')}</th>
+                <th>{t('lab.value')}</th>
+                <th>{t('lab.specification')}</th>
+                <th>{t('lab.againstSpec')}</th>
+                <th>{t('lab.revision')}</th>
+                <th>{t('lab.releasedBy')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {releasedRows.map((x) => (
+                <tr key={x.resultId}>
+                  <td className="mono">{x.sampleNumber}</td>
+                  <td>{nameOf(x.testName, x.testCode)}</td>
+                  <td className="mono">
+                    {x.methodCode}
+                    <span className="muted"> v{x.methodVersion}</span>
+                  </td>
+                  <td className="mono">
+                    {x.numericValue ?? x.textValue ?? x.qualitativeValue ??
+                      (x.booleanValue == null ? '—' : t(x.booleanValue ? 'lab.detected' : 'lab.notDetected'))}
+                    {x.numericValue != null && x.unit ? ` ${x.unit}` : ''}
+                  </td>
+                  <td>{specs(x.specificationSnapshot)}</td>
+                  <td>
+                    <EvaluationBadge evaluation={x.evaluation} />
+                  </td>
+                  <td className="num">{x.revision}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{fmt(x.releasedAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      <Card title={t('lab.allWorkOnJob')}>
+        <ErrorBox error={list.error} />
+        {list.isLoading ? (
+          <Loading />
+        ) : (
+          <>
           <div className="job-head">
             <Badge tone={outstanding ? 'warning' : 'success'}>
               {t('lab.outstandingCount', { count: outstanding })}
             </Badge>
-            <Badge tone="success">{t('lab.releasedCount', { count: released })}</Badge>
+            <Badge tone="success">{t('lab.releasedCount', { count: releasedRows.length })}</Badge>
             {outOfSpec ? <Badge tone="danger">{t('lab.outOfSpecCount', { count: outOfSpec })}</Badge> : null}
           </div>
           <Table>
@@ -287,8 +345,9 @@ export function LabOnJob({ jobId }: { jobId: string }) {
               ))}
             </tbody>
           </Table>
-        </>
-      )}
-    </Card>
+          </>
+        )}
+      </Card>
+    </div>
   );
 }

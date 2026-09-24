@@ -2,7 +2,7 @@
 
 REST поверх `/api`. Все эндпоинты, кроме явно публичных, требуют заголовок `Authorization: Bearer <access token>`.
 
-Актуально после PHASE 5.
+Актуально после PHASE 6.
 
 ---
 
@@ -254,7 +254,7 @@ POST /api/samples/{id}/transitions
 
 | Метод | Путь | Право | Описание |
 |---|---|---|---|
-| GET | `/lab/dashboard` | `lab.test.read` | счётчики очереди; каждый — запрос по тем же строкам |
+| GET | `/lab/dashboard` | `lab.test.read` | счётчики очереди; принимает `laboratoryId`, `branchId`, `mine=true` — те же фильтры, что и список, чтобы плитка и строки под ней считали одно и то же 
 | GET | `/lab/requests` | `lab.test.read` | рабочая очередь: пагинация, поиск, фильтры, сортировка |
 | GET | `/lab/requests/:id` | `lab.test.read` | карточка + `actions` — что можно сделать сейчас |
 | POST | `/lab/requests` | `lab.test.request` | запросить анализы: `{ sampleId, usePanel: true }` либо `{ sampleId, tests: [{ labTestId, testMethodId }] }` |
@@ -269,7 +269,13 @@ POST /api/samples/{id}/transitions
 | POST | `/lab/requests/:id/result/approve` | `lab.result.approve` | утвердить |
 | POST | `/lab/requests/:id/result/release` | `lab.result.release` | выпустить |
 | POST | `/lab/requests/:id/result/amendments` | `lab.result.amend` | ревизия утверждённого результата (причина обязательна) |
+| GET | `/lab/requests/:id/attachments` | `lab.test.read` | рабочие записи всех ревизий анализа |
+| POST | `/lab/requests/:id/attachments` | `lab.result.enter` | приложить распечатку или журнал к действующей ревизии (multipart) |
 | GET | `/lab/released?jobId=…\|sampleId=…` | `lab.test.read` | **только выпущенные** результаты — единственная дверь для отчётов |
+
+`/lab/released` требует `jobId` либо `sampleId` и без них отвечает 400: отчёт всегда про одну заявку или одну пробу, а выгрузка всех выпущенных результатов группы — это не отчёт.
+
+Приложить рабочую запись можно, только пока ревизия на рабочем месте (`in_progress`, `result_entered`); после сдачи — 409, потому что документы доказывают именно то значение, которое подписали.
 
 `PATCH` и `DELETE` для `test_results` не существует: утверждённый результат не правят, его заменяет новая ревизия, а предыдущая остаётся ровно такой, какой её подписали.
 
