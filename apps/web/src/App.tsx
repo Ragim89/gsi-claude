@@ -8,6 +8,8 @@ import { LoginPage } from './pages/LoginPage';
 import { JobsPage } from './pages/JobsPage';
 import { JobFormPage } from './pages/JobFormPage';
 import { JobDetailPage } from './pages/JobDetailPage';
+import { InspectionsPage } from './pages/InspectionsPage';
+import { InspectionDetailPage } from './pages/InspectionDetailPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailPage } from './pages/ClientDetailPage';
 import { UsersPage } from './pages/UsersPage';
@@ -39,9 +41,12 @@ function RequireAuth({ need, children }: { need?: Permission[]; children: JSX.El
 
 /** Everyone lands on the most useful screen their permissions allow. */
 function HomeRedirect() {
-  const { can } = useAuth();
+  const { user, can } = useAuth();
+  // A field role opens their own inspections, not a dashboard they cannot act on.
+  if (user?.scope === 'own' && can('inspection.read')) return <Navigate to="/inspections" replace />;
   if (can('dashboard.read')) return <Navigate to="/finance" replace />;
   if (can('job.read')) return <Navigate to="/jobs" replace />;
+  if (can('inspection.read')) return <Navigate to="/inspections" replace />;
   if (can('client.read')) return <Navigate to="/clients" replace />;
   // An account with no permissions at all: say so plainly rather than bounce between routes.
   return <NoAccess />;
@@ -81,6 +86,8 @@ export function App() {
         <Route path="/jobs/new" element={<RequireAuth need={['job.create']}><JobFormPage /></RequireAuth>} />
         <Route path="/jobs/:id" element={<RequireAuth need={['job.read']}><JobDetailPage /></RequireAuth>} />
         <Route path="/jobs/:id/edit" element={<RequireAuth need={['job.update']}><JobFormPage /></RequireAuth>} />
+        <Route path="/inspections" element={<RequireAuth need={['inspection.read']}><InspectionsPage /></RequireAuth>} />
+        <Route path="/inspections/:id" element={<RequireAuth need={['inspection.read']}><InspectionDetailPage /></RequireAuth>} />
         <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
         <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth need={['contract.read']}><ContractsPage /></RequireAuth>} />

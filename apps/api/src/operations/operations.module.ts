@@ -14,6 +14,6 @@ import { JobEventsService } from './job-events.service';
   imports: [DocumentsModule],
   controllers: [JobsController, MediaController],
   providers: [JobsService, ChecklistService, JobWorkflowService, JobEventsService],
-  exports: [JobWorkflowService, JobEventsService],
+  exports: [JobsService, JobWorkflowService, JobEventsService],
 })
 export class OperationsModule {}

@@ -7,10 +7,10 @@
  * ASSUMPTION: figures are invented for demonstration; they are not GSI's real numbers.
  */
 import { ClientBase } from 'pg';
-import { SERVICE_TYPES, ServiceType } from '@gsi/shared-types';
+import { JobStatus, SERVICE_TYPES, ServiceType } from '@gsi/shared-types';
 import { wrapClient, Tx } from './db.service';
 import { config } from '../config';
-import { seedChecklist } from '../operations/checklist-seed';
+import { seedInspection } from './seed-inspection';
 
 // Indicative mid-market rates to EUR (ASSUMPTION: manual reference data, see fx-rates API).
 const RATES: Record<string, number> = {
@@ -189,7 +189,18 @@ export async function seedFinance(client: ClientBase): Promise<void> {
            VESSELS[Math.floor(rand() * VESSELS.length)], COMMODITIES[Math.floor(rand() * COMMODITIES.length)],
            `${(5 + Math.floor(rand() * 45)) * 1000} MT`, date.toISOString(), supervisor.id, status, priority, finished],
         );
-        await seedChecklist(tx, job!.id, type);
+        // The field work of the job, with the checklist attached to it.
+        await seedInspection(tx, {
+          jobId: job!.id,
+          branchId: branch.id,
+          type,
+          jobStatus: status as JobStatus,
+          leadInspectorId: inspector?.id ?? null,
+          location: locations[Math.floor(rand() * locations.length)],
+          scheduledStart: date.toISOString(),
+          createdBy: supervisor.id,
+          createdAt: date.toISOString(),
+        });
         if (finished || status === 'under_review') {
           await tx.exec(
             `UPDATE job_checklist_items SET result = 'ok', updated_by = $2 WHERE job_id = $1`,

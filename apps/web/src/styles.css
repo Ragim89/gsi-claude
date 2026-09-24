@@ -500,3 +500,66 @@ td.negative { color: var(--gsi-color-danger); }
   .timeline__item { padding-inline-start: 22px; }
   .job-head { gap: 6px; }
 }
+
+/* ---- Inspections: field screen, action bar, photo captions -------------------------- */
+
+/*
+ * The status actions sit at the bottom of a phone screen and stay there. An inspector with
+ * one hand on a handrail should not have to scroll to the top to finish an inspection.
+ */
+.action-bar {
+  display: flex; gap: var(--gsi-space-2); flex-wrap: wrap;
+  padding-block-start: var(--gsi-space-3);
+}
+.action-bar__btn {
+  font-family: inherit; font-size: var(--gsi-font-size-sm); cursor: pointer;
+  padding: 10px 16px; border-radius: var(--gsi-radius-md);
+  border: 1px solid var(--gsi-color-border-strong); background: var(--gsi-color-surface);
+  color: var(--gsi-color-text);
+}
+.action-bar__btn--primary {
+  background: var(--gsi-color-primary); border-color: var(--gsi-color-primary); color: #fff;
+}
+.action-bar__btn:disabled { opacity: 0.6; cursor: default; }
+
+.save-state--ok { color: var(--gsi-color-success); }
+.save-state--failed {
+  border: 0; background: transparent; font-family: inherit; cursor: pointer;
+  color: var(--gsi-color-danger); text-decoration: underline;
+}
+.required-dot { color: var(--gsi-color-danger); }
+
+.photo--lg { width: 132px; height: 132px; }
+.photo__cap {
+  position: absolute; inset-inline: 0; inset-block-end: 0;
+  background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 11px; padding: 2px 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.photo-add--inline { width: auto; height: auto; padding: 8px 14px; }
+
+/* An inspection in the list, as a phone shows it. */
+.ins-card {
+  display: grid; gap: 6px; text-decoration: none; color: inherit;
+  border: 1px solid var(--gsi-color-border); border-radius: var(--gsi-radius-md);
+  padding: var(--gsi-space-3); background: var(--gsi-color-surface);
+}
+.ins-card:active { background: var(--gsi-color-background); }
+.ins-card__head { display: flex; justify-content: space-between; align-items: center; gap: var(--gsi-space-2); }
+.ins-card__title { font-weight: var(--gsi-font-weight-medium); }
+.ins-card__meta { display: flex; gap: var(--gsi-space-2); align-items: center; flex-wrap: wrap; font-size: var(--gsi-font-size-sm); }
+
+@media (max-width: 900px) {
+  .action-bar {
+    position: sticky; inset-block-end: 0; z-index: 5;
+    margin-inline: calc(-1 * var(--gsi-space-4));
+    padding: var(--gsi-space-3) var(--gsi-space-4);
+    padding-block-end: calc(var(--gsi-space-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--gsi-color-surface);
+    border-block-start: 1px solid var(--gsi-color-border);
+  }
+  .action-bar__btn { flex: 1 1 auto; min-height: 44px; }
+  /* Room for the sticky bar so it never covers the last question. */
+  .has-action-bar { padding-block-end: var(--gsi-space-4); }
+  .photo, .photo--lg { width: 104px; height: 104px; }
+  .check-item__head { align-items: flex-start; }
+}

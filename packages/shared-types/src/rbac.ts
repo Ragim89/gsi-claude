@@ -10,6 +10,11 @@ export const PERMISSIONS = [
   'job.approve', 'job.cancel', 'job.archive', 'job.restore', 'job.change_status', 'job.close',
   'job.read_history', 'job.read_finance',
   'checklist.update', 'media.upload', 'media.delete',
+  // Inspections
+  'inspection.read', 'inspection.create', 'inspection.update', 'inspection.assign',
+  'inspection.start', 'inspection.complete', 'inspection.review', 'inspection.approve',
+  'inspection.cancel', 'inspection.archive', 'inspection.restore',
+  'inspection.add_finding', 'inspection.add_measurement',
   // CRM
   'client.read', 'client.create', 'client.update', 'client.archive',
   // Documents

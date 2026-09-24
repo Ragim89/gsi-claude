@@ -16,7 +16,7 @@ import {
 } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { buildSet } from '../common/sql';
-import { seedChecklist } from './checklist-seed';
+import { openInspection } from '../inspections/open-inspection';
 import { ReportsService } from '../documents/reports.service';
 import { JOB_COLUMNS, JOB_FROM } from './job-sql';
 import { AuditService } from '../common/audit.service';
@@ -272,7 +272,19 @@ export class JobsService {
          input.city ?? null, input.objectKind ?? null, input.containerNo ?? null, input.transportRef ?? null,
          input.priority ?? null, input.requestedDate ?? null, input.internalNotes ?? null, user.id],
       );
-      await seedChecklist(tx, row!.id, input.type);
+      // A job opens with the inspection that carries its field work — and with it the
+      // checklist, which is where a job's checklist has lived since this phase. More
+      // inspections can be added to the same job at any time.
+      await openInspection(tx, this.audit, user, {
+        jobId: row!.id,
+        branchId: client.branch_id,
+        type: input.type,
+        leadInspectorId: input.assignedInspectorId ?? null,
+        location: input.location?.trim() ?? null,
+        city: input.city ?? null,
+        scheduledStart: input.scheduledAt ?? null,
+        instructions: input.instructions ?? null,
+      });
 
       // The inspector named at creation becomes the lead, and the job moves to assigned.
       if (input.assignedInspectorId) {

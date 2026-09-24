@@ -7,7 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { Client } from 'pg';
 import { config } from '../config';
 import { wrapClient } from './db.service';
-import { seedChecklist } from '../operations/checklist-seed';
+import { seedInspection } from './seed-inspection';
 import { seedFinance, seedFxRates } from './seed-finance';
 import { seedReference } from './seed-reference';
 import { seedAssets, seedDepreciation } from './seed-assets';
@@ -191,7 +191,16 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
          RETURNING id`,
         [tr, clientRow!.id, inspector!.id, supervisor!.id],
       );
-      await seedChecklist(tx, job!.id, 'loading_discharge');
+      await seedInspection(tx, {
+        jobId: job!.id,
+        branchId: tr,
+        type: 'loading_discharge',
+        jobStatus: 'assigned',
+        leadInspectorId: inspector!.id,
+        location: 'Port of Derince, Berth 5',
+        scheduledStart: new Date(Date.now() + 86400000).toISOString(),
+        createdBy: supervisor!.id,
+      });
     }
 
     // Countries are created by the branch trigger with the ISO code as their name; give the

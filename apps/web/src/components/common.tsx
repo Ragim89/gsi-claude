@@ -46,6 +46,24 @@ export function useFormatDate() {
   };
 }
 
+/**
+ * True while the viewport matches. Used to swap a dense table for cards on a phone rather
+ * than leave a field inspector pinching at ten columns.
+ */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = React.useState(
+    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
+  );
+  React.useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = () => setMatches(mql.matches);
+    onChange();
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return matches;
+}
+
 export function Loading() {
   const { t } = useTranslation();
   return (

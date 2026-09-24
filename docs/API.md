@@ -2,7 +2,7 @@
 
 REST поверх `/api`. Все эндпоинты, кроме явно публичных, требуют заголовок `Authorization: Bearer <access token>`.
 
-Актуально после PHASE 3.
+Актуально после PHASE 4.
 
 ---
 
@@ -14,7 +14,7 @@ REST поверх `/api`. Все эндпоинты, кроме явно пуб�
 { "rows": [ ... ], "total": 942, "limit": 50, "offset": 0 }
 ```
 
-Так отвечают `/jobs`, `/clients`, `/contracts`, `/admin/audit`. Остальные списки короткие по своей природе (контакты клиента, исполнители заявки, справочники) и отдаются массивом.
+Так отвечают `/jobs`, `/inspections`, `/clients`, `/contracts`, `/admin/audit`. Остальные списки короткие по своей природе (контакты клиента, исполнители заявки, справочники) и отдаются массивом.
 
 **Ошибка** — всегда одинаковой формы:
 
@@ -95,6 +95,74 @@ POST /api/jobs/{id}/transitions
 | `from`, `to` | период по плановой дате |
 | `search` | номер заявки, клиент, ссылка клиента, судно, место, контракт, культура, контейнер |
 | `sort` | `jobNumber`, `requestedDate`, `scheduledAt`, `priority`, `status`, `updatedAt` |
+| `dir` | `asc` \| `desc` |
+| `limit` (≤200), `offset` | страница |
+
+---
+
+## Инспекции
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/inspections` | `inspection.read` | список: пагинация, поиск, фильтры, сортировка |
+| GET | `/inspections/:id` | `inspection.read` | карточка + `actions` — что этот пользователь может сделать сейчас |
+| POST | `/inspections` | `inspection.create` | создание по заявке: `{ jobId, type?, location?, scheduledStart?, leadInspectorId?, withChecklist? }` |
+| PATCH | `/inspections/:id` | `inspection.update` | изменение; `version` для защиты от перезаписи |
+| **POST** | **`/inspections/:id/transitions`** | зависит от действия | **единственный вход для смены статуса** |
+| GET | `/inspections/:id/history` | `inspection.read` | история статусов |
+| GET | `/inspections/:id/assignments` | `inspection.read` | исполнители |
+| POST | `/inspections/:id/assignments` | `inspection.assign` | назначить: `{ userId, role?, note? }` |
+| DELETE | `/inspections/:id/assignments/:assignmentId` | `inspection.assign` | снять |
+| GET | `/inspections/:id/checklist` | `inspection.read` | пункты + прогресс + признак редактируемости |
+| **PATCH** | **`/inspections/:id/checklist`** | `checklist.update` | **пачка ответов одним запросом** (автосохранение) |
+| GET/POST | `/inspections/:id/findings` | `inspection.read` / `inspection.add_finding` | замечания |
+| PATCH | `/inspections/:id/findings/:findingId` | `inspection.add_finding` | изменить; после утверждения — только `status` |
+| GET/POST | `/inspections/:id/measurements` | `inspection.read` / `inspection.add_measurement` | замеры |
+| DELETE | `/inspections/:id/measurements/:measurementId` | `inspection.add_measurement` | удалить замер |
+| GET | `/inspections/:id/photos` | `inspection.read` | фотографии с подписанными ссылками |
+| POST | `/inspections/:id/photos` | `media.upload` | фото (multipart): `file`, `category?`, `caption?`, `checklistItemId?`, GPS, `takenAt` |
+| DELETE | `/inspections/:id` | `inspection.archive` | в архив (не удаление) |
+| POST | `/inspections/:id/restore` | `inspection.restore` | вернуть из архива |
+
+### Смена статуса
+
+```http
+POST /api/inspections/{id}/transitions
+{ "action": "return", "reason": "Photograph the damaged seal" }
+```
+
+`action` — из словаря: `schedule`, `start`, `complete`, `submit_review`, `return`, `approve`, `reopen`, `hold`, `resume`, `cancel`. Причина обязательна для `hold`, `cancel`, `return`, `reopen`. Ответ — карточка инспекции.
+
+### Пачка ответов чек-листа
+
+```http
+PATCH /api/inspections/{id}/checklist
+{ "answers": [
+  { "itemId": "…", "result": "deviation", "notes": "Hatch cover seal damaged" },
+  { "itemId": "…", "result": "ok" }
+] }
+```
+
+До 200 ответов за запрос. Поле, которого нет в объекте, не меняется — экран шлёт только то, чего касался инспектор. Ответ — весь чек-лист с прогрессом:
+
+```json
+{ "items": [ … ], "total": 6, "answered": 2, "requiredRemaining": 4, "editable": true }
+```
+
+Пункт чужой инспекции отклоняется с 404, а не молча пропускается: экран, приславший не те идентификаторы, — это ошибка, и терять из-за неё работу инспектора нельзя.
+
+### Параметры списка инспекций
+
+| Параметр | Значения |
+|---|---|
+| `status` | любой статус жизненного цикла |
+| `active` | `true` — всё, что не утверждено и не отменено |
+| `mine` | `true` — инспекции, где я ведущий или назначен |
+| `jobId`, `clientId`, `inspectorId`, `branchId`, `countryId` | фильтры по связям |
+| `type` | вид услуги из общего каталога |
+| `from`, `to` | период по плановой дате |
+| `search` | номер инспекции, номер заявки, клиент, место, город |
+| `sort` | `inspectionNumber`, `scheduledStart`, `status`, `updatedAt` |
 | `dir` | `asc` \| `desc` |
 | `limit` (≤200), `offset` | страница |
 

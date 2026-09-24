@@ -3,7 +3,7 @@
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
-    "contracts": "Sözleşmeler",
+    "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin."
   },
@@ -40,7 +40,8 @@
   "common": {
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
-    "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube"
+    "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube",
+    "description": "Açıklama", "retry": "Tekrar dene"
   },
   "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
@@ -75,6 +76,61 @@
     }
   },
   "result": { "ok": "Uygun", "deviation": "Uygunsuzluk", "na": "Uygulanamaz" },
+  "inspectionStatus": {
+    "draft": "Taslak", "scheduled": "Planlandı", "in_progress": "Devam ediyor", "completed": "Tamamlandı",
+    "under_review": "İncelemede", "approved": "Onaylandı", "on_hold": "Beklemede", "cancelled": "İptal edildi"
+  },
+  "inspectionAction": {
+    "schedule": "Planla", "start": "Muayeneyi başlat", "complete": "Tamamla", "submit_review": "İncelemeye gönder",
+    "return": "Düzeltmeye iade et", "approve": "Onayla", "reopen": "Yeniden aç", "hold": "Beklemeye al",
+    "resume": "Devam et", "cancel": "Muayeneyi iptal et",
+    "reasonFor": {
+      "hold": "Bu muayene neden beklemeye alınıyor?",
+      "cancel": "Bu muayene neden iptal ediliyor?",
+      "return": "Muayene görevlisi neyi düzeltmeli?",
+      "reopen": "Onaylanmış bir muayene neden değiştirilmeli?"
+    }
+  },
+  "severity": { "info": "Bilgi", "minor": "Küçük", "major": "Önemli", "critical": "Kritik" },
+  "findingStatus": { "open": "Açık", "acknowledged": "Bilgi alındı", "resolved": "Giderildi", "withdrawn": "Geri çekildi" },
+  "photoCategory": {
+    "general": "Genel", "cargo": "Yük", "damage": "Hasar", "seal": "Mühürler", "container": "Konteyner",
+    "document": "Belgeler", "equipment": "Ekipman", "sampling": "Numune alma", "other": "Diğer"
+  },
+  "measurementType": {
+    "temperature": "Sıcaklık", "moisture": "Nem", "weight": "Ağırlık", "density": "Yoğunluk",
+    "draft": "Draft", "dimension": "Ölçü", "count": "Adet", "ph": "pH", "other": "Diğer"
+  },
+  "checklistSection": {
+    "general": "Genel", "documents": "Belgeler", "vessel": "Gemi / nesne", "cargo": "Yük",
+    "operations": "Operasyonlar", "observations": "Gözlemler"
+  },
+  "inspections": {
+    "title": "Muayeneler", "myTitle": "Muayenelerim", "all": "Tümü", "mine": "Benim",
+    "activeOnly": "Sadece açık", "search": "Numara, iş, müşteri, yer…",
+    "found": "{{count}} muayene", "empty": "Muayene bulunamadı", "number": "Muayene no.",
+    "job": "İş", "scheduled": "Planlanan", "new": "Yeni muayene", "create": "Muayene oluştur",
+    "noneOnJob": "Bu işe ait muayene yok",
+    "scheduleHint": "Taslak olarak bırakmak için boş bırakın"
+  },
+  "inspection": {
+    "record": "Saha kaydı", "findings": "Bulgular", "findingsHint": "Aksiyon gerektiren hususlar",
+    "measurements": "Ölçümler", "photos": "Fotoğraflar",
+    "requiredRemaining": "Kalan zorunlu madde: {{count}}",
+    "requiredBlock": "{{count}} zorunlu kontrol listesi maddesi hâlâ yanıtlanmadı.",
+    "approveConfirm": "Bu muayene onaylansın mı? Onaydan sonra ancak yeniden açılarak değiştirilebilir ve bu kayda geçer.",
+    "approvedBy": "{{at}} tarihinde {{name}} tarafından onaylandı",
+    "actualStart": "Başlangıç", "actualEnd": "Bitiş", "scheduledStart": "Planlanan başlangıç", "scheduledEnd": "Planlanan bitiş",
+    "weather": "Hava durumu", "siteConditions": "Saha koşulları", "observations": "Genel gözlemler",
+    "conclusion": "Sonuç", "internalNotes": "Dahili notlar",
+    "internalNotesHint": "Müşteriye giden hiçbir belgeye yazılmaz",
+    "findingTitle": "Bulgu", "severity": "Önem", "category": "Kategori", "recommendation": "Öneri",
+    "internalOnly": "Sadece dahili", "addFinding": "Bulgu ekle", "noFindings": "Bulgu kaydedilmedi",
+    "addMeasurement": "Ölçüm ekle", "noMeasurements": "Ölçüm kaydedilmedi",
+    "measurementType": "Tür", "measurementLabel": "Etiket", "value": "Değer", "unit": "Birim",
+    "position": "Konum", "measuredBy": "Ölçen", "measuredAt": "Ölçüm zamanı",
+    "noPhotos": "Henüz fotoğraf yok", "caption": "Açıklama"
+  },
   "login": {
     "title": "Giriş", "email": "E-posta", "password": "Parola", "submit": "Giriş yap",
     "demoHint": "Demo hesaplar: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — parola ChangeMe123!"
@@ -126,7 +182,8 @@
   "checklist": {
     "title": "Saha kontrol listesi", "progress": "{{total}} maddeden {{done}} tamamlandı", "value": "Değer / okuma",
     "notes": "Açıklama", "addPhoto": "Fotoğraf ekle", "uploading": "Yükleniyor…", "deletePhoto": "Fotoğrafı sil",
-    "readOnly": "Salt okunur: iş «{{status}}» durumunda", "empty": "Kontrol listesi maddesi yok", "saving": "Kaydediliyor…", "saved": "Kaydedildi"
+    "readOnly": "Salt okunur: «{{status}}»", "empty": "Kontrol listesi maddesi yok", "saving": "Kaydediliyor…", "saved": "Kaydedildi",
+    "saveFailed": "Kaydedilmedi", "required": "Tamamlamadan önce zorunlu"
   },
   "clients": {
     "title": "Müşteriler", "new": "Yeni müşteri", "name": "Unvan", "gafta": "GAFTA / FOSFA ref.", "taxId": "Vergi no.",

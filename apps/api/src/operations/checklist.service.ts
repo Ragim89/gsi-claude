@@ -1,11 +1,20 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { createHash, randomUUID } from 'crypto';
 import sharp from 'sharp';
-import { AuthUser, ChecklistItem, ChecklistResult, InspectionJob, MediaAttachment } from '@gsi/shared-types';
+import {
+  AuthUser,
+  ChecklistItem,
+  ChecklistResult,
+  EDITABLE_INSPECTION_STATUSES,
+  InspectionJob,
+  InspectionStatus,
+  MediaAttachment,
+} from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { StorageService } from '../storage/storage.service';
 import { buildSet } from '../common/sql';
 import { JobsService } from './jobs.service';
+import { JobWorkflowService } from './job-workflow.service';
 
 const ITEM_COLUMNS = `
   id, job_id AS "jobId", item_key AS "itemKey", label, input_kind AS "inputKind", sort_order AS "sortOrder",
@@ -45,6 +54,7 @@ export class ChecklistService {
     private readonly db: DbService,
     private readonly storage: StorageService,
     private readonly jobs: JobsService,
+    private readonly workflow: JobWorkflowService,
   ) {}
 
   list(user: AuthUser, jobId: string): Promise<ChecklistItem[]> {
@@ -68,6 +78,7 @@ export class ChecklistService {
     if (!sql) throw new BadRequestException('Nothing to update');
     return this.db.tx(user, async (tx) => {
       await this.lockEditableJob(tx, user, jobId);
+      await this.assertInspectionUnlocked(tx, itemId);
       const row = await tx.one<ChecklistItem>(
         `UPDATE job_checklist_items SET ${sql}, updated_by = $${3 + params.length}
          WHERE id = $1 AND job_id = $2 RETURNING ${ITEM_COLUMNS}`,
@@ -92,6 +103,7 @@ export class ChecklistService {
         [itemId, jobId],
       );
       if (!item) throw new NotFoundException('Checklist item not found');
+      await this.assertInspectionUnlocked(tx, itemId);
 
       const id = randomUUID();
       const ext = (file.originalname.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -122,12 +134,18 @@ export class ChecklistService {
 
   removeMedia(user: AuthUser, mediaId: string) {
     return this.db.tx(user, async (tx) => {
-      const m = await tx.one<{ job_id: string; storage_key: string; preview_key: string | null }>(
-        'SELECT job_id, storage_key, preview_key FROM media_attachments WHERE id = $1',
+      const m = await tx.one<{
+        job_id: string;
+        checklist_item_id: string | null;
+        storage_key: string;
+        preview_key: string | null;
+      }>(
+        'SELECT job_id, checklist_item_id, storage_key, preview_key FROM media_attachments WHERE id = $1',
         [mediaId],
       );
       if (!m) throw new NotFoundException('Media not found');
       await this.lockEditableJob(tx, user, m.job_id);
+      if (m.checklist_item_id) await this.assertInspectionUnlocked(tx, m.checklist_item_id);
       await tx.exec('DELETE FROM media_attachments WHERE id = $1', [mediaId]);
       // Evidence is only deletable before approval; once a report is issued the job is locked.
       await this.storage.delete(m.storage_key).catch((e) => this.logger.warn(`delete ${m.storage_key}: ${e.message}`));
@@ -148,11 +166,33 @@ export class ChecklistService {
     if (!editable.includes(job.status)) {
       throw new ConflictException(`Checklist cannot be changed while the job is ${job.status}`);
     }
-    if (job.status === 'assigned') {
-      await tx.exec(`UPDATE inspection_jobs SET status = 'in_progress' WHERE id = $1`, [jobId]);
-      job.status = 'in_progress';
+    // The first entry starts the job — through the workflow engine, so the move is stamped,
+    // recorded in the history and audited exactly as pressing Start would be.
+    if (job.status === 'assigned' && user.permissions?.includes('job.start')) {
+      job.status = await this.workflow.apply(tx, user, job, 'start', {
+        metadata: { auto: true, trigger: 'checklist_entry' },
+      });
     }
     return job;
+  }
+
+  /**
+   * An item that belongs to an inspection obeys the inspection's lock as well as the job's.
+   * Without this the job-level checklist screen would be a back door into an approved
+   * inspection — precisely the silent edit the review step exists to prevent.
+   */
+  private async assertInspectionUnlocked(tx: Tx, itemId: string): Promise<void> {
+    const row = await tx.one<{ status: InspectionStatus; inspection_number: string }>(
+      `SELECT i.status, i.inspection_number
+       FROM job_checklist_items c JOIN inspections i ON i.id = c.inspection_id
+       WHERE c.id = $1`,
+      [itemId],
+    );
+    if (row && !EDITABLE_INSPECTION_STATUSES.includes(row.status)) {
+      throw new ConflictException(
+        `This item belongs to inspection ${row.inspection_number}, which is ${row.status.replace(/_/g, ' ')}`,
+      );
+    }
   }
 
   private async makePreview(buf: Buffer): Promise<Buffer | null> {

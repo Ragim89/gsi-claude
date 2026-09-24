@@ -25,6 +25,11 @@ export function Layout() {
           {can('job.read') && (
             <NavLink to="/jobs">{user?.scope === 'own' ? t('nav.myJobs') : t('nav.jobs')}</NavLink>
           )}
+          {can('inspection.read') && (
+            <NavLink to="/inspections">
+              {user?.scope === 'own' ? t('nav.myInspections') : t('nav.inspections')}
+            </NavLink>
+          )}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
           {finance && (

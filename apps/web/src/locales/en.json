@@ -3,7 +3,7 @@
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
-    "contracts": "Contracts",
+    "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
   },
@@ -40,7 +40,8 @@
   "common": {
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
-    "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch"
+    "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch",
+    "description": "Description", "retry": "Retry"
   },
   "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
@@ -75,6 +76,60 @@
     }
   },
   "result": { "ok": "OK", "deviation": "Deviation", "na": "N/A" },
+  "inspectionStatus": {
+    "draft": "Draft", "scheduled": "Scheduled", "in_progress": "In progress", "completed": "Completed",
+    "under_review": "Under review", "approved": "Approved", "on_hold": "On hold", "cancelled": "Cancelled"
+  },
+  "inspectionAction": {
+    "schedule": "Schedule", "start": "Start inspection", "complete": "Complete", "submit_review": "Submit for review",
+    "return": "Return for rework", "approve": "Approve", "reopen": "Reopen", "hold": "Put on hold",
+    "resume": "Resume", "cancel": "Cancel inspection",
+    "reasonFor": {
+      "hold": "Why is this inspection being put on hold?",
+      "cancel": "Why is this inspection being cancelled?",
+      "return": "What must the inspector correct?",
+      "reopen": "Why does an approved inspection have to be changed?"
+    }
+  },
+  "severity": { "info": "Information", "minor": "Minor", "major": "Major", "critical": "Critical" },
+  "findingStatus": { "open": "Open", "acknowledged": "Acknowledged", "resolved": "Resolved", "withdrawn": "Withdrawn" },
+  "photoCategory": {
+    "general": "General", "cargo": "Cargo", "damage": "Damage", "seal": "Seals", "container": "Container",
+    "document": "Documents", "equipment": "Equipment", "sampling": "Sampling", "other": "Other"
+  },
+  "measurementType": {
+    "temperature": "Temperature", "moisture": "Moisture", "weight": "Weight", "density": "Density",
+    "draft": "Draft", "dimension": "Dimension", "count": "Count", "ph": "pH", "other": "Other"
+  },
+  "checklistSection": {
+    "general": "General", "documents": "Documents", "vessel": "Vessel / object", "cargo": "Cargo",
+    "operations": "Operations", "observations": "Observations"
+  },
+  "inspections": {
+    "title": "Inspections", "myTitle": "My inspections", "all": "All", "mine": "Mine",
+    "activeOnly": "Open only", "search": "Number, job, client, location…",
+    "found": "{{count}} inspections", "empty": "No inspections found", "number": "Inspection no.",
+    "job": "Job", "scheduled": "Scheduled", "new": "New inspection", "create": "Create inspection",
+    "noneOnJob": "No inspections on this job yet",
+    "scheduleHint": "Leave empty to keep it as a draft"
+  },
+  "inspection": {
+    "record": "Field record", "findings": "Findings", "findingsHint": "What someone has to act on",
+    "measurements": "Measurements", "photos": "Photos",
+    "requiredRemaining": "{{count}} required item(s) left", "requiredBlock": "{{count}} required checklist item(s) are still unanswered.",
+    "approveConfirm": "Approve this inspection? After approval it can only be changed by reopening it, which is recorded.",
+    "approvedBy": "Approved by {{name}} on {{at}}",
+    "actualStart": "Started", "actualEnd": "Finished", "scheduledStart": "Scheduled start", "scheduledEnd": "Scheduled end",
+    "weather": "Weather", "siteConditions": "Site conditions", "observations": "General observations",
+    "conclusion": "Conclusion", "internalNotes": "Internal notes",
+    "internalNotesHint": "Never printed on anything the client receives",
+    "findingTitle": "Finding", "severity": "Severity", "category": "Category", "recommendation": "Recommendation",
+    "internalOnly": "Internal only", "addFinding": "Add finding", "noFindings": "No findings recorded",
+    "addMeasurement": "Add measurement", "noMeasurements": "No measurements recorded",
+    "measurementType": "Type", "measurementLabel": "Label", "value": "Value", "unit": "Unit",
+    "position": "Position", "measuredBy": "Measured by", "measuredAt": "Measured at",
+    "noPhotos": "No photos yet", "caption": "Caption"
+  },
   "login": {
     "title": "Sign in", "email": "Email", "password": "Password", "submit": "Sign in",
     "demoHint": "Demo accounts: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — password ChangeMe123!"
@@ -126,7 +181,8 @@
   "checklist": {
     "title": "Field checklist", "progress": "{{done}} of {{total}} checked", "value": "Value / reading",
     "notes": "Notes", "addPhoto": "Add photo", "uploading": "Uploading…", "deletePhoto": "Delete photo",
-    "readOnly": "Read-only: the job is {{status}}", "empty": "No checklist items", "saving": "Saving…", "saved": "Saved"
+    "readOnly": "Read-only: {{status}}", "empty": "No checklist items", "saving": "Saving…", "saved": "Saved",
+    "saveFailed": "Not saved", "required": "Required before completing"
   },
   "clients": {
     "title": "Clients", "new": "New client", "name": "Name", "gafta": "GAFTA / FOSFA ref.", "taxId": "Tax ID",

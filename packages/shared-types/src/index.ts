@@ -7,3 +7,4 @@ export * from './assets';
 export * from './rbac';
 export * from './crm';
 export * from './job-workflow';
+export * from './inspections';

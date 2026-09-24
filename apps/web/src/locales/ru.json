@@ -3,7 +3,7 @@
   "nav": {
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
     "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
-    "contracts": "Контракты",
+    "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль."
   },
@@ -40,7 +40,8 @@
   "common": {
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
     "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
-    "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал"
+    "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал",
+    "description": "Описание", "retry": "Повторить"
   },
   "roleNames": {
     "inspector": "Инспектор", "lab_technician": "Лаборант", "supervisor": "Супервайзер",
@@ -75,6 +76,61 @@
     }
   },
   "result": { "ok": "Норма", "deviation": "Отклонение", "na": "Н/П" },
+  "inspectionStatus": {
+    "draft": "Черновик", "scheduled": "Запланирована", "in_progress": "В работе", "completed": "Завершена",
+    "under_review": "На проверке", "approved": "Утверждена", "on_hold": "Приостановлена", "cancelled": "Отменена"
+  },
+  "inspectionAction": {
+    "schedule": "Запланировать", "start": "Начать инспекцию", "complete": "Завершить",
+    "submit_review": "Отправить на проверку", "return": "Вернуть на доработку", "approve": "Утвердить",
+    "reopen": "Открыть заново", "hold": "Приостановить", "resume": "Возобновить", "cancel": "Отменить инспекцию",
+    "reasonFor": {
+      "hold": "Почему инспекция приостанавливается?",
+      "cancel": "Почему инспекция отменяется?",
+      "return": "Что инспектор должен исправить?",
+      "reopen": "Почему утверждённую инспекцию нужно изменить?"
+    }
+  },
+  "severity": { "info": "Информация", "minor": "Незначительное", "major": "Существенное", "critical": "Критическое" },
+  "findingStatus": { "open": "Открыто", "acknowledged": "Принято к сведению", "resolved": "Устранено", "withdrawn": "Снято" },
+  "photoCategory": {
+    "general": "Общее", "cargo": "Груз", "damage": "Повреждения", "seal": "Пломбы", "container": "Контейнер",
+    "document": "Документы", "equipment": "Оборудование", "sampling": "Отбор проб", "other": "Прочее"
+  },
+  "measurementType": {
+    "temperature": "Температура", "moisture": "Влажность", "weight": "Вес", "density": "Плотность",
+    "draft": "Осадка", "dimension": "Размер", "count": "Количество", "ph": "pH", "other": "Прочее"
+  },
+  "checklistSection": {
+    "general": "Общее", "documents": "Документы", "vessel": "Судно / объект", "cargo": "Груз",
+    "operations": "Операции", "observations": "Наблюдения"
+  },
+  "inspections": {
+    "title": "Инспекции", "myTitle": "Мои инспекции", "all": "Все", "mine": "Мои",
+    "activeOnly": "Только открытые", "search": "Номер, заявка, контрагент, место…",
+    "found": "Инспекций: {{count}}", "empty": "Инспекции не найдены", "number": "№ инспекции",
+    "job": "Заявка", "scheduled": "Запланирована", "new": "Новая инспекция", "create": "Создать инспекцию",
+    "noneOnJob": "По этой заявке инспекций пока нет",
+    "scheduleHint": "Оставьте пустым, чтобы сохранить как черновик"
+  },
+  "inspection": {
+    "record": "Полевые данные", "findings": "Замечания", "findingsHint": "То, на что нужно отреагировать",
+    "measurements": "Замеры", "photos": "Фото",
+    "requiredRemaining": "Осталось обязательных пунктов: {{count}}",
+    "requiredBlock": "Не заполнено обязательных пунктов чек-листа: {{count}}.",
+    "approveConfirm": "Утвердить инспекцию? После утверждения изменить её можно только через повторное открытие, и это будет зафиксировано.",
+    "approvedBy": "Утверждена: {{name}}, {{at}}",
+    "actualStart": "Начата", "actualEnd": "Завершена", "scheduledStart": "Плановое начало", "scheduledEnd": "Плановое окончание",
+    "weather": "Погода", "siteConditions": "Условия на объекте", "observations": "Общие наблюдения",
+    "conclusion": "Заключение", "internalNotes": "Внутренние заметки",
+    "internalNotesHint": "Никогда не попадают в документы для клиента",
+    "findingTitle": "Замечание", "severity": "Важность", "category": "Категория", "recommendation": "Рекомендация",
+    "internalOnly": "Только внутреннее", "addFinding": "Добавить замечание", "noFindings": "Замечаний нет",
+    "addMeasurement": "Добавить замер", "noMeasurements": "Замеров нет",
+    "measurementType": "Тип", "measurementLabel": "Название", "value": "Значение", "unit": "Ед. изм.",
+    "position": "Место", "measuredBy": "Кто замерял", "measuredAt": "Когда",
+    "noPhotos": "Фотографий пока нет", "caption": "Подпись"
+  },
   "login": {
     "title": "Вход", "email": "Email", "password": "Пароль", "submit": "Войти",
     "demoHint": "Демо-учётки: admin@gsi.local, supervisor.tr@gsi.local, inspector.tr@gsi.local — пароль ChangeMe123!"
@@ -126,7 +182,8 @@
   "checklist": {
     "title": "Полевой чек-лист", "progress": "Проверено {{done}} из {{total}}", "value": "Значение / замер",
     "notes": "Примечания", "addPhoto": "Добавить фото", "uploading": "Загрузка…", "deletePhoto": "Удалить фото",
-    "readOnly": "Только чтение: заявка в статусе «{{status}}»", "empty": "Нет пунктов чек-листа", "saving": "Сохранение…", "saved": "Сохранено"
+    "readOnly": "Только чтение: «{{status}}»", "empty": "Нет пунктов чек-листа", "saving": "Сохранение…", "saved": "Сохранено",
+    "saveFailed": "Не сохранено", "required": "Обязательный пункт"
   },
   "clients": {
     "title": "Контрагенты", "new": "Новый клиент", "name": "Название", "gafta": "Номер GAFTA / FOSFA", "taxId": "ИНН / Tax ID",

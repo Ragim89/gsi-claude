@@ -16,7 +16,7 @@ import {
 } from '@gsi/shared-types';
 import { api, openPdf } from '../api';
 import { useAuth } from '../auth';
-import { Checklist } from '../components/Checklist';
+import { JobInspections } from '../components/JobInspections';
 import { ACTIONS_NEEDING_REASON, PriorityBadge, StatusTimeline } from '../components/JobBits';
 import { ReportsTable } from '../components/ReportsTable';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
@@ -73,7 +73,7 @@ export function JobDetailPage() {
     qc.invalidateQueries({ queryKey: ['jobs'] });
     qc.invalidateQueries({ queryKey: ['assignments', id] });
     qc.invalidateQueries({ queryKey: ['job-history', id] });
-    qc.invalidateQueries({ queryKey: ['checklist', id] });
+    qc.invalidateQueries({ queryKey: ['job-inspections', id] });
     qc.invalidateQueries({ queryKey: ['reports'] });
   };
 
@@ -151,7 +151,7 @@ export function JobDetailPage() {
   const tabs: { key: Tab; label: string; show: boolean; count?: number }[] = [
     { key: 'overview', label: t('job.details'), show: true },
     { key: 'assignments', label: t('job.assignments'), show: true, count: assignments.data?.length },
-    { key: 'inspection', label: t('job.inspection'), show: true },
+    { key: 'inspection', label: t('inspections.title'), show: can('inspection.read') },
     { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.length },
     { key: 'finance', label: t('nav.invoices'), show: can('finance.read') },
     { key: 'history', label: t('job.history'), show: can('job.read_history', 'job.read') },
@@ -351,7 +351,7 @@ export function JobDetailPage() {
         </Card>
       )}
 
-      {tab === 'inspection' && <Checklist job={j} />}
+      {tab === 'inspection' && <JobInspections job={j} />}
 
       {tab === 'reports' && (
         <Card title={t('job.reports')}>
