@@ -53,6 +53,11 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
   const checklist = useQuery({
     queryKey: ['inspection-checklist', inspection.id],
     queryFn: () => api.get<Checklist>(`/inspections/${inspection.id}/checklist`),
+    // React Query's own default (`networkMode: 'online'`) pauses a query the moment the
+    // browser reports itself offline — it never reaches `error`, just sits pending forever.
+    // That's the wrong signal to build a cache fallback on: we want the real fetch attempt
+    // (our own isNetworkFailure catch below decides what "offline" means), not react-query's.
+    networkMode: 'always',
   });
 
   // The last checklist this device actually saw, per user. Reopening the app offline (killed
@@ -64,10 +69,10 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
     if (checklist.data && cacheKey) void cacheSet(cacheKey, checklist.data);
   }, [checklist.data, cacheKey]);
   useEffect(() => {
-    if (!checklist.data && checklist.isError && cacheKey) {
+    if (!checklist.data && (checklist.isError || !isOnline) && cacheKey) {
       void cacheGet<Checklist>(cacheKey).then((c) => c && setCached(c));
     }
-  }, [checklist.data, checklist.isError, cacheKey]);
+  }, [checklist.data, checklist.isError, isOnline, cacheKey]);
   const offlineData = checklist.data ?? cached;
 
   // Answers queued in a previous, now-closed session (app killed or reloaded while offline)
@@ -100,6 +105,7 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
         if (op.payload.kind !== 'checklist-answers' || op.payload.inspectionId !== inspection.id) return;
         qc.invalidateQueries({ queryKey: ['inspection-checklist', inspection.id] });
         qc.invalidateQueries({ queryKey: ['inspection', inspection.id] });
+        setSaveState((s) => (s === 'queued' ? 'saved' : s));
       }),
     [inspection.id, qc],
   );
