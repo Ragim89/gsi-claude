@@ -1,27 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { createHash, randomBytes } from 'crypto';
-import * as QRCode from 'qrcode';
 import type { Readable } from 'stream';
-import { AuthUser, Branch, InspectionJob, Report, ReportVerification } from '@gsi/shared-types';
-import { tokens } from '@gsi/ui-kit';
+import { AuthUser, Branch, InspectionJob } from '@gsi/shared-types';
+
 import { DbService, Tx } from '../db/db.service';
 import { StorageService } from '../storage/storage.service';
-import { config } from '../config';
+
 import { JOB_COLUMNS, JOB_FROM } from '../operations/job-sql';
 import { PdfService } from './pdf.service';
 import { resolveTemplate, ReportTemplateData } from './templates';
-
-const REPORT_COLUMNS = `
-  r.id, r.branch_id AS "branchId", r.job_id AS "jobId", j.job_number AS "jobNumber", j.client_id AS "clientId",
-  c.name AS "clientName", j.type AS "serviceType", r.report_number AS "reportNumber", r.version, r.status,
-  r.template_id AS "templateId", r.approved_by AS "approvedBy", u.full_name AS "approvedByName",
-  r.approved_at AS "approvedAt", r.qr_code AS "verificationToken", r.created_at AS "createdAt"`;
-
-const REPORT_FROM = `
-  reports r
-  JOIN inspection_jobs j ON j.id = r.job_id
-  JOIN clients c ON c.id = j.client_id
-  LEFT JOIN users u ON u.id = r.approved_by`;
 
 const BRANCH_COLUMNS = `
   id, code, country, city, currency, locale, ui_locales AS "uiLocales", timezone,
@@ -39,50 +25,6 @@ export class ReportsService {
     private readonly pdf: PdfService,
   ) {}
 
-  /**
-   * Issues the official report for an approved job. Called inside the approval transaction
-   * (JobsService.approve) so the job status, report row and stored PDF stay consistent.
-   */
-  async issueForJob(tx: Tx, user: AuthUser, jobId: string): Promise<Report> {
-    const data = await this.collect(tx, jobId, false);
-    const { version } = (await tx.one<{ version: number }>(
-      'SELECT COALESCE(MAX(version), 0) + 1 AS version FROM reports WHERE job_id = $1',
-      [jobId],
-    ))!;
-    const { number } = (await tx.one<{ number: string }>(`SELECT next_doc_number($1, 'R') AS number`, [data.branch.id]))!;
-    const token = randomBytes(18).toString('base64url');
-    const verifyUrl = `${config.publicWebUrl}/verify/${token}`;
-
-    data.report = {
-      number,
-      version,
-      issuedAt: new Date(),
-      verifyUrl,
-      qrDataUrl: await QRCode.toDataURL(verifyUrl, {
-        margin: 1,
-        width: 320,
-        errorCorrectionLevel: 'M',
-        color: { dark: tokens.color.primary, light: tokens.color.surface },
-      }),
-    };
-    data.approvedByName = user.fullName;
-
-    const template = resolveTemplate(data.branch.letterheadTemplateId);
-    const pdf = await this.pdf.render(template.html(data), { footerHtml: template.footer(data) });
-    const pdfSha = createHash('sha256').update(pdf).digest('hex');
-    const key = `reports/${data.branch.code}/${data.job.clientId}/${number}-v${version}.pdf`;
-    await this.storage.put(key, pdf, 'application/pdf', { sha256: pdfSha });
-
-    const row = await tx.one<{ id: string }>(
-      `INSERT INTO reports (job_id, report_number, version, status, template_id, locale, pdf_storage_key, pdf_sha256,
-                            approved_by, approved_at, qr_code)
-       VALUES ($1, $2, $3, 'issued', $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-      [jobId, number, version, template.id, data.branch.locale, key, pdfSha, user.id, data.report.issuedAt, token],
-    );
-    this.logger.log(`issued ${number} v${version} for job ${data.job.jobNumber}`);
-    return (await tx.one<Report>(`SELECT ${REPORT_COLUMNS} FROM ${REPORT_FROM} WHERE r.id = $1`, [row!.id]))!;
-  }
-
   /** Unapproved preview with a DRAFT watermark; nothing is stored. */
   preview(user: AuthUser, jobId: string): Promise<Buffer> {
     return this.db.tx(user, async (tx) => {
@@ -90,20 +32,6 @@ export class ReportsService {
       const template = resolveTemplate(data.branch.letterheadTemplateId);
       return this.pdf.render(template.html(data), { footerHtml: template.footer(data) });
     });
-  }
-
-  list(user: AuthUser, f: { clientId?: string; jobId?: string; branchId?: string }) {
-    return this.db.tx(user, (tx) =>
-      tx.many<Report>(
-        `SELECT ${REPORT_COLUMNS} FROM ${REPORT_FROM}
-         WHERE ($1::uuid IS NULL OR j.client_id = $1::uuid)
-           AND ($2::uuid IS NULL OR r.job_id = $2::uuid)
-           AND ($3::uuid IS NULL OR r.branch_id = $3::uuid)
-         ORDER BY r.created_at DESC
-         LIMIT 1000`,
-        [f.clientId ?? null, f.jobId ?? null, f.branchId ?? null],
-      ),
-    );
   }
 
   async open(user: AuthUser, id: string): Promise<{ stream: Readable; filename: string }> {
@@ -117,30 +45,6 @@ export class ReportsService {
     return { stream: await this.storage.getStream(r.key), filename: `${r.number}-v${r.version}.pdf` };
   }
 
-  async verify(token: string): Promise<ReportVerification> {
-    const r = await this.db.tx(null, (tx) =>
-      tx.one<{
-        report_number: string;
-        status: Report['status'];
-        issued_at: string;
-        branch: string;
-        job_number: string;
-        service_type: InspectionJob['type'];
-        client_name: string;
-      }>('SELECT * FROM public_verify_report($1)', [token]),
-    );
-    if (!r) return { valid: false };
-    return {
-      valid: r.status === 'issued',
-      reportNumber: r.report_number,
-      status: r.status,
-      issuedAt: r.issued_at,
-      branch: r.branch,
-      jobNumber: r.job_number,
-      serviceType: r.service_type,
-      clientName: r.client_name,
-    };
-  }
 
   /** Gathers everything the letterhead template needs; photos are inlined as data URIs. */
   private async collect(tx: Tx, jobId: string, draft: boolean): Promise<ReportTemplateData> {

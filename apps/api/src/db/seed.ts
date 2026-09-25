@@ -9,6 +9,7 @@ import { config } from '../config';
 import { wrapClient } from './db.service';
 import { seedInspection } from './seed-inspection';
 import { seedLaboratory } from './seed-laboratory';
+import { seedReportTemplates } from './seed-report-templates';
 import { seedFinance, seedFxRates } from './seed-finance';
 import { seedReference } from './seed-reference';
 import { seedAssets, seedDepreciation } from './seed-assets';
@@ -268,6 +269,9 @@ export async function seed(options: SeedOptions = {}): Promise<void> {
     // Laboratory methods, specifications and instruments. It runs after the reference data
     // because a commodity-level specification needs its commodity to exist first.
     await seedLaboratory(tx);
+
+    // The forms documents are printed on. Reference data: a type with no template cannot be issued.
+    await seedReportTemplates(client);
 
     // Exchange rates are needed by every posting, demo volume or not.
     await seedFxRates(client);

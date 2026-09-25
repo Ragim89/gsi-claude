@@ -29,6 +29,9 @@ import { RolesPage } from './pages/RolesPage';
 import { AuditPage } from './pages/AuditPage';
 import { LaboratoriesPage } from './pages/LaboratoriesPage';
 import { ContractsPage } from './pages/ContractsPage';
+import { ReportsPage } from './pages/ReportsPage';
+import { ReportDetailPage } from './pages/ReportDetailPage';
+import { ReportNewPage } from './pages/ReportNewPage';
 import { LabQueuePage } from './pages/LabQueuePage';
 import { LabRequestDetailPage } from './pages/LabRequestDetailPage';
 import { LabCataloguePage } from './pages/LabCataloguePage';
@@ -106,6 +109,9 @@ export function App() {
         <Route path="/lab/catalogue" element={<RequireAuth need={['lab.method.read']}><LabCataloguePage /></RequireAuth>} />
         <Route path="/lab/specifications" element={<RequireAuth need={['lab.specification.read']}><LabSpecificationsPage /></RequireAuth>} />
         <Route path="/lab/instruments" element={<RequireAuth need={['lab.instrument.read']}><LabInstrumentsPage /></RequireAuth>} />
+        <Route path="/reports" element={<RequireAuth need={['report.read']}><ReportsPage /></RequireAuth>} />
+        <Route path="/reports/new" element={<RequireAuth need={['report.create']}><ReportNewPage /></RequireAuth>} />
+        <Route path="/reports/:id" element={<RequireAuth need={['report.read']}><ReportDetailPage /></RequireAuth>} />
         <Route path="/clients" element={<RequireAuth need={['client.read']}><ClientsPage /></RequireAuth>} />
         <Route path="/clients/:id" element={<RequireAuth need={['client.read']}><ClientDetailPage /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth need={['contract.read']}><ContractsPage /></RequireAuth>} />

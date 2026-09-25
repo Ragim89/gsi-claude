@@ -3,7 +3,7 @@
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
-    "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
+    "reports": "Documents", "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
@@ -401,8 +401,59 @@
     "archive": "Archive", "confirmArchive": "Archive this client? It disappears from the lists; its jobs, reports and invoices stay."
   },
   "reports": {
-    "number": "Report no.", "version": "Rev.", "issued": "Issued", "approvedBy": "Approved by",
-    "download": "Download PDF", "job": "Job", "service": "Service"
+    "number": "Document no.", "version": "Rev.", "issued": "Issued", "approvedBy": "Approved by",
+    "download": "Download PDF", "job": "Job", "service": "Service",
+    "registerTitle": "Documents", "registerSub": "Reports and certificates, from the first draft to the issued file",
+    "new": "New document", "newSub": "What kind of document, in which language, about which job",
+    "search": "Document, job, client or sample number",
+    "found": "{{count}} documents", "empty": "Nothing matches these filters",
+    "view": {
+      "all": "All", "drafts": "Drafts", "review": "Awaiting review", "approved": "Awaiting issue",
+      "issued": "Issued", "mine": "Mine"
+    },
+    "type": "Type", "language": "Language",
+    "languageHint": "The language the document is written in — not the language of this screen",
+    "template": "Template", "templateDefault": "Standard form for this type",
+    "title": "Title", "titleHint": "Optional: what this document is called on its own cover",
+    "versions": "Revisions", "legacy": "Legacy",
+    "versionsNotice": "An issued document is never edited. A correction is a new revision, and every earlier one keeps its own file, its own checksum and its own QR code.",
+    "notIssued": "Not issued", "preparedBy": "Prepared by", "preparedAt": "Started",
+    "submittedAt": "Handed in", "reviewedBy": "Reviewed by", "issuedBy": "Issued by",
+    "issuedOn": "Issued by {{name}} on {{at}}",
+    "content": "Content", "readOnly": "This document is no longer being written; open a revision to change it.",
+    "dataSources": "Data sources",
+    "dataSourcesHint": "What this document is built from. Everything factual on the page comes from here — the writer supplies the paragraphs, never the results.",
+    "releasedResults": "Released laboratory results",
+    "releasedOnly": "Only released revisions can appear on a document. Entered, reviewed and approved results do not.",
+    "noResults": "No released result on this job yet",
+    "noReleasedResults": "This job has no released laboratory result yet, so a certificate of analysis would have nothing to state.",
+    "executiveSummary": "Executive summary", "observations": "Observations",
+    "conclusions": "Conclusions", "recommendations": "Recommendations",
+    "narrativeHint": "The part only a person can write; the facts come from the system.",
+    "photos": "Photographs", "photosHint": "Choose what belongs on the document. Nothing is included automatically.",
+    "noPhotos": "No photograph on this job",
+    "preview": "Preview draft", "create": "Create document", "pickJob": "Choose a job first",
+    "step1": "1. What kind of document", "step2": "2. Which job", "step3": "3. What it can be built from",
+    "step4": "4. Anything to say up front",
+    "sourcesSummary": "{{inspections}} inspections · {{samples}} samples · {{results}} released results · {{photos}} photographs",
+    "reviewComment": "Review comment",
+    "changesRequested": "Returned for changes: {{reason}}",
+    "reviseHint": "The issued revision is kept exactly as it was sent, and a new one opens as a draft.",
+    "reason": "Reason", "none": "None"
+  },
+  "reportType": {
+    "inspection_report": "Inspection report", "survey_report": "Survey report",
+    "laboratory_report": "Laboratory report", "certificate_of_analysis": "Certificate of analysis",
+    "certificate": "Certificate", "sampling_report": "Sampling report", "custom": "Custom report"
+  },
+  "reportStatus": {
+    "draft": "Draft", "under_review": "Under review", "changes_requested": "Changes requested",
+    "approved": "Approved", "issued": "Issued", "superseded": "Superseded",
+    "cancelled": "Cancelled", "revoked": "Revoked"
+  },
+  "reportAction": {
+    "submit": "Hand in for review", "review": "Review", "request_changes": "Request changes",
+    "approve": "Approve", "issue": "Issue", "revise": "Open a revision", "cancel": "Cancel document"
   },
   "contacts": {
     "title": "Contacts", "new": "Add contact", "fullName": "Name", "position": "Position",
@@ -602,7 +653,12 @@
   },
   "depreciationMethods": { "straight_line": "Straight line", "none": "Not depreciated" },
   "verify": {
-    "title": "Report verification", "valid": "This report is authentic and valid.",
-    "invalid": "No valid report matches this code.", "revoked": "This report has been revoked."
+    "title": "Document verification", "valid": "This document is authentic and current.",
+    "invalid": "No document matches this code.", "revoked": "This document has been revoked.",
+    "superseded": "This copy is a valid historical document. It has been replaced by {{version}}.",
+    "cancelled": "This document has been cancelled.",
+    "notIssued": "This document has not been issued.",
+    "issuer": "Issued by", "checksum": "File checksum (SHA-256)",
+    "note": "This check confirms the document itself. It does not disclose who it was issued for."
   }
 }

@@ -382,6 +382,17 @@ export class LaboratoryController {
     return this.results.released(user, { jobId, sampleId });
   }
 
+  /**
+   * The operational view of a sample for the laboratory holding it — including a laboratory in
+   * another office, which cannot open the full card because the card is read through the job
+   * and the client of the office that sent it. Least privilege, decided in the database.
+   */
+  @Get('samples/:id/brief')
+  @RequirePermission('lab.test.read')
+  sampleBrief(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.requests.sampleBrief(user, id);
+  }
+
   @Get('requests')
   @RequirePermission('lab.test.read')
   list(@CurrentUser() user: AuthUser, @Query() q: RequestQueryDto) {

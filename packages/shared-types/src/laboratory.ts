@@ -345,6 +345,12 @@ export interface TestResult {
   supersedesResultId: string | null;
   resultType: LabResultType;
   numericValue: number | null;
+  /**
+   * The number exactly as the analyst typed it. `numeric(18,6)` cannot tell 12.40 from 12.4,
+   * and on a certificate they are not the same statement: the last digit says how precisely it
+   * was measured. Arithmetic uses the number; anything printed for a reader uses this.
+   */
+  numericText: string | null;
   textValue: string | null;
   booleanValue: boolean | null;
   qualitativeValue: string | null;
@@ -408,6 +414,8 @@ export interface ReleasedResult {
   standardReference: string | null;
   resultType: LabResultType;
   numericValue: number | null;
+  /** What a certificate prints: the value exactly as the analyst typed it. */
+  numericText: string | null;
   textValue: string | null;
   booleanValue: boolean | null;
   qualitativeValue: string | null;

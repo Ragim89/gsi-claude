@@ -2,7 +2,7 @@
 
 REST поверх `/api`. Все эндпоинты, кроме явно публичных, требуют заголовок `Authorization: Bearer <access token>`.
 
-Актуально после PHASE 6.
+Актуально после PHASE 7.
 
 ---
 
@@ -327,12 +327,49 @@ POST /api/lab/requests
 
 ---
 
-## Документы, финансы, активы
+## Документы
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/reports` | `report.read` | реестр: пагинация, поиск, фильтры по типу, статусу, языку, клиенту, периоду |
+| GET | `/reports/:id` | `report.read` | карточка + `actions` — что этот пользователь может сделать сейчас |
+| POST | `/reports` | `report.create` | начать документ: `{ jobId, reportType, language?, templateId?, title?, content? }` |
+| PATCH | `/reports/:id` | `report.update` | правка черновика; `lockVersion` защищает от перезаписи |
+| GET | `/reports/sources/:jobId` | `report.create` | из чего документ можно собрать, до того как он создан |
+| GET | `/reports/:id/sources` | `report.read` | то же для существующего документа |
+| GET | `/reports/:id/versions` | `report.read` | все ревизии, включая заменённые |
+| GET | `/reports/:id/history` | `report.read` | история статусов |
+| **POST** | **`/reports/:id/submit`** | `report.submit_review` | сдать на проверку |
+| POST | `/reports/:id/review` | `report.review` | подпись проверяющего (не меняет статус) |
+| POST | `/reports/:id/changes` | `report.review` | вернуть автору с обязательной причиной |
+| POST | `/reports/:id/approve` | `report.approve` | утвердить |
+| POST | `/reports/:id/issue` | `report.issue` | **выпустить**: заморозить факты, отрендерить, захешировать, сохранить |
+| POST | `/reports/:id/revisions` | `report.revise` | открыть ревизию выпущенного документа (причина обязательна) |
+| POST | `/reports/:id/cancel` | `report.cancel` | отменить с причиной |
+| DELETE / POST | `/reports/:id`, `/reports/:id/restore` | `report.archive` / `report.restore` | архив и возврат |
+| GET | `/reports/:id/preview` | `report.preview` | черновик PDF с водяным знаком, нигде не сохраняется |
+| GET | `/reports/:id/file?version=N` | `report.download` | выпущенный файл, байт в байт как он был сохранён |
+| GET | `/reports/:id/pdf` | `report.download` | то же для документов, выпущенных до появления ревизий |
+| GET/POST/PATCH | `/report-templates` | `report.read` / `report.manage_templates` | формы документов и их версии |
+| GET | `/public/verify/:token` | публично | проверка подлинности по QR |
+
+Свободного `PATCH status` нет: каждый переход — свой эндпоинт, как у заявки, инспекции, пробы и анализа.
+
+### Что отвечает публичная проверка
+
+```http
+GET /api/public/verify/{token}
+→ { "valid": true, "reportNumber": "TR-C-2026-00001", "reportType": "certificate_of_analysis",
+    "version": 2, "issuedAt": "…", "issuer": "General Survey Inspection (Türkiye)",
+    "branchCode": "TR", "checksum": "…64 hex…", "language": "en" }
+```
+
+Токен принадлежит **ревизии**, а не документу: скан копии, которая у человека на руках, отвечает о ней. Заменённая ревизия возвращает `status: "superseded"` и `supersededBy`, отменённый документ — `status: "cancelled"` и причину. Имени клиента и номера заявки в ответе нет.
+
+## Финансы, активы, данные
 
 | Метод | Путь | Право |
 |---|---|---|
-| GET | `/reports`, `/reports/:id/pdf` | `report.read`, `report.download` |
-| GET | `/public/verify/:token` | публично |
 | GET | `/finance/dashboard`, `/finance/stream` (SSE) | `dashboard.read` / `finance.read` |
 | GET/POST | `/finance/invoices`, `/finance/expenses` | `finance.read` + право действия |
 | GET/POST | `/assets`, `/assets/depreciation/run` | `asset.*` |

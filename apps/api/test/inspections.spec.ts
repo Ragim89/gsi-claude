@@ -544,10 +544,10 @@ describe('inspections leave the rest of the system alone', () => {
   });
 
   it('still verifies an issued report by its public token', async () => {
-    const reports = (await as(app, supervisor).get('/api/reports').expect(200)).body;
-    const list: { verificationToken: string }[] = Array.isArray(reports) ? reports : reports.rows;
-    if (!list.length) return;
-    const res = await as(app, supervisor).get(`/api/public/verify/${list[0].verificationToken}`).expect(200);
+    // The register now holds drafts as well as issued documents, and only an issued one verifies.
+    const reports = (await as(app, supervisor).get('/api/reports?status=issued&limit=1').expect(200)).body;
+    if (!reports.rows.length) return;
+    const res = await as(app, supervisor).get(`/api/public/verify/${reports.rows[0].verificationToken}`).expect(200);
     expect(res.body.valid).toBe(true);
   });
 

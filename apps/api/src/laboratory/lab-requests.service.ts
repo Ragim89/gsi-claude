@@ -442,6 +442,35 @@ export class LabRequestsService {
     });
   }
 
+  /**
+   * What a laboratory in another office may see of a sample sent to it.
+   *
+   * PHASE 6 found the gap: such a sample is visible to the receiving office by policy, but its
+   * card cannot be opened, because the card is read through a join to the job and the client —
+   * and those belong to the sending office. Opening a client's commercial record to another
+   * country to fix that would trade a small inconvenience for a large disclosure.
+   *
+   * So this is the least-privilege answer: what the sample is, how much of it there is, how it
+   * was sealed, what to do with it and whose material it is — and no contract, tariff, invoice,
+   * client address or internal note. The database decides who may read it, not this method.
+   */
+  sampleBrief(user: AuthUser, sampleId: string) {
+    return this.db.tx(user, async (tx) => {
+      const row = await tx.one<Record<string, unknown>>(
+        `SELECT id, sample_number AS "sampleNumber", status, commodity, quantity::float8 AS quantity, unit,
+                seal_number AS "sealNumber", seal_state AS "sealState", sampled_at AS "sampledAt",
+                received_at AS "receivedAt", container_type AS "containerType",
+                batch_lot_number AS "batchLotNumber", condition_notes AS "conditionNotes",
+                instructions, job_number AS "jobNumber", client_name AS "clientName",
+                laboratory_id AS "laboratoryId", branch_code AS "branchCode"
+         FROM lab_sample_brief($1)`,
+        [sampleId],
+      );
+      if (!row) throw new NotFoundException('Sample not found');
+      return row;
+    });
+  }
+
   // ---- Internals -------------------------------------------------------------------------
 
   private async defaultMethod(tx: Tx, labTestId: string): Promise<string | null> {

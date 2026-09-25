@@ -268,7 +268,8 @@ describe('jobs: what other modules depend on', () => {
 
     const verify = await as(app, admin).get(`/api/public/verify/${report.verificationToken}`).expect(200);
     expect(verify.body.valid).toBe(true);
-    expect(verify.body.jobNumber).toBe(job.body.jobNumber);
+    expect(verify.body.reportNumber).toBe(report.reportNumber);
+    expect(verify.body.checksum).toHaveLength(64);
   }, 60_000);
 
   it('keeps the checklist attached to its job', async () => {

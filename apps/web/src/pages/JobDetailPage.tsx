@@ -11,7 +11,8 @@ import {
   JobAction,
   JobAssignment,
   JobStatusHistoryEntry,
-  Report,
+  Page,
+  ReportDocument,
   User,
 } from '@gsi/shared-types';
 import { api, openPdf } from '../api';
@@ -56,7 +57,7 @@ export function JobDetailPage() {
   });
   const reports = useQuery({
     queryKey: ['reports', 'job', id],
-    queryFn: () => api.get<Report[]>(`/reports?jobId=${id}`),
+    queryFn: () => api.get<Page<ReportDocument>>(`/reports?jobId=${id}&limit=100`),
     enabled: can('report.read'),
   });
   const invoices = useQuery({
@@ -81,7 +82,7 @@ export function JobDetailPage() {
 
   const transition = useMutation({
     mutationFn: ({ action, reason }: { action: JobAction; reason?: string }) =>
-      api.post<{ job: InspectionJob; report?: Report }>(`/jobs/${id}/transitions`, { action, reason }),
+      api.post<{ job: InspectionJob; report?: ReportDocument }>(`/jobs/${id}/transitions`, { action, reason }),
     onSuccess: (res, vars) => {
       refresh();
       if (vars.action === 'approve' && res.report) {
@@ -156,7 +157,7 @@ export function JobDetailPage() {
     { key: 'inspection', label: t('inspections.title'), show: can('inspection.read') },
     { key: 'samples', label: t('samples.title'), show: can('sample.read') },
     { key: 'laboratory', label: t('lab.title'), show: can('lab.test.read') },
-    { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.length },
+    { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.total },
     { key: 'finance', label: t('nav.invoices'), show: can('finance.read') },
     { key: 'history', label: t('job.history'), show: can('job.read_history', 'job.read') },
   ];
@@ -365,7 +366,7 @@ export function JobDetailPage() {
           {reports.isLoading ? (
             <Loading />
           ) : (
-            <ReportsTable reports={reports.data ?? []} emptyText={t('job.noReports')} />
+            <ReportsTable reports={reports.data?.rows ?? []} emptyText={t('job.noReports')} />
           )}
         </Card>
       )}

@@ -8,7 +8,7 @@
 export const RESULT_COLUMNS = `
   x.id, x.test_request_id AS "testRequestId", x.revision, x.is_current AS "isCurrent",
   x.supersedes_result_id AS "supersedesResultId", x.result_type AS "resultType",
-  x.numeric_value::float8 AS "numericValue", x.text_value AS "textValue",
+  x.numeric_value::float8 AS "numericValue", x.numeric_text AS "numericText", x.text_value AS "textValue",
   x.boolean_value AS "booleanValue", x.qualitative_value AS "qualitativeValue", x.unit,
   x.method_snapshot AS "methodSnapshot", x.specification_snapshot AS "specificationSnapshot",
   x.evaluation, x.instrument_id AS "instrumentId", x.instrument_overdue AS "instrumentOverdue",

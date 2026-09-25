@@ -1,25 +1,17 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, StreamableFile } from '@nestjs/common';
-import { IsOptional, IsUUID } from 'class-validator';
+import { Controller, Get, Param, ParseUUIDPipe, StreamableFile } from '@nestjs/common';
 import { AuthUser } from '@gsi/shared-types';
 import { CurrentUser, Public, RequirePermission } from '../common/decorators';
 import { ReportsService } from './reports.service';
+import { ReportDocumentsService } from './report-documents.service';
 
-class ReportQueryDto {
-  @IsOptional() @IsUUID() clientId?: string;
-  @IsOptional() @IsUUID() jobId?: string;
-  @IsOptional() @IsUUID() branchId?: string;
-}
-
+/**
+ * The endpoints that existed before documents had a workflow, kept because things depend on
+ * them: the QR code printed on 520 reports, and the download link in every client card.
+ * The register itself now lives in `ReportDocumentsController`.
+ */
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
-
-  /** GET /reports?clientId=… — the client card's report list. RLS scopes it to the caller's branch. */
-  @Get()
-  @RequirePermission('report.read')
-  list(@CurrentUser() user: AuthUser, @Query() q: ReportQueryDto) {
-    return this.reports.list(user, q);
-  }
 
   @Get(':id/pdf')
   @RequirePermission('report.download')
@@ -49,12 +41,22 @@ export class JobReportPreviewController {
 
 @Controller('public')
 export class PublicVerifyController {
-  constructor(private readonly reports: ReportsService) {}
+  constructor(private readonly documents: ReportDocumentsService) {}
 
-  /** Third-party authenticity check behind the QR code printed on every issued report. */
+  /**
+   * The third-party check behind the QR code printed on every issued document.
+   *
+   * It answers for the revision that was actually printed, so a copy that a later revision has
+   * replaced says so rather than claiming to be the current one, and a cancelled document says
+   * it was cancelled rather than answering 404 — an authenticity check that hides the awkward
+   * cases teaches people not to trust it.
+   *
+   * What it does not say is whose cargo it was. The 520 documents issued before this used to
+   * return the client's name to anyone holding the token; they no longer do.
+   */
   @Public()
   @Get('verify/:token')
   verify(@Param('token') token: string) {
-    return this.reports.verify(token.slice(0, 64));
+    return this.documents.verify(token.slice(0, 64));
   }
 }

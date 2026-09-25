@@ -3,7 +3,7 @@
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
-    "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
+    "reports": "Belgeler", "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
     "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
@@ -426,8 +426,59 @@
     "range": "{{total}} kayıttan {{from}}–{{to}}", "page": "sayfa {{page}} / {{pages}}"
   },
   "reports": {
-    "number": "Rapor no.", "version": "Rev.", "issued": "Düzenlendi", "approvedBy": "Onaylayan",
-    "download": "PDF indir", "job": "İş", "service": "Hizmet"
+    "number": "Belge no.", "version": "Rev.", "issued": "Düzenlendi", "approvedBy": "Onaylayan",
+    "download": "PDF indir", "job": "İş", "service": "Hizmet",
+    "registerTitle": "Belgeler", "registerSub": "İlk taslaktan düzenlenmiş dosyaya kadar raporlar ve sertifikalar",
+    "new": "Yeni belge", "newSub": "Hangi tür belge, hangi dilde, hangi iş için",
+    "search": "Belge, iş, müşteri veya numune numarası",
+    "found": "{{count}} belge", "empty": "Bu filtrelere uyan belge yok",
+    "view": {
+      "all": "Tümü", "drafts": "Taslaklar", "review": "İncelemeyi bekleyen", "approved": "Düzenlenmeyi bekleyen",
+      "issued": "Düzenlenmiş", "mine": "Benimkiler"
+    },
+    "type": "Tür", "language": "Dil",
+    "languageHint": "Belgenin yazıldığı dil — bu ekranın dili değil",
+    "template": "Şablon", "templateDefault": "Bu tür için standart form",
+    "title": "Başlık", "titleHint": "İsteğe bağlı: belgenin kendi kapağındaki adı",
+    "versions": "Revizyonlar", "legacy": "Eski kayıt",
+    "versionsNotice": "Düzenlenmiş bir belge asla değiştirilmez. Düzeltme yeni bir revizyondur; her önceki revizyon kendi dosyasını, sağlama toplamını ve QR kodunu korur.",
+    "notIssued": "Düzenlenmedi", "preparedBy": "Hazırlayan", "preparedAt": "Başlangıç",
+    "submittedAt": "Teslim edildi", "reviewedBy": "Kontrol eden", "issuedBy": "Düzenleyen",
+    "issuedOn": "{{at}} tarihinde {{name}} düzenledi",
+    "content": "İçerik", "readOnly": "Bu belge artık yazılmıyor; değiştirmek için bir revizyon açın.",
+    "dataSources": "Veri kaynakları",
+    "dataSourcesHint": "Belgenin neye dayandığı. Sayfadaki tüm olgular buradan gelir — yazan kişi yalnızca paragrafları ekler, sonuçları değil.",
+    "releasedResults": "Yayımlanmış laboratuvar sonuçları",
+    "releasedOnly": "Belgede yalnızca yayımlanmış revizyonlar yer alabilir. Girilen, incelenen ve onaylanan sonuçlar yer alamaz.",
+    "noResults": "Bu işte henüz yayımlanmış sonuç yok",
+    "noReleasedResults": "Bu işin henüz yayımlanmış bir laboratuvar sonucu yok; analiz sertifikasının bildireceği bir şey olmaz.",
+    "executiveSummary": "Yönetici özeti", "observations": "Gözlemler",
+    "conclusions": "Sonuçlar", "recommendations": "Öneriler",
+    "narrativeHint": "Yalnızca bir insanın yazabileceği kısım; olgular sistemden gelir.",
+    "photos": "Fotoğraflar", "photosHint": "Belgeye neyin gireceğini seçin. Hiçbir şey kendiliğinden eklenmez.",
+    "noPhotos": "Bu işte fotoğraf yok",
+    "preview": "Taslağı önizle", "create": "Belgeyi oluştur", "pickJob": "Önce bir iş seçin",
+    "step1": "1. Belge türü", "step2": "2. Hangi iş", "step3": "3. Nelerden oluşturulabilir",
+    "step4": "4. Baştan söylenecekler",
+    "sourcesSummary": "{{inspections}} muayene · {{samples}} numune · {{results}} yayımlanmış sonuç · {{photos}} fotoğraf",
+    "reviewComment": "İnceleme notu",
+    "changesRequested": "Düzeltme için iade edildi: {{reason}}",
+    "reviseHint": "Düzenlenmiş revizyon gönderildiği hâliyle korunur, yenisi taslak olarak açılır.",
+    "reason": "Gerekçe", "none": "Yok"
+  },
+  "reportType": {
+    "inspection_report": "Muayene raporu", "survey_report": "Sörvey raporu",
+    "laboratory_report": "Laboratuvar raporu", "certificate_of_analysis": "Analiz sertifikası",
+    "certificate": "Sertifika", "sampling_report": "Numune alma raporu", "custom": "Özel rapor"
+  },
+  "reportStatus": {
+    "draft": "Taslak", "under_review": "İncelemede", "changes_requested": "Düzeltme istendi",
+    "approved": "Onaylandı", "issued": "Düzenlendi", "superseded": "Yerine yenisi geçti",
+    "cancelled": "İptal edildi", "revoked": "Geri alındı"
+  },
+  "reportAction": {
+    "submit": "İncelemeye gönder", "review": "İncele", "request_changes": "Düzeltme iste",
+    "approve": "Onayla", "issue": "Düzenle", "revise": "Revizyon aç", "cancel": "Belgeyi iptal et"
   },
   "users": {
     "title": "Kullanıcılar", "new": "Yeni kullanıcı", "fullName": "Ad soyad", "email": "E-posta", "role": "Rol",
@@ -604,7 +655,12 @@
   },
   "depreciationMethods": { "straight_line": "Normal (doğrusal)", "none": "Amortismana tabi değil" },
   "verify": {
-    "title": "Rapor doğrulama", "valid": "Bu rapor gerçek ve geçerlidir.",
-    "invalid": "Bu koda ait geçerli bir rapor bulunamadı.", "revoked": "Bu rapor iptal edilmiştir."
+    "title": "Belge doğrulama", "valid": "Bu belge gerçek ve günceldir.",
+    "invalid": "Bu koda ait bir belge bulunamadı.", "revoked": "Bu belge geri alınmıştır.",
+    "superseded": "Bu kopya geçerli bir tarihsel belgedir. Yerini {{version}} almıştır.",
+    "cancelled": "Bu belge iptal edilmiştir.",
+    "notIssued": "Bu belge henüz düzenlenmemiştir.",
+    "issuer": "Düzenleyen", "checksum": "Dosya sağlama toplamı (SHA-256)",
+    "note": "Bu kontrol belgenin kendisini doğrular. Kimin için düzenlendiğini açıklamaz."
   }
 }

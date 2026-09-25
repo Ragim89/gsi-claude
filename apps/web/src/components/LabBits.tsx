@@ -74,7 +74,7 @@ export function ResultValue({ result }: { result: TestResult | null | undefined 
   if (result.numericValue != null) {
     return (
       <span className="mono">
-        {result.numericValue}
+        {result.numericText ?? result.numericValue}
         {result.unit ? ` ${result.unit}` : ''}
       </span>
     );

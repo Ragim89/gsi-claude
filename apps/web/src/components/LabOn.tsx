@@ -287,7 +287,7 @@ export function LabOnJob({ jobId }: { jobId: string }) {
                     <span className="muted"> v{x.methodVersion}</span>
                   </td>
                   <td className="mono">
-                    {x.numericValue ?? x.textValue ?? x.qualitativeValue ??
+                    {x.numericText ?? x.numericValue ?? x.textValue ?? x.qualitativeValue ??
                       (x.booleanValue == null ? '—' : t(x.booleanValue ? 'lab.detected' : 'lab.notDetected'))}
                     {x.numericValue != null && x.unit ? ` ${x.unit}` : ''}
                   </td>

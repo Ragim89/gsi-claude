@@ -45,6 +45,7 @@ export function Layout() {
               {can('lab.instrument.read') && <NavLink to="/lab/instruments">{t('nav.labInstruments')}</NavLink>}
             </>
           )}
+          {can('report.read') && <NavLink to="/reports">{t('nav.reports')}</NavLink>}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
           {finance && (

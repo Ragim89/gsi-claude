@@ -17,7 +17,7 @@ import {
 import { DbService, Tx } from '../db/db.service';
 import { buildSet } from '../common/sql';
 import { openInspection } from '../inspections/open-inspection';
-import { ReportsService } from '../documents/reports.service';
+import { ReportDocumentsService } from '../documents/report-documents.service';
 import { JOB_COLUMNS, JOB_FROM } from './job-sql';
 import { AuditService } from '../common/audit.service';
 import { JobWorkflowService } from './job-workflow.service';
@@ -135,7 +135,7 @@ const UPDATABLE = {
 export class JobsService {
   constructor(
     private readonly db: DbService,
-    private readonly reports: ReportsService,
+    private readonly reports: ReportDocumentsService,
     private readonly audit: AuditService,
     private readonly workflow: JobWorkflowService,
     private readonly events: JobEventsService,

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
-import { AuditEntry, Client, InspectionJob, Invoice, Page, Report } from '@gsi/shared-types';
+import { AuditEntry, Client, InspectionJob, Invoice, Page, ReportDocument } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { ClientForm } from '../components/ClientForm';
@@ -34,7 +34,7 @@ export function ClientDetailPage() {
   const client = useQuery({ queryKey: ['client', id], queryFn: () => api.get<Client>(`/clients/${id}`) });
   const reports = useQuery({
     queryKey: ['reports', 'client', id],
-    queryFn: () => api.get<Report[]>(`/reports?clientId=${id}`),
+    queryFn: () => api.get<Page<ReportDocument>>(`/reports?clientId=${id}&limit=100`),
     enabled: can('report.read') && tab === 'reports',
   });
   const jobs = useQuery({
@@ -165,7 +165,7 @@ export function ClientDetailPage() {
           {reports.isLoading ? (
             <Loading />
           ) : (
-            <ReportsTable reports={reports.data ?? []} emptyText={t('clients.noReports')} />
+            <ReportsTable reports={reports.data?.rows ?? []} emptyText={t('clients.noReports')} />
           )}
         </Card>
       )}

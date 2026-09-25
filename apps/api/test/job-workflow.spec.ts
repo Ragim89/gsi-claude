@@ -221,16 +221,20 @@ describe('job lifecycle', () => {
   }, 60_000);
 
   it('shows the issued report on the client card and serves its PDF', async () => {
-    const reports = (await as(app, supervisor).get(`/api/reports?clientId=${clientId}`).expect(200)).body;
-    expect(reports).toHaveLength(1);
-    const pdf = await as(app, supervisor).get(`/api/reports/${reports[0].id}/pdf`).expect(200);
+    const page = (await as(app, supervisor).get(`/api/reports?clientId=${clientId}`).expect(200)).body;
+    expect(page.total).toBe(1);
+    expect(page.rows[0].reportType).toBe('inspection_report');
+    const pdf = await as(app, supervisor).get(`/api/reports/${page.rows[0].id}/pdf`).expect(200);
     expect(pdf.headers['content-type']).toContain('application/pdf');
   }, 60_000);
 
   it('verifies the report publicly by its token, without a session', async () => {
-    const reports = (await as(app, supervisor).get(`/api/reports?clientId=${clientId}`).expect(200)).body;
-    const res = await as(app, supervisor).get(`/api/public/verify/${reports[0].verificationToken}`).expect(200);
+    const page = (await as(app, supervisor).get(`/api/reports?clientId=${clientId}`).expect(200)).body;
+    const res = await as(app, supervisor).get(`/api/public/verify/${page.rows[0].verificationToken}`).expect(200);
     expect(res.body.valid).toBe(true);
+    // The public check names the document and the office that issued it, never the client.
+    expect(res.body.reportNumber).toBe(page.rows[0].reportNumber);
+    expect(res.body.clientName).toBeUndefined();
   });
 
   it('completes and closes the job, and then it is locked', async () => {

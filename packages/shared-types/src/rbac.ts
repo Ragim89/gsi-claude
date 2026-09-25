@@ -30,6 +30,9 @@ export const PERMISSIONS = [
   'client.read', 'client.create', 'client.update', 'client.archive',
   // Documents
   'report.read', 'report.download', 'report.preview',
+  'report.create', 'report.update', 'report.submit_review', 'report.review', 'report.approve',
+  'report.issue', 'report.revise', 'report.cancel', 'report.archive', 'report.restore',
+  'report.manage_templates', 'report.self_approve',
   // Finance
   'finance.read', 'dashboard.read', 'invoice.create', 'invoice.issue', 'invoice.pay',
   'invoice.cancel', 'invoice.delete', 'expense.create', 'expense.delete', 'fx.manage',

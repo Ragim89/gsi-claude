@@ -14,7 +14,7 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import type { AuthUser } from '@gsi/shared-types';
 import { DbService } from './db.service';
-import { ReportsService } from '../documents/reports.service';
+import { ReportDocumentsService } from '../documents/report-documents.service';
 
 /**
  * How many reports this run should still issue to reach the target — never a negative number,
@@ -28,7 +28,7 @@ export function stillNeeded(existing: number, target: number): number {
 export async function seedReports(app: INestApplicationContext, limit: number): Promise<void> {
   const logger = new Logger('SeedReports');
   const db = app.get(DbService);
-  const reports = app.get(ReportsService);
+  const reports = app.get(ReportDocumentsService);
 
   // Without a security context RLS hides every user row, so look the seed admin up through
   // the SECURITY DEFINER function that login uses.

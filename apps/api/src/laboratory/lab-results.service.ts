@@ -86,27 +86,27 @@ export class LabResultsService {
       if (current) {
         await tx.exec(
           `UPDATE test_results
-              SET numeric_value = $2::numeric, text_value = $3, boolean_value = $4, qualitative_value = $5,
+              SET numeric_value = $2::numeric, numeric_text = $14, text_value = $3, boolean_value = $4, qualitative_value = $5,
                   unit = $6, method_snapshot = $7::jsonb, specification_snapshot = $8::jsonb,
                   evaluation = $9::spec_evaluation, instrument_id = $10::uuid, instrument_overdue = $11,
                   comments = $12, analyst_id = $13, entered_at = now()
             WHERE id = $1`,
           [current.id, value.numeric, value.text, value.boolean, value.qualitative, unit,
            JSON.stringify(method), specification ? JSON.stringify(specification) : null, evaluation,
-           instrument?.id ?? null, instrument?.overdue ?? false, input.comments ?? null, user.id],
+           instrument?.id ?? null, instrument?.overdue ?? false, input.comments ?? null, user.id, value.entered],
         );
         resultId = current.id;
       } else {
         const row = await tx.one<{ id: string }>(
           `INSERT INTO test_results (test_request_id, branch_id, revision, result_type, numeric_value,
-                                     text_value, boolean_value, qualitative_value, unit, method_snapshot,
+                                     numeric_text, text_value, boolean_value, qualitative_value, unit, method_snapshot,
                                      specification_snapshot, evaluation, instrument_id, instrument_overdue,
                                      analyst_id, comments)
-           VALUES ($1, $2, 1, $3::lab_result_type, $4::numeric, $5, $6, $7, $8, $9::jsonb, $10::jsonb,
-                   $11::spec_evaluation, $12::uuid, $13, $14, $15)
+           VALUES ($1, $2, 1, $3::lab_result_type, $4::numeric, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb,
+                   $12::spec_evaluation, $13::uuid, $14, $15, $16)
            RETURNING id`,
-          [requestId, request.branchId, resultType, value.numeric, value.text, value.boolean,
-           value.qualitative, unit, JSON.stringify(method),
+          [requestId, request.branchId, resultType, value.numeric, value.entered,
+           value.text, value.boolean, value.qualitative, unit, JSON.stringify(method),
            specification ? JSON.stringify(specification) : null, evaluation,
            instrument?.id ?? null, instrument?.overdue ?? false, user.id, input.comments ?? null],
         );
@@ -227,11 +227,11 @@ export class LabResultsService {
       await tx.exec('UPDATE test_results SET is_current = false WHERE id = $1', [previous.id]);
       const row = await tx.one<{ id: string; revision: number }>(
         `INSERT INTO test_results (test_request_id, branch_id, revision, is_current, supersedes_result_id,
-                                   result_type, numeric_value, text_value, boolean_value, qualitative_value,
+                                   result_type, numeric_value, numeric_text, text_value, boolean_value, qualitative_value,
                                    unit, method_snapshot, specification_snapshot, evaluation,
                                    instrument_id, instrument_overdue, analyst_id, comments, amendment_reason)
          SELECT p.test_request_id, p.branch_id, p.revision + 1, true, p.id,
-                p.result_type, p.numeric_value, p.text_value, p.boolean_value, p.qualitative_value,
+                p.result_type, p.numeric_value, p.numeric_text, p.text_value, p.boolean_value, p.qualitative_value,
                 p.unit, p.method_snapshot, p.specification_snapshot, p.evaluation,
                 p.instrument_id, p.instrument_overdue, $2, p.comments, $3
          FROM test_results p WHERE p.id = $1
@@ -288,6 +288,7 @@ export class LabResultsService {
                 (x.method_snapshot->>'version')::int AS "methodVersion",
                 x.method_snapshot->>'standardReference' AS "standardReference",
                 x.result_type AS "resultType", x.numeric_value::float8 AS "numericValue",
+                x.numeric_text AS "numericText",
                 x.text_value AS "textValue", x.boolean_value AS "booleanValue",
                 x.qualitative_value AS "qualitativeValue", x.unit, x.evaluation,
                 x.specification_snapshot AS "specificationSnapshot",
@@ -313,7 +314,14 @@ export class LabResultsService {
 
   /** Reads the one field the result type promises, and refuses the rest. */
   private readValue(type: LabResultType, input: ResultInput) {
-    const empty = { numeric: null as string | null, text: null as string | null, boolean: null as boolean | null, qualitative: null as string | null };
+    const empty = {
+      numeric: null as string | null,
+      /** The number exactly as typed, kept beside it because `numeric(18,6)` cannot tell 12.40 from 12.4. */
+      entered: null as string | null,
+      text: null as string | null,
+      boolean: null as boolean | null,
+      qualitative: null as string | null,
+    };
     switch (type) {
       case 'numeric': {
         if (input.numericValue === undefined || input.numericValue === null || input.numericValue === '') {
@@ -323,7 +331,14 @@ export class LabResultsService {
         // would turn 12.40 into something that is not quite 12.40, for ever.
         const raw = String(input.numericValue).trim().replace(',', '.');
         if (!/^-?\d+(\.\d+)?$/.test(raw)) throw new BadRequestException(`"${raw}" is not a number`);
-        return { ...empty, numeric: raw };
+        const [whole, decimals = ''] = raw.replace('-', '').split('.');
+        // The column holds numeric(18,6). Rounding a measurement silently would be worse than
+        // refusing it: the analyst would never learn that the last digits were dropped.
+        if (whole.length > 12) throw new BadRequestException('That number is too large to record');
+        if (decimals.length > 6) {
+          throw new BadRequestException('This analysis records at most six decimal places');
+        }
+        return { ...empty, numeric: raw, entered: raw };
       }
       case 'text':
         if (!input.textValue?.trim()) throw new BadRequestException('This analysis needs a text result');

@@ -2,22 +2,29 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Badge, Button, EmptyState, Table } from '@gsi/ui-kit/react';
-import { Report } from '@gsi/shared-types';
+import { ReportDocument } from '@gsi/shared-types';
 import { downloadFile } from '../api';
-import { ErrorBox, useFormatDate, useServiceLabel } from './common';
+import { ErrorBox, useFormatDate } from './common';
 
-export function ReportsTable({ reports, showJob = true, emptyText }: { reports: Report[]; showJob?: boolean; emptyText: string }) {
+export function ReportsTable({
+  reports,
+  showJob = true,
+  emptyText,
+}: {
+  reports: ReportDocument[];
+  showJob?: boolean;
+  emptyText: string;
+}) {
   const { t } = useTranslation();
   const fmt = useFormatDate();
-  const serviceLabel = useServiceLabel();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<unknown>(null);
 
-  async function download(r: Report) {
+  async function download(r: ReportDocument) {
     setBusy(r.id);
     setError(null);
     try {
-      await downloadFile(`/reports/${r.id}/pdf`, `${r.reportNumber}-v${r.version}.pdf`);
+      await downloadFile(`/reports/${r.id}/pdf`, `${r.reportNumber}-r${r.version}.pdf`);
     } catch (err) {
       setError(err);
     } finally {
@@ -36,7 +43,7 @@ export function ReportsTable({ reports, showJob = true, emptyText }: { reports: 
             <th>{t('reports.number')}</th>
             <th>{t('reports.version')}</th>
             {showJob && <th>{t('reports.job')}</th>}
-            {showJob && <th>{t('reports.service')}</th>}
+            {showJob && <th>{t('reports.type')}</th>}
             <th>{t('reports.issued')}</th>
             <th>{t('reports.approvedBy')}</th>
             <th />
@@ -46,7 +53,8 @@ export function ReportsTable({ reports, showJob = true, emptyText }: { reports: 
           {reports.map((r) => (
             <tr key={r.id}>
               <td className="mono">
-                {r.reportNumber} {r.status !== 'issued' && <Badge tone="danger">{r.status}</Badge>}
+                <Link to={`/reports/${r.id}`}>{r.reportNumber}</Link>{' '}
+                {r.status !== 'issued' && <Badge tone="neutral">{t(`reportStatus.${r.status}`)}</Badge>}
               </td>
               <td>{r.version}</td>
               {showJob && (
@@ -54,8 +62,8 @@ export function ReportsTable({ reports, showJob = true, emptyText }: { reports: 
                   <Link to={`/jobs/${r.jobId}`}>{r.jobNumber}</Link>
                 </td>
               )}
-              {showJob && <td>{r.serviceType ? serviceLabel(r.serviceType) : '—'}</td>}
-              <td>{fmt(r.approvedAt)}</td>
+              {showJob && <td>{t(`reportType.${r.reportType}`)}</td>}
+              <td>{fmt(r.issuedAt ?? r.approvedAt)}</td>
               <td>{r.approvedByName ?? '—'}</td>
               <td style={{ textAlign: 'end' }}>
                 <Button size="sm" variant="secondary" loading={busy === r.id} onClick={() => download(r)}>

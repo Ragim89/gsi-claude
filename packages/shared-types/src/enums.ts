@@ -96,5 +96,19 @@ export type ChecklistResult = (typeof CHECKLIST_RESULTS)[number];
 export const MEDIA_TYPES = ['photo', 'video'] as const;
 export type MediaType = (typeof MEDIA_TYPES)[number];
 
-export const REPORT_STATUSES = ['draft', 'issued', 'revoked'] as const;
+/**
+ * A document's life. `revoked` is kept because rows carry it: it predates the document
+ * workflow and means what `cancelled` now means, and renaming a value nobody benefits from
+ * renaming would only break the queries that already read it.
+ */
+export const REPORT_STATUSES = [
+  'draft',
+  'under_review',
+  'changes_requested',
+  'approved',
+  'issued',
+  'superseded',
+  'cancelled',
+  'revoked',
+] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
