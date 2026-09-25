@@ -34,7 +34,7 @@ import {
   SeverityBadge,
 } from '../components/InspectionBits';
 import { DocumentsCard } from '../components/DocumentsCard';
-import { ErrorBox, Loading, PageHead, toLocalInput, fromLocalInput, useFormatDate, useServiceLabel } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, toLocalInput, fromLocalInput, useFormatDate, useServiceLabel } from '../components/common';
 
 type Tab = 'overview' | 'checklist' | 'findings' | 'measurements' | 'photos' | 'samples' | 'team' | 'documents' | 'history';
 
@@ -126,6 +126,13 @@ export function InspectionDetailPage() {
 
   return (
     <div className="stack has-action-bar">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.operations') },
+          { label: t('nav.inspections'), to: can('inspection.read') ? '/inspections' : undefined },
+          { label: x.inspectionNumber },
+        ]}
+      />
       <PageHead
         title={x.inspectionNumber}
         sub={

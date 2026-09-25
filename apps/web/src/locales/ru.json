@@ -9,7 +9,12 @@
     "labQueue": "Лаборатория", "myAnalyses": "Мои анализы", "labCatalogue": "Каталог анализов",
     "labSpecifications": "Нормы", "labInstruments": "Приборы",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
-    "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль."
+    "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль.",
+    "openMenu": "Открыть меню", "closeMenu": "Закрыть меню",
+    "groups": {
+      "crm": "CRM", "operations": "Операции", "laboratory": "Лаборатория",
+      "documents": "Документы и отчёты", "finance": "Финансы", "analytics": "Аналитика", "administration": "Администрирование"
+    }
   },
   "roles": {
     "title": "Роли и права",

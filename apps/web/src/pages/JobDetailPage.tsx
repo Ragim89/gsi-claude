@@ -25,7 +25,7 @@ import { LabOnJob } from '../components/LabOn';
 import { ACTIONS_NEEDING_REASON, PriorityBadge, StatusTimeline } from '../components/JobBits';
 import { ReportsTable } from '../components/ReportsTable';
 import { DocumentsCard } from '../components/DocumentsCard';
-import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
 type Tab = 'overview' | 'assignments' | 'inspection' | 'samples' | 'laboratory' | 'reports' | 'finance' | 'documents' | 'history';
 
@@ -173,6 +173,13 @@ export function JobDetailPage() {
 
   return (
     <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.operations') },
+          { label: t('nav.jobs'), to: can('job.read') ? '/jobs' : undefined },
+          { label: j.jobNumber },
+        ]}
+      />
       <PageHead
         title={j.jobNumber}
         sub={`${serviceLabel(j.type)} · ${j.clientName}${j.clientReference ? ` · ${j.clientReference}` : ''}`}

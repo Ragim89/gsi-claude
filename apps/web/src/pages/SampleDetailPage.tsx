@@ -32,7 +32,7 @@ import {
   SealBadge,
 } from '../components/SampleBits';
 import { DocumentsCard } from '../components/DocumentsCard';
-import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 type Tab = 'overview' | 'laboratory' | 'custody' | 'attachments' | 'documents' | 'history';
 
@@ -171,6 +171,13 @@ export function SampleDetailPage() {
 
   return (
     <div className="stack has-action-bar">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.operations') },
+          { label: t('nav.samples'), to: can('sample.read') ? '/samples' : undefined },
+          { label: s.sampleNumber },
+        ]}
+      />
       <PageHead
         title={s.sampleNumber}
         sub={

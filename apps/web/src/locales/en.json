@@ -9,7 +9,12 @@
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
-    "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role."
+    "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role.",
+    "openMenu": "Open menu", "closeMenu": "Close menu",
+    "groups": {
+      "crm": "CRM", "operations": "Operations", "laboratory": "Laboratory",
+      "documents": "Documents & Reports", "finance": "Finance", "analytics": "Analytics", "administration": "Administration"
+    }
   },
   "roles": {
     "title": "Roles and permissions",

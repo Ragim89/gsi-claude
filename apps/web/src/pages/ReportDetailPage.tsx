@@ -20,7 +20,7 @@ import {
   ReportActionBar,
   ReportTimeline,
 } from '../components/ReportBits';
-import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 type Tab = 'overview' | 'content' | 'sources' | 'versions' | 'history';
 
@@ -147,6 +147,13 @@ export function ReportDetailPage() {
 
   return (
     <div className="stack has-action-bar">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.documents') },
+          { label: t('nav.reports'), to: can('report.read') ? '/reports' : undefined },
+          { label: r.reportNumber },
+        ]}
+      />
       <PageHead
         title={r.reportNumber}
         sub={

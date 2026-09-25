@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Alert, Badge, BadgeTone, Spinner } from '@gsi/ui-kit/react';
 import { JobStatus, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shared-types';
@@ -78,6 +79,33 @@ export function ErrorBox({ error }: { error: unknown }) {
   if (!error) return null;
   const msg = error instanceof ApiError || error instanceof Error ? error.message : t('common.error');
   return <Alert>{msg}</Alert>;
+}
+
+export interface BreadcrumbItem {
+  label: React.ReactNode;
+  /** Omitted when the viewer has no permission to open that step, or it is the current page. */
+  to?: string;
+}
+
+/**
+ * Section → list → record, one detail screen at a time. A step with no `to` renders as text:
+ * the current record, or a section the viewer's permissions don't let them open on its own.
+ */
+export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+  return (
+    <nav className="breadcrumbs" aria-label="Breadcrumb">
+      {items.map((item, i) => (
+        <span className="breadcrumbs__item" key={i}>
+          {item.to ? <Link to={item.to}>{item.label}</Link> : <span>{item.label}</span>}
+          {i < items.length - 1 && (
+            <span className="breadcrumbs__sep" aria-hidden="true">
+              /
+            </span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
 }
 
 export function PageHead({ title, sub, actions }: { title: React.ReactNode; sub?: React.ReactNode; actions?: React.ReactNode }) {

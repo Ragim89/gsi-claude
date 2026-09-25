@@ -6,7 +6,7 @@ import { Badge, Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
 import { Invoice, InvoicePayment, InvoiceReminder } from '@gsi/shared-types';
 import { api, downloadFile } from '../api';
 import { useAuth } from '../auth';
-import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 import { INVOICE_TONE } from './InvoicesPage';
 
 /** One invoice: lines, payment history from the ledger, and the actions for its status. */
@@ -80,6 +80,13 @@ export function InvoiceDetailPage() {
 
   return (
     <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.finance') },
+          { label: t('nav.invoices'), to: can('finance.read') ? '/finance/invoices' : undefined },
+          { label: inv.invoiceNumber },
+        ]}
+      />
       <PageHead
         title={
           <span className="row-actions">

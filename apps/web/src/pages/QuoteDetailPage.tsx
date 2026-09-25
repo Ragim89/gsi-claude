@@ -6,7 +6,7 @@ import { Badge, Button, Card, Table } from '@gsi/ui-kit/react';
 import { Invoice, Quote, QuoteAction } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 import { QUOTE_TONE } from './QuotesPage';
 
 const REASON_ACTIONS: QuoteAction[] = ['reject', 'revise', 'cancel'];
@@ -64,6 +64,13 @@ export function QuoteDetailPage() {
 
   return (
     <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.finance') },
+          { label: t('nav.quotes'), to: can('quote.read') ? '/finance/quotes' : undefined },
+          { label: q.quoteNumber },
+        ]}
+      />
       <PageHead
         title={
           <span className="row-actions">

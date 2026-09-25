@@ -11,7 +11,7 @@ import { ContactsCard } from '../components/ContactsCard';
 import { ContractsCard } from '../components/ContractsCard';
 import { ReportsTable } from '../components/ReportsTable';
 import { DocumentsCard } from '../components/DocumentsCard';
-import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
 type Tab = 'overview' | 'contacts' | 'contracts' | 'jobs' | 'reports' | 'invoices' | 'statement' | 'activity' | 'documents';
 
@@ -93,6 +93,13 @@ export function ClientDetailPage() {
 
   return (
     <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.crm') },
+          { label: t('nav.clients'), to: can('client.read') ? '/clients' : undefined },
+          { label: c.name },
+        ]}
+      />
       <PageHead
         title={c.name}
         sub={[c.branchCode, c.gaftaFosfaRef, c.country].filter(Boolean).join(' · ')}

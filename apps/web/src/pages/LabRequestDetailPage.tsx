@@ -36,7 +36,7 @@ import {
   TestStatusBadge,
   useSpecText,
 } from '../components/LabBits';
-import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 type Tab = 'result' | 'attachments' | 'revisions' | 'history';
 
@@ -222,6 +222,13 @@ export function LabRequestDetailPage() {
 
   return (
     <div className="stack has-action-bar">
+      <Breadcrumbs
+        items={[
+          { label: t('nav.groups.laboratory') },
+          { label: t('nav.labQueue'), to: can('lab.test.read') ? '/lab' : undefined },
+          { label: testName },
+        ]}
+      />
       <PageHead
         title={testName}
         sub={
