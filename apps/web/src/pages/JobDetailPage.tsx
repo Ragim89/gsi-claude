@@ -10,6 +10,7 @@ import {
   Invoice,
   JobAction,
   JobAssignment,
+  JobFinanceSummary,
   JobStatusHistoryEntry,
   Page,
   ReportDocument,
@@ -17,6 +18,7 @@ import {
 } from '@gsi/shared-types';
 import { api, openPdf } from '../api';
 import { useAuth } from '../auth';
+import { StatTile } from '../components/charts';
 import { JobInspections } from '../components/JobInspections';
 import { SamplesOn } from '../components/SamplesOn';
 import { LabOnJob } from '../components/LabOn';
@@ -64,6 +66,11 @@ export function JobDetailPage() {
     queryKey: ['invoices', 'job', id],
     queryFn: () => api.get<Invoice[]>(`/finance/invoices?jobId=${id}`),
     enabled: can('finance.read') && tab === 'finance',
+  });
+  const financeSummary = useQuery({
+    queryKey: ['job-finance', id],
+    queryFn: () => api.get<JobFinanceSummary>(`/finance/jobs/${id}/summary`),
+    enabled: can('job.read_finance') && tab === 'finance',
   });
   const people = useQuery({
     queryKey: ['users', 'assignable'],
@@ -158,7 +165,7 @@ export function JobDetailPage() {
     { key: 'samples', label: t('samples.title'), show: can('sample.read') },
     { key: 'laboratory', label: t('lab.title'), show: can('lab.test.read') },
     { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.total },
-    { key: 'finance', label: t('nav.invoices'), show: can('finance.read') },
+    { key: 'finance', label: t('nav.invoices'), show: can('finance.read', 'job.read_finance') },
     { key: 'history', label: t('job.history'), show: can('job.read_history', 'job.read') },
   ];
 
@@ -372,7 +379,58 @@ export function JobDetailPage() {
       )}
 
       {tab === 'finance' && (
-        <Card title={t('nav.invoices')}>
+        <>
+          {can('job.read_finance') && financeSummary.data && (
+            <Card title={t('jobFinance.title')}>
+              <div className="kpi-row">
+                <StatTile
+                  label={t('jobFinance.revenue')}
+                  value={`${financeSummary.data.revenueBase.toLocaleString()} ${financeSummary.data.baseCurrency}`}
+                />
+                <StatTile
+                  label={t('jobFinance.costs')}
+                  value={`${financeSummary.data.costsBase.toLocaleString()} ${financeSummary.data.baseCurrency}`}
+                />
+                <StatTile
+                  label={t('jobFinance.margin')}
+                  value={`${financeSummary.data.marginBase.toLocaleString()} ${financeSummary.data.baseCurrency}`}
+                  hint={financeSummary.data.marginPct != null ? `${financeSummary.data.marginPct.toFixed(1)}%` : undefined}
+                  tone={financeSummary.data.marginBase >= 0 ? 'positive' : 'negative'}
+                />
+              </div>
+              {financeSummary.data.costLines.length > 0 && (
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('jobFinance.date')}</th>
+                      <th>{t('jobFinance.line')}</th>
+                      <th>{t('jobFinance.kind')}</th>
+                      <th className="num">{t('jobFinance.amount')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...financeSummary.data.revenueLines, ...financeSummary.data.costLines]
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map((l) => (
+                        <tr key={l.id}>
+                          <td>{fmt(l.date)}</td>
+                          <td>{l.description}</td>
+                          <td>
+                            <Badge tone={l.kind === 'invoice' ? 'success' : 'neutral'}>
+                              {t(`jobFinance.kindLabel.${l.kind}`)}
+                            </Badge>
+                          </td>
+                          <td className="num">
+                            {l.amount.toLocaleString()} {l.currency}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card>
+          )}
+          <Card title={t('nav.invoices')}>
           <ErrorBox error={invoices.error} />
           {invoices.isLoading ? (
             <Loading />
@@ -408,7 +466,8 @@ export function JobDetailPage() {
               </tbody>
             </Table>
           )}
-        </Card>
+          </Card>
+        </>
       )}
 
       {tab === 'history' && (

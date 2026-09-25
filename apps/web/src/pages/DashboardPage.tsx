@@ -82,6 +82,8 @@ export function DashboardPage() {
           tone={d.totals.overdueBase > 0 ? 'negative' : undefined}
           hint={t('dashboard.overdue', { amount: money(d.totals.overdueBase) })}
         />
+        <StatTile label={t('dashboard.payable')} value={money(d.totals.payableBase)} />
+        <StatTile label={t('dashboard.unallocatedCash')} value={money(d.totals.unallocatedCashBase)} />
       </div>
 
       <div className="chart-grid">
@@ -255,6 +257,32 @@ export function DashboardPage() {
           </tbody>
         </Table>
       </Card>
+
+      {d.quotePipeline.length > 0 && (
+        <Card title={t('dashboard.quotePipeline')}>
+          <Table>
+            <thead>
+              <tr>
+                <th>{t('jobs.status')}</th>
+                <th>{t('dashboard.invoices')}</th>
+                <th>{t('dashboard.amount')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {d.quotePipeline.map((q) => (
+                <tr key={q.status}>
+                  <td>{t(`quoteStatus.${q.status}`)}</td>
+                  <td>{q.count}</td>
+                  <td>{money(q.amountBase)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <p className="muted" style={{ marginBottom: 0, marginTop: 8 }}>
+            <Link to="/finance/quotes">{t('nav.quotes')}</Link>
+          </p>
+        </Card>
+      )}
 
       <Card title={t('dashboard.opsKpis')}>
         <div className="kpi-row">

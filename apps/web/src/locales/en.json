@@ -2,7 +2,8 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
-    "invoices": "Invoices", "expenses": "Expenses", "assets": "Assets", "branches": "Branches", "import": "Data import",
+    "invoices": "Invoices", "expenses": "Expenses", "quotes": "Quotes", "payments": "Payments", "pricing": "Pricing",
+    "assets": "Assets", "branches": "Branches", "import": "Data import",
     "reports": "Documents", "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
@@ -44,7 +45,7 @@
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
     "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch",
-    "description": "Description", "retry": "Retry"
+    "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive"
   },
   "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
@@ -584,7 +585,8 @@
     "byBranch": "By branch", "localRevenue": "Revenue (local)", "unassigned": "Not linked to a job",
     "opsKpis": "Operational KPIs", "jobsInPeriod": "Jobs created", "jobsApproved": "Jobs approved",
     "reportsIssued": "Reports issued", "avgCycle": "Job → report", "days2": "{{days}} days",
-    "inspectorLoad": "Jobs per inspector", "activeInspectors": "{{count}} active inspectors"
+    "inspectorLoad": "Jobs per inspector", "activeInspectors": "{{count}} active inspectors",
+    "payable": "Payable", "unallocatedCash": "Unallocated cash", "quotePipeline": "Quote pipeline"
   },
   "invoices": {
     "title": "Invoices", "status": "Status", "new": "New invoice", "number": "Invoice no.", "issued": "Issued", "due": "Due date",
@@ -601,10 +603,56 @@
     "toChase": "Chase these first", "amountDue": "Outstanding", "overdueBy": "Overdue by",
     "register": "Invoice register", "onlyOverdue": "Overdue only", "dueDate": "Due date",
     "cancelInvoice": "Cancel invoice", "details": "Details", "paidAt": "Paid at", "currency": "Currency",
-    "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by", "downloadPdf": "Invoice PDF"
+    "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by", "downloadPdf": "Invoice PDF",
+    "remindPrompt": "Note for this reminder (optional):", "logReminder": "Log reminder",
+    "reminders": "Reminders", "noReminders": "No reminders logged", "reminderNote": "Note"
   },
   "invoiceStatus": {
     "draft": "Draft", "issued": "Issued", "partially_paid": "Partially paid", "paid": "Paid", "cancelled": "Cancelled"
+  },
+  "quotes": {
+    "title": "Quotes", "new": "New quote", "register": "Quote register", "number": "Quote no.",
+    "empty": "No quotes", "open": "Open quotes", "total": "Total quotes", "validUntil": "Valid until",
+    "service": "Service", "sendConfirm": "Send this quote to the client?", "createInvoice": "Create invoice",
+    "sentAt": "Sent", "decidedAt": "Decided"
+  },
+  "quoteStatus": {
+    "draft": "Draft", "sent": "Sent", "accepted": "Accepted", "rejected": "Rejected",
+    "expired": "Expired", "cancelled": "Cancelled"
+  },
+  "quoteAction": {
+    "send": "Send", "accept": "Accept", "reject": "Reject", "expire": "Mark expired",
+    "revise": "Revise", "cancel": "Cancel quote",
+    "reasonFor": {
+      "reject": "Why was the quote rejected?",
+      "revise": "What needs to change?",
+      "cancel": "Why is this quote being cancelled?"
+    }
+  },
+  "payments": {
+    "title": "Payments", "new": "New payment", "register": "Payment register", "empty": "No payments",
+    "direction": "Direction", "party": "Party", "method": "Method", "reference": "Reference",
+    "unallocated": "Unallocated", "invoiceId": "Invoice", "invoiceIdHint": "Invoice id (leave empty to leave on account)",
+    "expenseId": "Expense", "expenseIdHint": "Expense id"
+  },
+  "paymentDirection": { "inbound": "Received from client", "outbound": "Paid to supplier" },
+  "paymentMethod": {
+    "bank_transfer": "Bank transfer", "cash": "Cash", "card": "Card", "cheque": "Cheque", "other": "Other"
+  },
+  "pricing": {
+    "title": "Services & pricing", "services": "Service catalogue", "prices": "Prices",
+    "newService": "New service", "newPrice": "New price", "code": "Code", "name": "Name",
+    "unit": "Unit", "contract": "Contract", "effectiveFrom": "Effective from", "default": "Branch default",
+    "selectService": "Select a service to see its prices", "noServices": "No services yet", "noPrices": "No prices yet"
+  },
+  "jobFinance": {
+    "title": "Revenue, costs & margin", "revenue": "Revenue", "costs": "Costs", "margin": "Margin",
+    "date": "Date", "line": "Line", "kind": "Kind", "amount": "Amount",
+    "kindLabel": { "invoice": "Revenue", "expense": "Cost" }
+  },
+  "statement": {
+    "title": "Financial statement", "empty": "Nothing in this period", "reference": "Reference",
+    "debit": "Debit", "credit": "Credit", "balance": "Balance", "opening": "Opening balance", "closing": "Closing balance"
   },
   "expenses": {
     "title": "Expenses", "new": "New expense", "category": "Category", "description": "Description",

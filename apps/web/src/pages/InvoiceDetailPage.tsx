@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
-import { Invoice, InvoicePayment } from '@gsi/shared-types';
+import { Invoice, InvoicePayment, InvoiceReminder } from '@gsi/shared-types';
 import { api, downloadFile } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
@@ -27,6 +27,11 @@ export function InvoiceDetailPage() {
     queryKey: ['invoice-payments', id],
     queryFn: () => api.get<InvoicePayment[]>(`/finance/invoices/${id}/payments`),
   });
+  const reminders = useQuery({
+    queryKey: ['invoice-reminders', id],
+    queryFn: () => api.get<InvoiceReminder[]>(`/finance/invoices/${id}/reminders`),
+    enabled: can('finance.read'),
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['invoice', id] });
@@ -47,6 +52,10 @@ export function InvoiceDetailPage() {
       invalidate();
       navigate('/finance/invoices');
     },
+  });
+  const remind = useMutation({
+    mutationFn: (note: string | null) => api.post(`/finance/invoices/${id}/reminders`, { note }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoice-reminders', id] }),
   });
 
   async function print() {
@@ -98,6 +107,18 @@ export function InvoiceDetailPage() {
             <Button variant="secondary" loading={printing} onClick={print}>
               ⤓ {t('invoices.downloadPdf')}
             </Button>
+            {can('invoice.remind') && ['issued', 'partially_paid'].includes(inv.status) && (
+              <Button
+                variant="ghost"
+                loading={remind.isPending}
+                onClick={() => {
+                  const note = window.prompt(t('invoices.remindPrompt'));
+                  if (note !== null) remind.mutate(note.trim() || null);
+                }}
+              >
+                {t('invoices.logReminder')}
+              </Button>
+            )}
             {canWrite && (
               <>
                 {inv.status === 'draft' && (
@@ -137,7 +158,7 @@ export function InvoiceDetailPage() {
           </>
         }
       />
-      <ErrorBox error={act.error ?? remove.error ?? printError} />
+      <ErrorBox error={act.error ?? remove.error ?? remind.error ?? printError} />
 
       <div className="two-col">
         <Card title={t('invoices.lines')}>
@@ -237,6 +258,35 @@ export function InvoiceDetailPage() {
               </Table>
             )}
           </Card>
+
+          {can('finance.read') && (
+            <Card title={t('invoices.reminders')}>
+              {reminders.isLoading ? (
+                <Loading />
+              ) : !reminders.data?.length ? (
+                <EmptyState>{t('invoices.noReminders')}</EmptyState>
+              ) : (
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('expenses.date')}</th>
+                      <th>{t('invoices.registeredBy')}</th>
+                      <th>{t('invoices.reminderNote')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reminders.data.map((r) => (
+                      <tr key={r.id}>
+                        <td>{fmt(r.createdAt)}</td>
+                        <td className="muted">{r.sentByName ?? '—'}</td>
+                        <td>{r.note ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>

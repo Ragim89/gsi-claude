@@ -2,7 +2,8 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
-    "invoices": "Счета", "expenses": "Расходы", "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
+    "invoices": "Счета", "expenses": "Расходы", "quotes": "Предложения", "payments": "Платежи", "pricing": "Тарифы",
+    "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
     "reports": "Документы", "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
     "samples": "Пробы", "mySamples": "Мои пробы", "laboratories": "Лаборатории",
     "labQueue": "Лаборатория", "myAnalyses": "Мои анализы", "labCatalogue": "Каталог анализов",
@@ -44,7 +45,7 @@
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
     "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
     "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал",
-    "description": "Описание", "retry": "Повторить"
+    "description": "Описание", "retry": "Повторить", "active": "Активно", "inactive": "Неактивно"
   },
   "roleNames": {
     "inspector": "Инспектор", "lab_technician": "Лаборант", "supervisor": "Супервайзер",
@@ -590,7 +591,8 @@
     "byBranch": "По филиалам", "localRevenue": "Выручка (локальная)", "unassigned": "Без привязки к заявке",
     "opsKpis": "Операционные показатели", "jobsInPeriod": "Создано заявок", "jobsApproved": "Утверждено заявок",
     "reportsIssued": "Выпущено отчётов", "avgCycle": "Заявка → отчёт", "days2": "{{days}} дн.",
-    "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}"
+    "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}",
+    "payable": "Кредиторка", "unallocatedCash": "Неразнесённые платежи", "quotePipeline": "Воронка предложений"
   },
   "invoices": {
     "title": "Счета", "status": "Статус", "new": "Новый счёт", "number": "№ счёта", "issued": "Выставлен", "due": "Срок оплаты",
@@ -607,10 +609,56 @@
     "toChase": "Кому напомнить об оплате", "amountDue": "К оплате", "overdueBy": "Просрочка",
     "register": "Журнал счетов", "onlyOverdue": "Только просроченные", "dueDate": "Срок оплаты",
     "cancelInvoice": "Аннулировать счёт", "details": "Реквизиты", "paidAt": "Оплачен", "currency": "Валюта",
-    "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл", "downloadPdf": "Счёт в PDF"
+    "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл", "downloadPdf": "Счёт в PDF",
+    "remindPrompt": "Заметка к напоминанию (необязательно):", "logReminder": "Записать напоминание",
+    "reminders": "Напоминания", "noReminders": "Напоминаний нет", "reminderNote": "Заметка"
   },
   "invoiceStatus": {
     "draft": "Черновик", "issued": "Выставлен", "partially_paid": "Оплачен частично", "paid": "Оплачен", "cancelled": "Аннулирован"
+  },
+  "quotes": {
+    "title": "Коммерческие предложения", "new": "Новое предложение", "register": "Журнал предложений", "number": "№ предложения",
+    "empty": "Предложений нет", "open": "Открытые", "total": "Всего предложений", "validUntil": "Действительно до",
+    "service": "Услуга", "sendConfirm": "Отправить предложение клиенту?", "createInvoice": "Создать счёт",
+    "sentAt": "Отправлено", "decidedAt": "Решение"
+  },
+  "quoteStatus": {
+    "draft": "Черновик", "sent": "Отправлено", "accepted": "Принято", "rejected": "Отклонено",
+    "expired": "Истекло", "cancelled": "Отменено"
+  },
+  "quoteAction": {
+    "send": "Отправить", "accept": "Принять", "reject": "Отклонить", "expire": "Отметить истёкшим",
+    "revise": "На доработку", "cancel": "Отменить предложение",
+    "reasonFor": {
+      "reject": "Почему предложение отклонено?",
+      "revise": "Что нужно изменить?",
+      "cancel": "Почему предложение отменяется?"
+    }
+  },
+  "payments": {
+    "title": "Платежи", "new": "Новый платёж", "register": "Журнал платежей", "empty": "Платежей нет",
+    "direction": "Направление", "party": "Контрагент", "method": "Способ", "reference": "Референс",
+    "unallocated": "Не разнесено", "invoiceId": "Счёт", "invoiceIdHint": "ID счёта (пусто — оставить на балансе)",
+    "expenseId": "Расход", "expenseIdHint": "ID расхода"
+  },
+  "paymentDirection": { "inbound": "Получен от клиента", "outbound": "Выплачен поставщику" },
+  "paymentMethod": {
+    "bank_transfer": "Банковский перевод", "cash": "Наличные", "card": "Карта", "cheque": "Чек", "other": "Другое"
+  },
+  "pricing": {
+    "title": "Услуги и тарифы", "services": "Каталог услуг", "prices": "Тарифы",
+    "newService": "Новая услуга", "newPrice": "Новый тариф", "code": "Код", "name": "Название",
+    "unit": "Единица", "contract": "Контракт", "effectiveFrom": "Действует с", "default": "Тариф филиала по умолчанию",
+    "selectService": "Выберите услугу, чтобы увидеть тарифы", "noServices": "Услуг пока нет", "noPrices": "Тарифов пока нет"
+  },
+  "jobFinance": {
+    "title": "Выручка, затраты и маржа", "revenue": "Выручка", "costs": "Затраты", "margin": "Маржа",
+    "date": "Дата", "line": "Позиция", "kind": "Тип", "amount": "Сумма",
+    "kindLabel": { "invoice": "Выручка", "expense": "Затраты" }
+  },
+  "statement": {
+    "title": "Акт сверки", "empty": "За период ничего нет", "reference": "Документ",
+    "debit": "Дебет", "credit": "Кредит", "balance": "Баланс", "opening": "Сальдо на начало", "closing": "Сальдо на конец"
   },
   "expenses": {
     "title": "Расходы", "new": "Новый расход", "category": "Категория", "description": "Описание",

@@ -14,7 +14,7 @@ export interface Posting {
   branchId: string;
   currency: string;
   date: string;
-  sourceType: 'invoice' | 'payment' | 'expense';
+  sourceType: 'invoice' | 'payment' | 'expense' | 'payment_on_account' | 'expense_payment';
   sourceId: string;
   description: string;
   legs: PostingLeg[];

@@ -20,6 +20,10 @@ import { DashboardPage } from './pages/DashboardPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage';
+import { QuotesPage } from './pages/QuotesPage';
+import { QuoteDetailPage } from './pages/QuoteDetailPage';
+import { PaymentsPage } from './pages/PaymentsPage';
+import { ServicesPricingPage } from './pages/ServicesPricingPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { BranchDetailPage } from './pages/BranchDetailPage';
 import { AssetsPage } from './pages/AssetsPage';
@@ -92,6 +96,10 @@ export function App() {
         <Route path="/finance/invoices" element={<RequireAuth need={['finance.read']}><InvoicesPage /></RequireAuth>} />
         <Route path="/finance/invoices/:id" element={<RequireAuth need={['finance.read']}><InvoiceDetailPage /></RequireAuth>} />
         <Route path="/finance/expenses" element={<RequireAuth need={['finance.read']}><ExpensesPage /></RequireAuth>} />
+        <Route path="/finance/quotes" element={<RequireAuth need={['quote.read']}><QuotesPage /></RequireAuth>} />
+        <Route path="/finance/quotes/:id" element={<RequireAuth need={['quote.read']}><QuoteDetailPage /></RequireAuth>} />
+        <Route path="/finance/payments" element={<RequireAuth need={['payment.read']}><PaymentsPage /></RequireAuth>} />
+        <Route path="/finance/pricing" element={<RequireAuth need={['service.read']}><ServicesPricingPage /></RequireAuth>} />
         <Route path="/assets" element={<RequireAuth need={['asset.read']}><AssetsPage /></RequireAuth>} />
         <Route path="/assets/:id" element={<RequireAuth need={['asset.read']}><AssetDetailPage /></RequireAuth>} />
         <Route path="/branches" element={<RequireAuth need={['dashboard.read']}><BranchesPage /></RequireAuth>} />

@@ -2,7 +2,7 @@
 
 REST поверх `/api`. Все эндпоинты, кроме явно публичных, требуют заголовок `Authorization: Bearer <access token>`.
 
-Актуально после PHASE 7.
+Актуально после PHASE 8.
 
 ---
 
@@ -372,9 +372,63 @@ GET /api/public/verify/{token}
 |---|---|---|
 | GET | `/finance/dashboard`, `/finance/stream` (SSE) | `dashboard.read` / `finance.read` |
 | GET/POST | `/finance/invoices`, `/finance/expenses` | `finance.read` + право действия |
+| POST | `/finance/invoices/:id/issue` \| `/pay` \| `/cancel` | `invoice.issue` \| `invoice.pay` \| `invoice.cancel` |
+| GET | `/finance/invoices/:id/payments` | `finance.read` — история платежей по счёту |
+| GET/POST | `/finance/invoices/:id/reminders` | `finance.read` / `invoice.remind` — **лог**, не отправка (адаптер писем — PHASE 10) |
 | GET/POST | `/assets`, `/assets/depreciation/run` | `asset.*` |
 | GET | `/export/:section`, `/export/all` | `export.run` |
 | GET/POST | `/import/:section`, `/import/:section/preview` | `import.run` + право раздела |
+
+### Прайс-лист (PHASE 8)
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET/POST | `/finance/services` | `service.read` / `service.manage` | каталог услуг — не коммерческие данные, как справочники |
+| PATCH | `/finance/services/:id` | `service.manage` | изменить или деактивировать |
+| GET/POST | `/finance/prices` | `pricing.read` / `pricing.manage` | цены — коммерческие данные, та же изоляция, что у контрактов |
+| PATCH | `/finance/prices/:id/deactivate` | `pricing.manage` | снять с действия |
+| GET | `/finance/prices/resolve?serviceId=…&branchId=…&clientId=…&contractId=…` | `pricing.read` | действующая цена, порядок контракт → клиент → офис по умолчанию |
+
+### Предложения (PHASE 8)
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET/POST | `/finance/quotes` | `quote.read` / `quote.create` | список / создать (`status: draft`) |
+| GET | `/finance/quotes/:id` | `quote.read` | карточка + `actions` |
+| DELETE | `/finance/quotes/:id` | `quote.update` | архивировать черновик |
+| POST | `/finance/quotes/:id/send` | `quote.send` | draft → sent |
+| POST | `/finance/quotes/:id/accept` \| `/reject` \| `/expire` | `quote.decide` | sent → accepted \| rejected \| expired (причина обязательна для `reject`) |
+| POST | `/finance/quotes/:id/revise` | `quote.update` | назад в draft, причина обязательна |
+| POST | `/finance/quotes/:id/cancel` | `quote.cancel` | отмена, причина обязательна |
+| POST | `/finance/quotes/:id/create-invoice` | `invoice.create` | только из `accepted`; копирует позиции в новый черновик счёта |
+
+Жизненный цикл не версионируется, как отчёт: предложение можно послать заново после `revise`, а не только исправить черновик.
+
+### Платежи (PHASE 8)
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET/POST | `/finance/payments` | `payment.read` / `payment.create` (входящий) или `expense.pay` (исходящий) | список / регистрация |
+| GET | `/finance/payments/:id` | `payment.read` | карточка с разнесением |
+| POST | `/finance/payments/:id/allocate` | `payment.allocate` | разнести неразнесённый остаток на счёт или расход |
+
+`POST /finance/invoices/:id/pay` не изменился: он по-прежнему полностью разносит платёж на один счёт — это тонкий случай `payments`, а не отдельный механизм.
+
+### Заявка: себестоимость и маржа (PHASE 8)
+
+| Метод | Путь | Право |
+|---|---|---|
+| GET | `/finance/jobs/:id/summary` | `job.read_finance` |
+
+Выручка и себестоимость — это счета и расходы, у которых `job_id` указывает на эту заявку; отдельной таблицы затрат нет.
+
+### Акт сверки клиента (PHASE 8)
+
+| Метод | Путь | Право |
+|---|---|---|
+| GET | `/finance/clients/:id/statement?from=…&to=…` | `finance.read` |
+
+Бегущее сальдо: выставленный счёт — дебет, применённый платёж — кредит, каждая сумма по курсу своей даты.
 
 ## Администрирование
 

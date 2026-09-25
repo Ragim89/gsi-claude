@@ -2,7 +2,8 @@
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
     "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
-    "invoices": "Faturalar", "expenses": "Giderler", "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
+    "invoices": "Faturalar", "expenses": "Giderler", "quotes": "Teklifler", "payments": "Ödemeler", "pricing": "Fiyatlandırma",
+    "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "reports": "Belgeler", "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
@@ -44,7 +45,7 @@
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
     "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube",
-    "description": "Açıklama", "retry": "Tekrar dene"
+    "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif"
   },
   "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
@@ -586,7 +587,8 @@
     "byBranch": "Şubelere göre", "localRevenue": "Ciro (yerel)", "unassigned": "İşle ilişkilendirilmemiş",
     "opsKpis": "Operasyonel göstergeler", "jobsInPeriod": "Açılan iş", "jobsApproved": "Onaylanan iş",
     "reportsIssued": "Düzenlenen rapor", "avgCycle": "İş → rapor", "days2": "{{days}} gün",
-    "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper"
+    "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper",
+    "payable": "Borçlar", "unallocatedCash": "Eşleşmemiş tahsilat", "quotePipeline": "Teklif hattı"
   },
   "invoices": {
     "title": "Faturalar", "status": "Durum", "new": "Yeni fatura", "number": "Fatura no.", "issued": "Düzenlendi", "due": "Vade",
@@ -603,10 +605,56 @@
     "toChase": "Önce bunları takip edin", "amountDue": "Kalan tutar", "overdueBy": "Gecikme",
     "register": "Fatura defteri", "onlyOverdue": "Sadece vadesi geçen", "dueDate": "Vade tarihi",
     "cancelInvoice": "Faturayı iptal et", "details": "Bilgiler", "paidAt": "Ödendiği tarih", "currency": "Para birimi",
-    "payments": "Ödemeler", "noPayments": "Henüz ödeme yok", "registeredBy": "Kaydeden", "downloadPdf": "Fatura PDF"
+    "payments": "Ödemeler", "noPayments": "Henüz ödeme yok", "registeredBy": "Kaydeden", "downloadPdf": "Fatura PDF",
+    "remindPrompt": "Bu hatırlatma için not (isteğe bağlı):", "logReminder": "Hatırlatma kaydet",
+    "reminders": "Hatırlatmalar", "noReminders": "Kayıtlı hatırlatma yok", "reminderNote": "Not"
   },
   "invoiceStatus": {
     "draft": "Taslak", "issued": "Düzenlendi", "partially_paid": "Kısmi ödendi", "paid": "Ödendi", "cancelled": "İptal edildi"
+  },
+  "quotes": {
+    "title": "Teklifler", "new": "Yeni teklif", "register": "Teklif defteri", "number": "Teklif no.",
+    "empty": "Teklif yok", "open": "Açık teklifler", "total": "Toplam teklif", "validUntil": "Geçerlilik tarihi",
+    "service": "Hizmet", "sendConfirm": "Teklif müşteriye gönderilsin mi?", "createInvoice": "Fatura oluştur",
+    "sentAt": "Gönderildi", "decidedAt": "Karar tarihi"
+  },
+  "quoteStatus": {
+    "draft": "Taslak", "sent": "Gönderildi", "accepted": "Kabul edildi", "rejected": "Reddedildi",
+    "expired": "Süresi doldu", "cancelled": "İptal edildi"
+  },
+  "quoteAction": {
+    "send": "Gönder", "accept": "Kabul et", "reject": "Reddet", "expire": "Süresi doldu olarak işaretle",
+    "revise": "Revize et", "cancel": "Teklifi iptal et",
+    "reasonFor": {
+      "reject": "Teklif neden reddedildi?",
+      "revise": "Ne değişmeli?",
+      "cancel": "Teklif neden iptal ediliyor?"
+    }
+  },
+  "payments": {
+    "title": "Ödemeler", "new": "Yeni ödeme", "register": "Ödeme defteri", "empty": "Ödeme yok",
+    "direction": "Yön", "party": "Taraf", "method": "Yöntem", "reference": "Referans",
+    "unallocated": "Eşleşmemiş", "invoiceId": "Fatura", "invoiceIdHint": "Fatura kimliği (boş bırakılırsa bakiyede kalır)",
+    "expenseId": "Gider", "expenseIdHint": "Gider kimliği"
+  },
+  "paymentDirection": { "inbound": "Müşteriden alındı", "outbound": "Tedarikçiye ödendi" },
+  "paymentMethod": {
+    "bank_transfer": "Banka havalesi", "cash": "Nakit", "card": "Kart", "cheque": "Çek", "other": "Diğer"
+  },
+  "pricing": {
+    "title": "Hizmetler ve fiyatlandırma", "services": "Hizmet kataloğu", "prices": "Fiyatlar",
+    "newService": "Yeni hizmet", "newPrice": "Yeni fiyat", "code": "Kod", "name": "Ad",
+    "unit": "Birim", "contract": "Sözleşme", "effectiveFrom": "Geçerlilik başlangıcı", "default": "Şube varsayılanı",
+    "selectService": "Fiyatları görmek için bir hizmet seçin", "noServices": "Henüz hizmet yok", "noPrices": "Henüz fiyat yok"
+  },
+  "jobFinance": {
+    "title": "Gelir, maliyet ve marj", "revenue": "Gelir", "costs": "Maliyet", "margin": "Marj",
+    "date": "Tarih", "line": "Kalem", "kind": "Tür", "amount": "Tutar",
+    "kindLabel": { "invoice": "Gelir", "expense": "Maliyet" }
+  },
+  "statement": {
+    "title": "Cari hesap ekstresi", "empty": "Bu dönemde kayıt yok", "reference": "Belge",
+    "debit": "Borç", "credit": "Alacak", "balance": "Bakiye", "opening": "Açılış bakiyesi", "closing": "Kapanış bakiyesi"
   },
   "expenses": {
     "title": "Giderler", "new": "Yeni gider", "category": "Kategori", "description": "Açıklama",

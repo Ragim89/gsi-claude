@@ -1,6 +1,6 @@
 # Рабочие процессы GSI ONE
 
-Документ описывает жизненные циклы сущностей и правила переходов. Актуально с PHASE 7.
+Документ описывает жизненные циклы сущностей и правила переходов. Актуально с PHASE 8.
 
 ---
 
@@ -614,6 +614,47 @@ flowchart LR
 
 `draft → issued → partially_paid → paid`, плюс `cancelled`. Отмена не удаляет проводки, а сторнирует их. Детали — в `docs/03-finance-dashboard.md`.
 
+С PHASE 8 `amount_paid` и статус двигает не эндпоинт `pay` напрямую, а `PaymentsService`: `pay` теперь лишь создаёт платёж, полностью разнесённый на этот счёт, — тот же результат, та же проводка (`cash.bank`/`ar.trade`), что и до этой фазы.
+
 ## Контракт
 
 `draft → active → suspended / expired / terminated`. Статус меняется вручную; срок действия контролируется отдельно (`valid_to`), и экран контрактов показывает истекающие.
+
+## Предложение (Quote)
+
+Коммерческое предложение — не документ вроде отчёта или сертификата: его можно послать заново после правки, и прежняя копия не обязана остаться на записи как отдельная ревизия. Поэтому у него нет версий и снимков — только статус и история переходов, движок той же формы, что у всех остальных сущностей.
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft: создание
+
+    draft --> sent: send
+    draft --> cancelled: cancel (с причиной)
+
+    sent --> accepted: accept
+    sent --> rejected: reject (с причиной)
+    sent --> expired: expire
+    sent --> draft: revise (с причиной)
+    sent --> cancelled: cancel (с причиной)
+
+    rejected --> draft: revise (с причиной)
+    expired --> draft: revise (с причиной)
+
+    accepted --> [*]
+    cancelled --> [*]
+```
+
+| Действие | Из | В | Право | Причина обязательна |
+|---|---|---|---|---|
+| `send` | draft | sent | `quote.send` | — |
+| `accept` | sent | accepted | `quote.decide` | — |
+| `reject` | sent | rejected | `quote.decide` | **да** |
+| `expire` | sent | expired | `quote.decide` | — |
+| `revise` | sent, rejected, expired | draft | `quote.update` | **да** |
+| `cancel` | draft, sent | cancelled | `quote.cancel` | **да** |
+
+`accepted` — не начало ревизий, а конец жизни предложения: принятое предложение превращается в счёт (`POST /finance/quotes/:id/create-invoice`, копирует позиции в новый черновик через тот же `InvoicesService.create`, которым пользуется обычное создание счёта) — дальше живёт счёт, а не предложение.
+
+### Движок
+
+`QuoteWorkflowService` — той же формы, что `JobWorkflowService`, `ReportWorkflowService` и остальные: право → законность перехода → причина → проверки (`hasLines` — у предложения есть хотя бы одна позиция) → строка → история (`quote_status_history`, только на добавление) → аудит.

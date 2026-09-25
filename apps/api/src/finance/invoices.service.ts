@@ -11,6 +11,7 @@ import {
 import { DbService, Tx } from '../db/db.service';
 import { LedgerService } from './ledger.service';
 import { AuditService } from '../common/audit.service';
+import { PaymentsService } from './payments.service';
 import { config } from '../config';
 
 const INVOICE_COLUMNS = `
@@ -57,9 +58,10 @@ export class InvoicesService {
     private readonly db: DbService,
     private readonly ledger: LedgerService,
     private readonly audit: AuditService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
-  list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean; branchId?: string }) {
+  list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean; branchId?: string; jobId?: string }) {
     return this.db.tx(user, (tx) =>
       tx.many<Invoice>(
         `SELECT ${INVOICE_COLUMNS} FROM ${INVOICE_FROM}
@@ -67,10 +69,11 @@ export class InvoicesService {
            AND ($2::uuid IS NULL OR i.client_id = $2::uuid)
            AND ($3::boolean IS NOT TRUE OR (i.status IN ('issued','partially_paid') AND i.due_date < current_date))
            AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)
+           AND ($5::uuid IS NULL OR i.job_id = $5::uuid)
            AND i.deleted_at IS NULL
          ORDER BY i.issue_date DESC, i.invoice_number DESC
          LIMIT 500`,
-        [f.status ?? null, f.clientId ?? null, f.overdue ?? null, f.branchId ?? null],
+        [f.status ?? null, f.clientId ?? null, f.overdue ?? null, f.branchId ?? null, f.jobId ?? null],
       ),
     );
   }
@@ -241,17 +244,36 @@ export class InvoicesService {
     });
   }
 
-  /** Payment history of one invoice, reconstructed from its ledger postings. */
+  /**
+   * Payment history of one invoice. Since PHASE 8 this is read from `payment_allocations` (the
+   * real record of what was applied, whichever way the money arrived); an invoice untouched
+   * since before that phase falls back to its ledger postings, exactly as this always worked.
+   * A payment made before PHASE 8 and another made after it, on the same invoice, would only
+   * show the second here — a display nuance, not a money one: amount_paid and status are
+   * correct either way.
+   */
   payments(user: AuthUser, id: string): Promise<InvoicePayment[]> {
+    const base = config.consolidationCurrency;
     return this.db.tx(user, (tx) =>
       tx.many<InvoicePayment>(
-        `SELECT to_char(l.entry_date, 'YYYY-MM-DD') AS date, l.debit::float8 AS amount, l.currency,
-                l.amount_base::float8 AS "amountBase", u.full_name AS "registeredBy"
-         FROM ledger_entries l
-         LEFT JOIN users u ON u.id = l.created_by
-         WHERE l.source_type = 'payment' AND l.source_id = $1 AND l.account_group = 'cash' AND l.debit > 0
-         ORDER BY l.entry_date, l.created_at`,
-        [id],
+        `SELECT * FROM (
+           SELECT to_char(pay.payment_date, 'YYYY-MM-DD') AS date, pa.amount::float8 AS amount, pay.currency,
+                  (pa.amount * fx_rate_on(pay.currency, $2, pay.payment_date))::float8 AS "amountBase",
+                  u.full_name AS "registeredBy", pay.created_at AS sort_at
+           FROM payment_allocations pa
+           JOIN payments pay ON pay.id = pa.payment_id
+           LEFT JOIN users u ON u.id = pay.created_by
+           WHERE pa.invoice_id = $1
+           UNION ALL
+           SELECT to_char(l.entry_date, 'YYYY-MM-DD') AS date, l.debit::float8 AS amount, l.currency,
+                  l.amount_base::float8 AS "amountBase", u2.full_name AS "registeredBy", l.created_at AS sort_at
+           FROM ledger_entries l
+           LEFT JOIN users u2 ON u2.id = l.created_by
+           WHERE l.source_type = 'payment' AND l.source_id = $1 AND l.account_group = 'cash' AND l.debit > 0
+             AND NOT EXISTS (SELECT 1 FROM payment_allocations pa2 WHERE pa2.invoice_id = $1)
+         ) history
+         ORDER BY date, sort_at`,
+        [id, base],
       ),
     );
   }
@@ -330,7 +352,13 @@ export class InvoicesService {
     });
   }
 
-  /** Registers a (partial) payment: cash up, receivable down. */
+  /**
+   * Registers a (partial) payment: cash up, receivable down.
+   *
+   * Unchanged in behavior since before PHASE 8 — same signature, same clamping to what is due,
+   * same ledger shape. It now goes through `PaymentsService`, which also gives this payment an
+   * id, a method and a reference, and makes it show up in `GET /finance/payments`.
+   */
   pay(user: AuthUser, id: string, amount: number, paidOn?: string) {
     if (!(amount > 0)) throw new BadRequestException('Payment amount must be positive');
     return this.db.tx(user, async (tx) => {
@@ -338,28 +366,20 @@ export class InvoicesService {
       if (!['issued', 'partially_paid'].includes(inv.status)) {
         throw new ConflictException(`Cannot register a payment for an invoice in status ${inv.status}`);
       }
+      const client = await tx.one<{ client_id: string }>('SELECT client_id FROM invoices WHERE id = $1', [id]);
       const due = round2(Number(inv.amount_total) - Number(inv.amount_paid));
       const paid = round2(Math.min(amount, due));
-      const fullyPaid = paid >= due - 0.01;
-      await tx.exec(
-        `UPDATE invoices SET amount_paid = amount_paid + $2,
-                             status = CASE WHEN $3 THEN 'paid'::invoice_status ELSE 'partially_paid'::invoice_status END,
-                             paid_at = CASE WHEN $3 THEN now() ELSE paid_at END
-         WHERE id = $1`,
-        [id, paid, fullyPaid],
-      );
-      await this.ledger.post(tx, user, {
+
+      await this.paymentsService.create(tx, user, {
         branchId: inv.branch_id,
+        direction: 'inbound',
+        clientId: client!.client_id,
         currency: inv.currency,
-        date: paidOn ?? today(),
-        sourceType: 'payment',
-        sourceId: id,
-        description: `Payment for ${inv.invoice_number}`,
-        legs: [
-          { account: 'cash.bank', group: 'cash', debit: paid },
-          { account: 'ar.trade', group: 'receivable', credit: paid },
-        ],
+        amount: paid,
+        paymentDate: paidOn ?? today(),
+        allocations: [{ invoiceId: id, amount: paid }],
       });
+
       return this.load(tx, id);
     });
   }

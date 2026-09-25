@@ -35,7 +35,14 @@ export const PERMISSIONS = [
   'report.manage_templates', 'report.self_approve',
   // Finance
   'finance.read', 'dashboard.read', 'invoice.create', 'invoice.issue', 'invoice.pay',
-  'invoice.cancel', 'invoice.delete', 'expense.create', 'expense.delete', 'fx.manage',
+  'invoice.cancel', 'invoice.delete', 'invoice.remind', 'expense.create', 'expense.delete',
+  'expense.pay', 'fx.manage',
+  // Services, pricing, quotes
+  'service.read', 'service.manage', 'pricing.read', 'pricing.manage',
+  'quote.read', 'quote.create', 'quote.update', 'quote.send', 'quote.decide', 'quote.cancel',
+  'quote.archive', 'quote.restore',
+  // Payments
+  'payment.read', 'payment.create', 'payment.allocate',
   // Assets
   'asset.read', 'asset.create', 'asset.update', 'asset.delete', 'asset.depreciate',
   // Reference data

@@ -9,7 +9,11 @@ import { config } from '../config';
 const EXPENSE_COLUMNS = `
   e.id, e.branch_id AS "branchId", b.code AS "branchCode", e.category, e.description, e.supplier,
   e.currency, e.amount::float8 AS amount, to_char(e.expense_date, 'YYYY-MM-DD') AS "expenseDate",
-  e.job_id AS "jobId", j.job_number AS "jobNumber", e.created_at AS "createdAt"`;
+  e.job_id AS "jobId", j.job_number AS "jobNumber", e.payment_status AS "paymentStatus",
+  CASE WHEN e.payment_status = 'paid' THEN e.amount
+       ELSE COALESCE((SELECT SUM(pa.amount) FROM payment_allocations pa WHERE pa.expense_id = e.id), 0)
+  END::float8 AS "amountPaid",
+  e.created_at AS "createdAt"`;
 
 const EXPENSE_FROM = `
   expenses e
@@ -25,6 +29,12 @@ export interface CreateExpenseInput {
   jobId?: string | null;
   branchId?: string;
   currency?: string;
+  /**
+   * When true, the expense is booked as a payable (`expense` debit / `ap.trade` credit)
+   * instead of paid immediately. Defaults to false — the original, unchanged behavior:
+   * "expenses are recorded as paid immediately" (see below).
+   */
+  onAccount?: boolean;
 }
 
 /** Branch costs (docs/01-architecture.md, module 6). Booking an expense posts to the ledger. */
@@ -195,14 +205,16 @@ export class ExpensesService {
       if (!branch) throw new NotFoundException('Branch not found');
       const currency = input.currency ?? branch.currency;
 
+      const onAccount = input.onAccount ?? false;
       const row = await tx.one<{ id: string }>(
-        `INSERT INTO expenses (branch_id, category, description, supplier, currency, amount, expense_date, job_id, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8, $9) RETURNING id`,
+        `INSERT INTO expenses (branch_id, category, description, supplier, currency, amount, expense_date, job_id,
+                               payment_status, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8, $9::expense_payment_status, $10) RETURNING id`,
         [branchId, input.category, input.description.trim(), input.supplier ?? null, currency, input.amount,
-         date, input.jobId ?? null, user.id],
+         date, input.jobId ?? null, onAccount ? 'unpaid' : 'paid', user.id],
       );
-      // ASSUMPTION: expenses are recorded as paid immediately (cash accounting). Accounts
-      // payable with a separate payment step arrives with the accounting integration.
+      // Default: expenses are recorded as paid immediately (cash accounting), same as always.
+      // `onAccount: true` books it as a payable instead; PaymentsService.allocate() pays it off.
       await this.ledger.post(tx, user, {
         branchId,
         currency,
@@ -210,10 +222,15 @@ export class ExpensesService {
         sourceType: 'expense',
         sourceId: row!.id,
         description: input.description.trim(),
-        legs: [
-          { account: `expense.${input.category}`, group: 'expense', debit: input.amount },
-          { account: 'cash.bank', group: 'cash', credit: input.amount },
-        ],
+        legs: onAccount
+          ? [
+              { account: `expense.${input.category}`, group: 'expense', debit: input.amount },
+              { account: 'ap.trade', group: 'payable', credit: input.amount },
+            ]
+          : [
+              { account: `expense.${input.category}`, group: 'expense', debit: input.amount },
+              { account: 'cash.bank', group: 'cash', credit: input.amount },
+            ],
       });
       return (await tx.one<Expense>(`SELECT ${EXPENSE_COLUMNS} FROM ${EXPENSE_FROM} WHERE e.id = $1`, [row!.id]))!;
     });

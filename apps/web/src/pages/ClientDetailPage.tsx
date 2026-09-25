@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Table } from '@gsi/ui-kit/react';
-import { AuditEntry, Client, InspectionJob, Invoice, Page, ReportDocument } from '@gsi/shared-types';
+import { AuditEntry, Client, ClientStatement, InspectionJob, Invoice, Page, ReportDocument } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { ClientForm } from '../components/ClientForm';
@@ -12,7 +12,7 @@ import { ContractsCard } from '../components/ContractsCard';
 import { ReportsTable } from '../components/ReportsTable';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'contacts' | 'contracts' | 'jobs' | 'reports' | 'invoices' | 'activity';
+type Tab = 'overview' | 'contacts' | 'contracts' | 'jobs' | 'reports' | 'invoices' | 'statement' | 'activity';
 
 /**
  * Client card. Everything the company knows about one counterparty, in the order someone
@@ -52,6 +52,11 @@ export function ClientDetailPage() {
     queryFn: () => api.get<Page<AuditEntry>>(`/admin/audit?clientId=${id}&limit=50`),
     enabled: can('audit.read') && tab === 'activity',
   });
+  const statement = useQuery({
+    queryKey: ['client-statement', id],
+    queryFn: () => api.get<ClientStatement>(`/finance/clients/${id}/statement`),
+    enabled: can('finance.read') && tab === 'statement',
+  });
 
   const remove = useMutation({
     mutationFn: () => api.del(`/clients/${id}`),
@@ -80,6 +85,7 @@ export function ClientDetailPage() {
     { key: 'jobs', label: t('clients.jobs'), show: can('job.read'), count: c.jobCount },
     { key: 'reports', label: t('clients.reports'), show: can('report.read') },
     { key: 'invoices', label: t('nav.invoices'), show: can('finance.read') },
+    { key: 'statement', label: t('statement.title'), show: can('finance.read') },
     { key: 'activity', label: t('clients.activity'), show: can('audit.read') },
   ];
 
@@ -246,6 +252,56 @@ export function ClientDetailPage() {
                 ))}
               </tbody>
             </Table>
+          )}
+        </Card>
+      )}
+
+      {tab === 'statement' && (
+        <Card
+          title={t('statement.title')}
+          actions={
+            statement.data ? (
+              <span className="muted">
+                {t('statement.opening')}: {statement.data.openingBalanceBase.toLocaleString()} {statement.data.baseCurrency}
+              </span>
+            ) : null
+          }
+        >
+          <ErrorBox error={statement.error} />
+          {statement.isLoading ? (
+            <Loading />
+          ) : !statement.data?.entries.length ? (
+            <EmptyState>{t('statement.empty')}</EmptyState>
+          ) : (
+            <>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>{t('expenses.date')}</th>
+                    <th>{t('statement.reference')}</th>
+                    <th className="num">{t('statement.debit')}</th>
+                    <th className="num">{t('statement.credit')}</th>
+                    <th className="num">{t('statement.balance')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {statement.data.entries.map((e, i) => (
+                    <tr key={`${e.date}-${i}`}>
+                      <td>{fmt(e.date, false)}</td>
+                      <td>{e.reference}</td>
+                      <td className="num">{e.debitBase ? e.debitBase.toLocaleString() : '—'}</td>
+                      <td className="num">{e.creditBase ? e.creditBase.toLocaleString() : '—'}</td>
+                      <td className="num">
+                        <strong>{e.balanceBase.toLocaleString()}</strong>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              <p className="muted" style={{ marginTop: 8 }}>
+                {t('statement.closing')}: <strong>{statement.data.closingBalanceBase.toLocaleString()} {statement.data.baseCurrency}</strong>
+              </p>
+            </>
           )}
         </Card>
       )}

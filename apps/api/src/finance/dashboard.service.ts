@@ -42,7 +42,8 @@ export class DashboardService {
     };
 
     return this.db.tx(user, async (tx) => {
-      const [branches, monthly, cashFlow, revenueByService, revenueByClient, expensesByCategory, aging, kpis, overdue] =
+      const [branches, monthly, cashFlow, revenueByService, revenueByClient, expensesByCategory, aging, kpis, overdue,
+             payable, unallocated, quotePipeline] =
         await Promise.all([
           this.branches(tx, period, base),
           this.monthly(tx, period),
@@ -53,6 +54,9 @@ export class DashboardService {
           this.arAging(tx, base, period.branchId),
           this.kpis(tx, period),
           this.overdueTotal(tx, base, period.branchId),
+          this.payableTotal(tx, base, period.branchId),
+          this.unallocatedCash(tx, base, period.branchId),
+          this.quotePipeline(tx, base, period.branchId),
         ]);
 
       // Net book value of the fixed assets, so "capitalisation" is not just liquid assets.
@@ -86,6 +90,8 @@ export class DashboardService {
           cashBase,
           receivableBase,
           overdueBase: overdue,
+          payableBase: payable,
+          unallocatedCashBase: unallocated,
         },
         branches,
         monthly,
@@ -94,6 +100,7 @@ export class DashboardService {
         revenueByClient,
         expensesByCategory,
         arAging: aging,
+        quotePipeline,
         kpis,
         generatedAt: new Date().toISOString(),
       };
@@ -265,6 +272,43 @@ export class DashboardService {
       [base, branchId],
     );
     return round2(n(row?.amount));
+  }
+
+  /** Money still owed to suppliers on on-account expenses (PHASE 8). */
+  private async payableTotal(tx: Tx, base: string, branchId: string | null): Promise<number> {
+    const row = await tx.one<{ amount: number }>(
+      `SELECT COALESCE(-SUM(a.amount_base), 0)::float8 AS amount
+       FROM finance_daily_agg a
+       WHERE a.account_group = 'payable' AND ($1::uuid IS NULL OR a.branch_id = $1::uuid)`,
+      [branchId],
+    );
+    return round2(n(row?.amount));
+  }
+
+  /** Payments received but not yet applied to an invoice (PHASE 8). */
+  private async unallocatedCash(tx: Tx, base: string, branchId: string | null): Promise<number> {
+    const row = await tx.one<{ amount: number }>(
+      `SELECT COALESCE(SUM((p.amount - COALESCE(alloc.sum, 0)) * fx_rate_on(p.currency, $1, p.payment_date)), 0)::float8 AS amount
+       FROM payments p
+       LEFT JOIN LATERAL (SELECT SUM(pa.amount) AS sum FROM payment_allocations pa WHERE pa.payment_id = p.id) alloc ON true
+       WHERE p.direction = 'inbound' AND ($2::uuid IS NULL OR p.branch_id = $2::uuid)
+         AND p.amount - COALESCE(alloc.sum, 0) > 0.01`,
+      [base, branchId],
+    );
+    return round2(n(row?.amount));
+  }
+
+  /** Open quotes by status — the commercial pipeline (PHASE 8). */
+  private async quotePipeline(tx: Tx, base: string, branchId: string | null) {
+    const rows = await tx.many<{ status: string; cnt: number; amount: number }>(
+      `SELECT q.status::text, count(*)::int AS cnt,
+              SUM(q.amount_total * fx_rate_on(q.currency, $1, q.issue_date))::float8 AS amount
+       FROM quotes q
+       WHERE q.deleted_at IS NULL AND ($2::uuid IS NULL OR q.branch_id = $2::uuid)
+       GROUP BY q.status`,
+      [base, branchId],
+    );
+    return rows.map((r) => ({ status: r.status, count: n(r.cnt), amountBase: round2(n(r.amount)) }));
   }
 
   /** Operational KPIs shown next to the money (docs/03, §"Операционные KPI"). */

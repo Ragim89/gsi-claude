@@ -11,3 +11,6 @@ export * from './inspections';
 export * from './samples';
 export * from './laboratory';
 export * from './reports';
+export * from './quotes';
+export * from './pricing';
+export * from './payments';

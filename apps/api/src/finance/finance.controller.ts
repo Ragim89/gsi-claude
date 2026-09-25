@@ -47,6 +47,9 @@ import { ExpensesService } from './expenses.service';
 import { DashboardService } from './dashboard.service';
 import { FinanceEventsService } from './finance-events.service';
 import { InvoicePdfService } from './invoice-pdf.service';
+import { JobFinanceService } from './job-finance.service';
+import { ClientStatementService } from './client-statement.service';
+import { RemindersService } from './reminders.service';
 
 class InvoiceLineDto {
   @IsString() @MinLength(2) @MaxLength(300) description: string;
@@ -63,6 +66,7 @@ class CreateInvoiceDto {
   @IsOptional() @IsDateString() issueDate?: string;
   @IsOptional() @IsDateString() dueDate?: string | null;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
+  @IsOptional() @IsString() @MinLength(3) @MaxLength(3) currency?: string;
 }
 
 class PayDto {
@@ -75,6 +79,7 @@ class InvoiceQueryDto {
   @IsOptional() @IsUUID() clientId?: string;
   @IsOptional() @Type(() => Boolean) @IsBoolean() overdue?: boolean;
   @IsOptional() @IsUUID() branchId?: string;
+  @IsOptional() @IsUUID() jobId?: string;
 }
 
 class CreateExpenseDto {
@@ -85,6 +90,8 @@ class CreateExpenseDto {
   @IsOptional() @IsDateString() expenseDate?: string;
   @IsOptional() @IsUUID() jobId?: string | null;
   @IsOptional() @IsUUID() branchId?: string;
+  @IsOptional() @IsString() @MinLength(3) @MaxLength(3) currency?: string;
+  @IsOptional() @IsBoolean() onAccount?: boolean;
 }
 
 class ExpenseQueryDto {
@@ -106,6 +113,10 @@ class FxRateDto {
   @IsOptional() @IsDateString() rateDate?: string;
 }
 
+class ReminderDto {
+  @IsOptional() @IsString() @MaxLength(2000) note?: string | null;
+}
+
 /** Finance & billing domain (docs/01 modules 6–7, docs/03). */
 @Controller('finance')
 @RequirePermission('finance.read')
@@ -117,6 +128,9 @@ export class FinanceController {
     private readonly events: FinanceEventsService,
     private readonly invoicePdf_: InvoicePdfService,
     private readonly db: DbService,
+    private readonly jobFinance: JobFinanceService,
+    private readonly clientStatement: ClientStatementService,
+    private readonly reminders: RemindersService,
   ) {}
 
   // ---- dashboard ---------------------------------------------------------------
@@ -251,5 +265,32 @@ export class FinanceController {
         [dto.currency, config.consolidationCurrency, dto.rate, dto.rateDate ?? null],
       ),
     );
+  }
+
+  // ---- job costing / margin ------------------------------------------------------
+  /** Reuses the permission reserved for this since PHASE 3 (job.read_finance). */
+  @Get('jobs/:id/summary')
+  @RequirePermission('job.read_finance')
+  jobFinanceSummary(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.jobFinance.summary(user, id);
+  }
+
+  // ---- client statement -----------------------------------------------------------
+  @Get('clients/:id/statement')
+  clientStatementFor(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Query() q: PeriodDto) {
+    return this.clientStatement.build(user, id, q.from, q.to);
+  }
+
+  // ---- overdue reminders (a log, not a send — see reminders.service.ts) -----------
+  @Get('invoices/:id/reminders')
+  listReminders(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.reminders.list(user, id);
+  }
+
+  @Post('invoices/:id/reminders')
+  @RequirePermission('invoice.remind')
+  @HttpCode(201)
+  logReminder(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: ReminderDto) {
+    return this.reminders.log(user, id, dto.note);
   }
 }

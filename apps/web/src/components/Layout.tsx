@@ -48,12 +48,15 @@ export function Layout() {
           {can('report.read') && <NavLink to="/reports">{t('nav.reports')}</NavLink>}
           {can('client.read') && <NavLink to="/clients">{t('nav.clients')}</NavLink>}
           {can('contract.read') && <NavLink to="/contracts">{t('nav.contracts')}</NavLink>}
+          {can('quote.read') && <NavLink to="/finance/quotes">{t('nav.quotes')}</NavLink>}
           {finance && (
             <>
               <NavLink to="/finance/invoices">{t('nav.invoices')}</NavLink>
               <NavLink to="/finance/expenses">{t('nav.expenses')}</NavLink>
             </>
           )}
+          {can('payment.read') && <NavLink to="/finance/payments">{t('nav.payments')}</NavLink>}
+          {can('service.read') && <NavLink to="/finance/pricing">{t('nav.pricing')}</NavLink>}
           {can('asset.read') && <NavLink to="/assets">{t('nav.assets')}</NavLink>}
           {can('import.run') && <NavLink to="/import">{t('nav.import')}</NavLink>}
           {can('user.read') && <NavLink to="/users">{t('nav.users')}</NavLink>}

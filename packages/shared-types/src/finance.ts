@@ -1,5 +1,6 @@
 import type { ServiceType } from './enums';
 import type { Timestamp } from './entities';
+import type { ExpensePaymentStatus } from './payments';
 
 export const INVOICE_STATUSES = ['draft', 'issued', 'partially_paid', 'paid', 'cancelled'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
@@ -15,7 +16,7 @@ export const EXPENSE_CATEGORIES = [
 ] as const;
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
-export const ACCOUNT_GROUPS = ['revenue', 'expense', 'receivable', 'cash', 'tax', 'asset'] as const;
+export const ACCOUNT_GROUPS = ['revenue', 'expense', 'receivable', 'cash', 'tax', 'asset', 'payable'] as const;
 export type AccountGroup = (typeof ACCOUNT_GROUPS)[number];
 
 /** Roles allowed to see money (mirrors app_sees_finance() in the DB). */
@@ -74,6 +75,9 @@ export interface Expense {
   expenseDate: string;
   jobId: string | null;
   jobNumber?: string | null;
+  /** 'paid' unless the expense was booked on account (accounts payable). */
+  paymentStatus: ExpensePaymentStatus;
+  amountPaid?: number;
   createdAt: Timestamp;
 }
 
@@ -225,6 +229,10 @@ export interface FinanceDashboard {
     cashBase: number;
     receivableBase: number;
     overdueBase: number;
+    /** Money owed to suppliers on on-account expenses, not yet paid off. */
+    payableBase: number;
+    /** Payments received but not yet applied to an invoice. */
+    unallocatedCashBase: number;
   };
   branches: BranchFinanceRow[];
   monthly: MonthlyPoint[];
@@ -233,6 +241,7 @@ export interface FinanceDashboard {
   revenueByClient: BreakdownSlice[];
   expensesByCategory: BreakdownSlice[];
   arAging: ArAgingBucket[];
+  quotePipeline: { status: string; count: number; amountBase: number }[];
   kpis: OperationalKpis;
   /** Server time of the aggregate — the dashboard shows when it last refreshed. */
   generatedAt: Timestamp;
@@ -245,4 +254,60 @@ export interface FinanceEvent {
   date: string;
   amountBase: number;
   source: string;
+}
+
+// ---------------------------------------------------------------------------
+// Job costing and margin (PHASE 8). Revenue and costs are read straight from the
+// invoices/expenses already linked to the job by job_id — no separate cost ledger — each
+// converted to the consolidation currency at its own document date's fx rate (the same
+// "snapshot" already used throughout this file), not the live rate.
+// ---------------------------------------------------------------------------
+
+export interface JobFinanceLine {
+  id: string;
+  kind: 'invoice' | 'expense';
+  date: string;
+  description: string;
+  currency: string;
+  amount: number;
+  amountBase: number;
+}
+
+export interface JobFinanceSummary {
+  jobId: string;
+  baseCurrency: string;
+  revenueBase: number;
+  costsBase: number;
+  marginBase: number;
+  /** null when there is no revenue yet to divide by. */
+  marginPct: number | null;
+  revenueLines: JobFinanceLine[];
+  costLines: JobFinanceLine[];
+}
+
+// ---------------------------------------------------------------------------
+// Client financial statement (PHASE 8): a running balance, chronological, each event
+// converted at its own date's fx rate.
+// ---------------------------------------------------------------------------
+
+export interface ClientStatementEntry {
+  date: string;
+  kind: 'invoice' | 'payment';
+  reference: string;
+  currency: string;
+  debit: number;
+  credit: number;
+  debitBase: number;
+  creditBase: number;
+  balanceBase: number;
+}
+
+export interface ClientStatement {
+  clientId: string;
+  clientName: string;
+  baseCurrency: string;
+  period: { from: string; to: string };
+  openingBalanceBase: number;
+  closingBalanceBase: number;
+  entries: ClientStatementEntry[];
 }
