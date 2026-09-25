@@ -24,9 +24,10 @@ import { SamplesOn } from '../components/SamplesOn';
 import { LabOnJob } from '../components/LabOn';
 import { ACTIONS_NEEDING_REASON, PriorityBadge, StatusTimeline } from '../components/JobBits';
 import { ReportsTable } from '../components/ReportsTable';
+import { DocumentsCard } from '../components/DocumentsCard';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'assignments' | 'inspection' | 'samples' | 'laboratory' | 'reports' | 'finance' | 'history';
+type Tab = 'overview' | 'assignments' | 'inspection' | 'samples' | 'laboratory' | 'reports' | 'finance' | 'documents' | 'history';
 
 /**
  * The job card. Everything about one piece of work, and the only place its status changes —
@@ -166,6 +167,7 @@ export function JobDetailPage() {
     { key: 'laboratory', label: t('lab.title'), show: can('lab.test.read') },
     { key: 'reports', label: t('job.reports'), show: can('report.read'), count: reports.data?.total },
     { key: 'finance', label: t('nav.invoices'), show: can('finance.read', 'job.read_finance') },
+    { key: 'documents', label: t('documents.title'), show: can('document.read') },
     { key: 'history', label: t('job.history'), show: can('job.read_history', 'job.read') },
   ];
 
@@ -469,6 +471,8 @@ export function JobDetailPage() {
           </Card>
         </>
       )}
+
+      {tab === 'documents' && <DocumentsCard entityType="job" entityId={j.id} />}
 
       {tab === 'history' && (
         <Card title={t('job.history')}>

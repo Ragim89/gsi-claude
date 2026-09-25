@@ -97,4 +97,22 @@ export const config = {
   },
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB ?? 25) * 1024 * 1024,
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:8080').split(','),
+  /**
+   * Outbound e-mail (PHASE 10). 'console' — the default — logs the message instead of sending
+   * it, so a fresh checkout never silently mails anyone; set EMAIL_PROVIDER=smtp with real
+   * credentials to actually deliver. SMTP rather than one vendor's SDK is the point: any
+   * provider (SES, SendGrid, Mailgun, a corporate relay) speaks it, so this adapter is never
+   * tied to one poster.
+   */
+  email: {
+    provider: (process.env.EMAIL_PROVIDER ?? 'console').toLowerCase(),
+    from: process.env.EMAIL_FROM ?? 'no-reply@gsi.local',
+    smtp: {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: (process.env.SMTP_SECURE ?? 'false') === 'true',
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  },
 };

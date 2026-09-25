@@ -31,6 +31,7 @@ import { PdfService } from './pdf.service';
 import { ReportDataService } from './report-data.service';
 import { ReportWorkflowService } from './report-workflow.service';
 import { ReportTemplatesService } from './report-templates.service';
+import { DocumentRegistryService } from './document-registry.service';
 import { DEFAULT_SECTIONS, renderDocument } from './templates/document';
 import { REPORT_COLUMNS, REPORT_FROM, VERSION_FROM, VERSION_WITH_NAMES } from './report-sql';
 
@@ -90,6 +91,7 @@ export class ReportDocumentsService {
     private readonly data: ReportDataService,
     private readonly workflow: ReportWorkflowService,
     private readonly templates: ReportTemplatesService,
+    private readonly documents: DocumentRegistryService,
   ) {}
 
   // ---- Reading ------------------------------------------------------------------------------
@@ -434,6 +436,18 @@ export class ReportDocumentsService {
       );
 
       this.logger.log(`issued ${report.reportNumber} r${version.versionNumber} (${buffer.length} bytes)`);
+
+      // Surfaces in the job's (and, once uploaded documents exist for it, the client's) document
+      // list — a reference to this PDF, not a second copy of it (documents.reportVersionId).
+      await this.documents.reference(tx, user, {
+        entityType: 'job',
+        entityId: report.jobId,
+        branchId: report.branchId,
+        title: `${report.reportNumber} — r${version.versionNumber}`,
+        filename: `${report.reportNumber}-r${version.versionNumber}.pdf`,
+        reportVersionId: version.id,
+      });
+
       const issued = await this.load(tx, id);
       return { ...issued, actions: this.workflow.available(user, issued) };
     });
@@ -548,7 +562,7 @@ export class ReportDocumentsService {
 
     await tx.exec('UPDATE reports SET pdf_storage_key = $2, pdf_sha256 = $3 WHERE id = $1',
       [report.id, key, sha256]);
-    await tx.exec(
+    const insertedVersion = await tx.one<{ id: string }>(
       `INSERT INTO report_versions (report_id, branch_id, version_number, status, content, data_snapshot,
                                     language, template_id, template_code, template_version,
                                     template_definition,
@@ -556,7 +570,8 @@ export class ReportDocumentsService {
                                     prepared_by, submitted_by, submitted_at, reviewed_by, reviewed_at,
                                     approved_by, approved_at, issued_by, issued_at)
        VALUES ($1, $2, 1, 'issued'::report_status, '{}'::jsonb, $3::jsonb, $4, $5, $6, $7, $8::jsonb,
-               $9, $10, $11, $12, $13, $13, now(), $13, now(), $13, now(), $13, now())`,
+               $9, $10, $11, $12, $13, $13, now(), $13, now(), $13, now(), $13, now())
+       RETURNING id::text`,
       [report.id, job.branch_id, JSON.stringify(snapshot), job.locale,
        template?.id ?? null, template?.code ?? null, template?.version ?? null,
        template?.definition ? JSON.stringify(template.definition) : null,
@@ -567,6 +582,15 @@ export class ReportDocumentsService {
        VALUES ($1, 1, NULL, 'issued'::report_status, $2, $3)`,
       [report.id, user.id, 'Issued with the approval of the job it reports on'],
     );
+
+    await this.documents.reference(tx, user, {
+      entityType: 'job',
+      entityId: jobId,
+      branchId: job.branch_id,
+      title: `${number} — r1`,
+      filename: `${number}-r1.pdf`,
+      reportVersionId: insertedVersion!.id,
+    });
 
     this.logger.log(`issued ${number} for job ${job.job_number} (${buffer.length} bytes)`);
     return this.load(tx, report.id);

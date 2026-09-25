@@ -12,6 +12,7 @@ import {
 } from '@gsi/shared-types';
 import { Tx } from '../db/db.service';
 import { AuditService } from '../common/audit.service';
+import { JobEventsService } from '../operations/job-events.service';
 
 export interface ReportTransitionInput {
   reason?: string | null;
@@ -32,7 +33,10 @@ const label = (s: ReportStatus) => s.replace(/_/g, ' ');
  */
 @Injectable()
 export class ReportWorkflowService {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    private readonly audit: AuditService,
+    private readonly events: JobEventsService,
+  ) {}
 
   /**
    * What this user may do with this document right now.
@@ -107,6 +111,21 @@ export class ReportWorkflowService {
       before: { status: report.status },
       after: { status: transition.to, version: report.version },
       ...(input.reason ? { metadata: { reason: input.reason } } : {}),
+    });
+
+    this.events.emit({
+      type: 'job.status_changed',
+      entityType: 'report',
+      jobId: report.id,
+      jobNumber: report.reportNumber,
+      branchId: report.branchId,
+      actorId: user.id,
+      from: report.status,
+      to: transition.to,
+      // Only 'issued' needs a specific recipient (the author); every other transition is
+      // routed to whoever holds the relevant permission in the branch, not to one person.
+      userId: transition.to === 'issued' ? (report.currentVersion?.preparedBy ?? report.preparedBy ?? undefined) : undefined,
+      reason: input.reason ?? null,
     });
 
     return transition.to;

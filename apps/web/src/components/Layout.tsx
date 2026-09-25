@@ -4,6 +4,8 @@ import { Button, LogoLockup } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
 import { BranchSwitcher } from '../branch';
 import { LANGUAGES } from '../i18n';
+import { GlobalSearchBox } from './GlobalSearchBox';
+import { NotificationBell } from './NotificationBell';
 
 export function Layout() {
   const { t, i18n } = useTranslation();
@@ -85,6 +87,10 @@ export function Layout() {
         </div>
       </aside>
       <main className="main">
+        <div className="topbar">
+          {can('search.read') && <GlobalSearchBox />}
+          {can('notification.read') && <NotificationBell />}
+        </div>
         <Outlet />
       </main>
     </div>

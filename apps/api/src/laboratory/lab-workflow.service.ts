@@ -108,10 +108,13 @@ export class LabWorkflowService {
 
     this.events.emit({
       type: 'job.status_changed',
-      jobId: request.jobId ?? request.sampleId,
+      entityType: 'test_request',
+      jobId: request.id,
       jobNumber: `${request.sampleNumber ?? ''} · ${request.testCode ?? ''}`.trim(),
       branchId: request.branchId,
       actorId: user.id,
+      from: request.status,
+      to: target,
       reason: input.reason ?? null,
     });
 

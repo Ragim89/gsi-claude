@@ -10,9 +10,10 @@ import { ClientForm } from '../components/ClientForm';
 import { ContactsCard } from '../components/ContactsCard';
 import { ContractsCard } from '../components/ContractsCard';
 import { ReportsTable } from '../components/ReportsTable';
+import { DocumentsCard } from '../components/DocumentsCard';
 import { ErrorBox, Loading, PageHead, StatusBadge, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'contacts' | 'contracts' | 'jobs' | 'reports' | 'invoices' | 'statement' | 'activity';
+type Tab = 'overview' | 'contacts' | 'contracts' | 'jobs' | 'reports' | 'invoices' | 'statement' | 'activity' | 'documents';
 
 /**
  * Client card. Everything the company knows about one counterparty, in the order someone
@@ -86,6 +87,7 @@ export function ClientDetailPage() {
     { key: 'reports', label: t('clients.reports'), show: can('report.read') },
     { key: 'invoices', label: t('nav.invoices'), show: can('finance.read') },
     { key: 'statement', label: t('statement.title'), show: can('finance.read') },
+    { key: 'documents', label: t('documents.title'), show: can('document.read') },
     { key: 'activity', label: t('clients.activity'), show: can('audit.read') },
   ];
 
@@ -305,6 +307,8 @@ export function ClientDetailPage() {
           )}
         </Card>
       )}
+
+      {tab === 'documents' && <DocumentsCard entityType="client" entityId={c.id} />}
 
       {tab === 'activity' && (
         <Card title={t('clients.activity')} actions={<span className="muted">{t('clients.activityHint')}</span>}>

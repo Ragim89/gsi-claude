@@ -1,25 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter } from 'events';
-import type { JobAction, JobStatus } from '@gsi/shared-types';
+import type { JobAction } from '@gsi/shared-types';
+
+/** Which record moved. Defaults to 'job' — the type this bus started with, before other workflows reused it. */
+export type DomainEntityType = 'job' | 'sample' | 'test_request' | 'report';
 
 export interface JobEvent {
   type: 'job.status_changed' | 'job.assigned' | 'job.unassigned';
+  entityType?: DomainEntityType;
   jobId: string;
   jobNumber: string;
   branchId: string;
   actorId: string;
-  from?: JobStatus;
-  to?: JobStatus;
-  action?: JobAction;
+  from?: string;
+  to?: string;
+  action?: JobAction | string;
   userId?: string;
   reason?: string | null;
 }
 
 /**
- * The seam notifications will plug into.
+ * The seam PHASE 10's notification centre plugs into (`notifications/notification-events.listener.ts`).
  *
- * Phase 10 builds the notification centre; until then this exists so the workflow has
- * somewhere to announce what happened without knowing who listens. An in-process emitter is
+ * Despite the name this bus now carries status changes for jobs, samples, test requests and
+ * reports alike — job-workflow, sample-workflow, lab-workflow and report-workflow all emit
+ * through the one instance rather than each inventing its own. An in-process emitter is
  * deliberate — a message broker for a monolith that does not need one yet would be a cost
  * with no payer.
  */

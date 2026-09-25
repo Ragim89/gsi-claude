@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DocumentsModule } from '../documents/documents.module';
+import { EmailModule } from '../email/email.module';
 import { FinanceController } from './finance.controller';
 import { QuotesController } from './quotes.controller';
 import { PricingController } from './pricing.controller';
@@ -20,7 +21,7 @@ import { RemindersService } from './reminders.service';
 
 /** Finance domain: billing, costs, multi-currency consolidation, live dashboard. */
 @Module({
-  imports: [DocumentsModule],
+  imports: [DocumentsModule, EmailModule],
   controllers: [FinanceController, QuotesController, PricingController, PaymentsController],
   providers: [
     InvoicesService, ExpensesService, DashboardService, LedgerService, FinanceEventsService, InvoicePdfService,

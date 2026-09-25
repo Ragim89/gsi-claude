@@ -724,5 +724,21 @@
     "notIssued": "This document has not been issued.",
     "issuer": "Issued by", "checksum": "File checksum (SHA-256)",
     "note": "This check confirms the document itself. It does not disclose who it was issued for."
+  },
+  "documents": {
+    "title": "Documents", "add": "Add document", "docTitle": "Title", "docTitleHint": "Leave blank to use the file name",
+    "category": "Category", "uploadedBy": "Uploaded by", "uploadedAt": "Uploaded", "chooseFile": "Choose file…",
+    "empty": "No documents yet.", "archive": "Archive", "confirmArchive": "Archive this document?",
+    "categories": {
+      "contract": "Contract", "certificate": "Certificate", "correspondence": "Correspondence",
+      "customs": "Customs", "identity": "Identity", "photo": "Photo", "invoice": "Invoice", "other": "Other"
+    }
+  },
+  "notifications": {
+    "title": "Notifications", "markAllRead": "Mark all read", "empty": "You're all caught up."
+  },
+  "search": {
+    "placeholder": "Search jobs, clients, samples, reports, invoices…", "empty": "No matches.",
+    "groups": { "job": "Jobs", "client": "Clients", "sample": "Samples", "report": "Reports & certificates", "invoice": "Invoices" }
   }
 }

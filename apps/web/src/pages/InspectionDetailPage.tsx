@@ -33,9 +33,10 @@ import {
   InspectionTimeline,
   SeverityBadge,
 } from '../components/InspectionBits';
+import { DocumentsCard } from '../components/DocumentsCard';
 import { ErrorBox, Loading, PageHead, toLocalInput, fromLocalInput, useFormatDate, useServiceLabel } from '../components/common';
 
-type Tab = 'overview' | 'checklist' | 'findings' | 'measurements' | 'photos' | 'samples' | 'team' | 'history';
+type Tab = 'overview' | 'checklist' | 'findings' | 'measurements' | 'photos' | 'samples' | 'team' | 'documents' | 'history';
 
 /**
  * The inspection card: everything about one piece of field work, and the only place its
@@ -119,6 +120,7 @@ export function InspectionDetailPage() {
     { key: 'photos', label: t('inspection.photos'), show: true, count: x.photoCount },
     { key: 'samples', label: t('samples.title'), show: can('sample.read') },
     { key: 'team', label: t('job.assignments'), show: true, count: assignments.data?.length },
+    { key: 'documents', label: t('documents.title'), show: can('document.read') },
     { key: 'history', label: t('job.history'), show: true },
   ];
 
@@ -190,6 +192,7 @@ export function InspectionDetailPage() {
         />
       )}
       {tab === 'team' && <Team inspection={x} rows={assignments.data ?? []} loading={assignments.isLoading} />}
+      {tab === 'documents' && <DocumentsCard entityType="inspection" entityId={x.id} />}
       {tab === 'history' && (
         <Card title={t('job.history')}>
           <ErrorBox error={history.error} />

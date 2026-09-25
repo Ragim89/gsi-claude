@@ -56,6 +56,12 @@ export const PERMISSIONS = [
   'export.run', 'import.run',
   // Analytics
   'analytics.read', 'analytics.workload',
+  // Documents registry
+  'document.read', 'document.upload', 'document.archive',
+  // Notifications
+  'notification.read',
+  // Global search
+  'search.read',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

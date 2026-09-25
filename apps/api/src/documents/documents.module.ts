@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { JobReportPreviewController, PublicVerifyController, ReportsController } from './reports.controller';
 import { ReportDocumentsController, ReportTemplatesController } from './report-documents.controller';
+import { DocumentRegistryController } from './document-registry.controller';
 import { ReportsService } from './reports.service';
 import { ReportDocumentsService } from './report-documents.service';
 import { ReportDataService } from './report-data.service';
 import { ReportTemplatesService } from './report-templates.service';
 import { ReportWorkflowService } from './report-workflow.service';
+import { DocumentRegistryService } from './document-registry.service';
 import { PdfService } from './pdf.service';
 
 /**
@@ -23,6 +25,7 @@ import { PdfService } from './pdf.service';
     ReportTemplatesController,
     JobReportPreviewController,
     PublicVerifyController,
+    DocumentRegistryController,
   ],
   providers: [
     ReportsService,
@@ -31,7 +34,8 @@ import { PdfService } from './pdf.service';
     ReportTemplatesService,
     ReportWorkflowService,
     PdfService,
+    DocumentRegistryService,
   ],
-  exports: [ReportsService, ReportDocumentsService, PdfService],
+  exports: [ReportsService, ReportDocumentsService, PdfService, DocumentRegistryService],
 })
 export class DocumentsModule {}

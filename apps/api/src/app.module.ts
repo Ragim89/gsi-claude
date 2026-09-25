@@ -12,6 +12,8 @@ import { LaboratoryModule } from './laboratory/laboratory.module';
 import { DocumentsModule } from './documents/documents.module';
 import { FinanceModule } from './finance/finance.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SearchModule } from './search/search.module';
 import { ReferenceModule } from './reference/reference.module';
 import { AssetsModule } from './assets/assets.module';
 import { ExportModule } from './export/export.module';
@@ -45,6 +47,8 @@ import { config } from './config';
     DocumentsModule,
     FinanceModule,
     AnalyticsModule,
+    NotificationsModule,
+    SearchModule,
     ReferenceModule,
     AssetsModule,
     ExportModule,

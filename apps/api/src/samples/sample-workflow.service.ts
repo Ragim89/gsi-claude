@@ -114,10 +114,13 @@ export class SampleWorkflowService {
 
     this.events.emit({
       type: 'job.status_changed',
-      jobId: sample.jobId,
+      entityType: 'sample',
+      jobId: sample.id,
       jobNumber: sample.sampleNumber,
       branchId: sample.branchId,
       actorId: user.id,
+      from: sample.status,
+      to: target,
       reason: input.reason ?? null,
     });
 

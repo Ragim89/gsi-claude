@@ -144,6 +144,11 @@ check('jobs', ok(await get('/analytics/jobs')));
 check('turnaround', ok(await get('/analytics/turnaround')));
 check('workload', ok(await get('/analytics/workload')));
 
+console.log('\nDocuments registry, notifications, search (PHASE 10)');
+check('documents list for a job', ok(await get(`/documents?entityType=job&entityId=${job.id}`)));
+check('notifications list', ok(await get('/notifications')));
+check('global search', ok(await get(`/search?q=${encodeURIComponent(job.jobNumber ?? client.name)}`)));
+
 console.log('\nAssets, organisation, audit');
 check('assets', ok(await get('/assets')));
 check('organisation tree', ok(await get('/org')));

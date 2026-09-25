@@ -726,5 +726,21 @@
     "notIssued": "Bu belge henüz düzenlenmemiştir.",
     "issuer": "Düzenleyen", "checksum": "Dosya sağlama toplamı (SHA-256)",
     "note": "Bu kontrol belgenin kendisini doğrular. Kimin için düzenlendiğini açıklamaz."
+  },
+  "documents": {
+    "title": "Belgeler", "add": "Belge ekle", "docTitle": "Başlık", "docTitleHint": "Boş bırakılırsa dosya adı kullanılır",
+    "category": "Kategori", "uploadedBy": "Yükleyen", "uploadedAt": "Yüklendi", "chooseFile": "Dosya seç…",
+    "empty": "Henüz belge yok.", "archive": "Arşivle", "confirmArchive": "Bu belge arşivlensin mi?",
+    "categories": {
+      "contract": "Sözleşme", "certificate": "Sertifika", "correspondence": "Yazışma",
+      "customs": "Gümrük", "identity": "Kimlik", "photo": "Fotoğraf", "invoice": "Fatura", "other": "Diğer"
+    }
+  },
+  "notifications": {
+    "title": "Bildirimler", "markAllRead": "Tümünü okundu işaretle", "empty": "Yeni bildirim yok."
+  },
+  "search": {
+    "placeholder": "İş, müşteri, numune, rapor, fatura ara…", "empty": "Sonuç bulunamadı.",
+    "groups": { "job": "İşler", "client": "Müşteriler", "sample": "Numuneler", "report": "Raporlar ve sertifikalar", "invoice": "Faturalar" }
   }
 }
