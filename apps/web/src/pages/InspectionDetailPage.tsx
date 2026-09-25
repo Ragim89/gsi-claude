@@ -22,10 +22,11 @@ import {
   PhotoCategory,
   User,
 } from '@gsi/shared-types';
-import { api, blanksToNull } from '../api';
+import { api, ApiError, blanksToNull } from '../api';
 import { useAuth } from '../auth';
 import { InspectionChecklist } from '../components/InspectionChecklist';
 import { SamplesOn } from '../components/SamplesOn';
+import { ConflictBanner } from '../components/ConflictBanner';
 import {
   ActionBar,
   INSPECTION_ACTIONS_NEEDING_REASON,
@@ -318,7 +319,16 @@ function Overview({ inspection, onSaved }: { inspection: Inspection; onSaved(): 
           )
         }
       >
-        <ErrorBox error={save.error} />
+        {save.error instanceof ApiError && save.error.status === 409 ? (
+          <ConflictBanner
+            onRefresh={() => {
+              save.reset();
+              onSaved();
+            }}
+          />
+        ) : (
+          <ErrorBox error={save.error} />
+        )}
         <div className="form-grid">
           <Field label={t('jobs.location')}>
             <Input value={form.location} disabled={!editable} onChange={set('location')} />

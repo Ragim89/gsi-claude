@@ -9,13 +9,23 @@ import {
   InspectionPhoto,
   localize,
 } from '@gsi/shared-types';
-import { api } from '../api';
+import { api, ApiError } from '../api';
+import { useAuth } from '../auth';
+import { offlineQueue, onSynced } from '../offline/queue';
+import { useOffline } from '../offline/OfflineProvider';
+import { cacheGet, cacheSet } from '../offline/db';
 import { ErrorBox, Loading } from './common';
 import { ChecklistProgress } from './InspectionBits';
 
 type Result = 'ok' | 'deviation' | 'na';
 type Answer = { result?: Result | null; value?: string | null; notes?: string | null };
-type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
+type SaveState = 'idle' | 'saving' | 'saved' | 'failed' | 'queued';
+
+/** A `fetch` that never reached the server (offline, DNS, dropped connection) throws a plain
+ * `TypeError`, never an `ApiError` — the server was never asked, so there is no status to read. */
+function isNetworkFailure(err: unknown): boolean {
+  return !(err instanceof ApiError) && err instanceof Error;
+}
 
 /** Long enough that typing a sentence is one request, short enough to feel instant. */
 const DEBOUNCE_MS = 800;
@@ -30,6 +40,8 @@ const DEBOUNCE_MS = 800;
 export function InspectionChecklist({ inspection }: { inspection: Inspection }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const { isOnline, ops } = useOffline();
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [saveError, setSaveError] = useState<unknown>(null);
 
@@ -43,6 +55,55 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
     queryFn: () => api.get<Checklist>(`/inspections/${inspection.id}/checklist`),
   });
 
+  // The last checklist this device actually saw, per user. Reopening the app offline (killed
+  // process, dead signal in the warehouse) must show that, not an empty list — the write queue
+  // above only covers edits, not the read that has to come before anyone can make one.
+  const cacheKey = user ? `checklist:${user.id}:${inspection.id}` : null;
+  const [cached, setCached] = useState<Checklist | undefined>(undefined);
+  useEffect(() => {
+    if (checklist.data && cacheKey) void cacheSet(cacheKey, checklist.data);
+  }, [checklist.data, cacheKey]);
+  useEffect(() => {
+    if (!checklist.data && checklist.isError && cacheKey) {
+      void cacheGet<Checklist>(cacheKey).then((c) => c && setCached(c));
+    }
+  }, [checklist.data, checklist.isError, cacheKey]);
+  const offlineData = checklist.data ?? cached;
+
+  // Answers queued in a previous, now-closed session (app killed or reloaded while offline)
+  // still live in IndexedDB. They are not in `pending` — that ref is fresh — so without this
+  // they would read as unanswered until the queue drains, which is exactly the data loss an
+  // offline queue exists to prevent.
+  const queuedForThisInspection = useMemo(
+    () =>
+      ops
+        .filter((o) => o.payload.kind === 'checklist-answers' && o.payload.inspectionId === inspection.id)
+        .sort((a, b) => a.createdAt - b.createdAt),
+    [ops, inspection.id],
+  );
+  useEffect(() => {
+    if (!queuedForThisInspection.length) return;
+    setLocal((prev) => {
+      const merged: Record<string, Answer> = {};
+      for (const op of queuedForThisInspection) {
+        if (op.payload.kind !== 'checklist-answers') continue;
+        for (const { itemId, ...vals } of op.payload.answers) merged[itemId] = { ...merged[itemId], ...vals };
+      }
+      return { ...merged, ...prev };
+    });
+    setSaveState((s) => (s === 'idle' || s === 'saved' ? 'queued' : s));
+  }, [queuedForThisInspection]);
+
+  useEffect(
+    () =>
+      onSynced((op) => {
+        if (op.payload.kind !== 'checklist-answers' || op.payload.inspectionId !== inspection.id) return;
+        qc.invalidateQueries({ queryKey: ['inspection-checklist', inspection.id] });
+        qc.invalidateQueries({ queryKey: ['inspection', inspection.id] });
+      }),
+    [inspection.id, qc],
+  );
+
   const flush = useCallback(async () => {
     if (timer.current) {
       clearTimeout(timer.current);
@@ -50,6 +111,15 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
     }
     if (!pending.current.size) return;
     const batch = Array.from(pending.current.entries()).map(([itemId, a]) => ({ itemId, ...a }));
+
+    if (!isOnline) {
+      if (user) await offlineQueue.queueChecklistAnswers(user.id, { inspectionId: inspection.id, answers: batch });
+      pending.current.clear();
+      setSaveError(null);
+      setSaveState('queued');
+      return;
+    }
+
     setSaveState('saving');
     try {
       const next = await api.patch<Checklist>(`/inspections/${inspection.id}/checklist`, { answers: batch });
@@ -63,10 +133,17 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
       setSaveError(null);
       setSaveState(pending.current.size ? 'idle' : 'saved');
     } catch (err) {
+      if (isNetworkFailure(err) && user) {
+        await offlineQueue.queueChecklistAnswers(user.id, { inspectionId: inspection.id, answers: batch });
+        pending.current.clear();
+        setSaveError(null);
+        setSaveState('queued');
+        return;
+      }
       setSaveError(err);
       setSaveState('failed');
     }
-  }, [inspection.id, qc]);
+  }, [inspection.id, qc, isOnline, user]);
 
   const queue = useCallback(
     (itemId: string, patch: Answer) => {
@@ -91,7 +168,8 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
     };
   }, [flush]);
 
-  const data = checklist.data;
+  const data = offlineData;
+  const usingCache = !checklist.data && !!cached;
   const items = data?.items ?? [];
   const editable = (data?.editable ?? false) && !inspection.archivedAt;
 
@@ -126,9 +204,10 @@ export function InspectionChecklist({ inspection }: { inspection: Inspection }) 
             {t('checklist.readOnly', { status: t(`inspectionStatus.${inspection.status}`) })}
           </div>
         ) : null}
-        <ErrorBox error={checklist.error ?? saveError} />
+        {usingCache && <div className="muted">{t('offline.offline')} — {t('offline.willSyncWhenOnline')}</div>}
+        <ErrorBox error={usingCache ? saveError : (checklist.error ?? saveError)} />
 
-        {checklist.isLoading ? (
+        {checklist.isLoading && !usingCache ? (
           <Loading />
         ) : !items.length ? (
           <EmptyState>{t('checklist.empty')}</EmptyState>
@@ -160,6 +239,7 @@ function sameAnswer(a: Answer, b: Answer): boolean {
 
 function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry(): void }) {
   const { t } = useTranslation();
+  if (state === 'queued') return <span className="save-state">{t('offline.queued')}</span>;
   if (state === 'saving') return <span className="save-state">{t('checklist.saving')}</span>;
   if (state === 'saved') return <span className="save-state save-state--ok">{t('checklist.saved')}</span>;
   if (state === 'failed') {
@@ -187,13 +267,29 @@ function ItemCard({
 }) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const { isOnline, ops } = useOffline();
   const [value, setValue] = useState(item.value ?? '');
   const [notes, setNotes] = useState(item.notes ?? '');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<unknown>(null);
 
+  const queuedPhotos = ops.filter(
+    (o) => o.payload.kind === 'checklist-photo' && o.payload.inspectionId === inspectionId && o.payload.itemId === item.id,
+  ).length;
+
   useEffect(() => setValue(item.value ?? ''), [item.value]);
   useEffect(() => setNotes(item.notes ?? ''), [item.notes]);
+
+  useEffect(
+    () =>
+      onSynced((op) => {
+        if (op.payload.kind !== 'checklist-photo' || op.payload.inspectionId !== inspectionId) return;
+        qc.invalidateQueries({ queryKey: ['inspection-checklist', inspectionId] });
+        qc.invalidateQueries({ queryKey: ['inspection-photos', inspectionId] });
+      }),
+    [inspectionId, qc],
+  );
 
   async function onFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -204,17 +300,51 @@ function ItemCard({
     try {
       const pos = await currentPosition();
       for (const file of files) {
-        const form = new FormData();
-        form.append('file', file);
-        form.append('checklistItemId', item.id);
-        form.append('category', 'general');
-        form.append('takenAt', new Date(file.lastModified || Date.now()).toISOString());
-        if (pos) {
-          form.append('gpsLat', String(pos.coords.latitude));
-          form.append('gpsLng', String(pos.coords.longitude));
-          form.append('gpsAccuracyM', String(Math.round(pos.coords.accuracy)));
+        const takenAt = new Date(file.lastModified || Date.now()).toISOString();
+        const gps = pos
+          ? { gpsLat: pos.coords.latitude, gpsLng: pos.coords.longitude, gpsAccuracyM: Math.round(pos.coords.accuracy) }
+          : {};
+        if (!isOnline) {
+          if (user) {
+            await offlineQueue.queueChecklistPhoto(user.id, {
+              inspectionId,
+              itemId: item.id,
+              category: 'general',
+              takenAt,
+              fileName: file.name,
+              mimeType: file.type,
+              blob: file,
+              ...gps,
+            });
+          }
+          continue;
         }
-        await api.upload<InspectionPhoto>(`/inspections/${inspectionId}/photos`, form);
+        try {
+          const form = new FormData();
+          form.append('file', file);
+          form.append('checklistItemId', item.id);
+          form.append('category', 'general');
+          form.append('takenAt', takenAt);
+          if (pos) {
+            form.append('gpsLat', String(gps.gpsLat));
+            form.append('gpsLng', String(gps.gpsLng));
+            form.append('gpsAccuracyM', String(gps.gpsAccuracyM));
+          }
+          await api.upload<InspectionPhoto>(`/inspections/${inspectionId}/photos`, form);
+        } catch (err) {
+          if (isNetworkFailure(err) && user) {
+            await offlineQueue.queueChecklistPhoto(user.id, {
+              inspectionId,
+              itemId: item.id,
+              category: 'general',
+              takenAt,
+              fileName: file.name,
+              mimeType: file.type,
+              blob: file,
+              ...gps,
+            });
+          } else throw err;
+        }
       }
       qc.invalidateQueries({ queryKey: ['inspection-checklist', inspectionId] });
       qc.invalidateQueries({ queryKey: ['inspection-photos', inspectionId] });
@@ -293,6 +423,7 @@ function ItemCard({
           </label>
         )}
       </div>
+      {queuedPhotos > 0 && <div className="muted" style={{ fontSize: 12 }}>{t('offline.photoQueued')}</div>}
       <ErrorBox error={uploadError} />
     </div>
   );

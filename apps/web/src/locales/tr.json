@@ -10,7 +10,7 @@
     "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin.",
-    "openMenu": "Menüyü aç", "closeMenu": "Menüyü kapat",
+    "openMenu": "Menüyü aç", "closeMenu": "Menüyü kapat", "more": "Diğer",
     "groups": {
       "crm": "CRM", "operations": "Operasyonlar", "laboratory": "Laboratuvar",
       "documents": "Belgeler ve Raporlar", "finance": "Finans", "analytics": "Analitik", "administration": "Yönetim"
@@ -747,5 +747,22 @@
   "search": {
     "placeholder": "İş, müşteri, numune, rapor, fatura ara…", "empty": "Sonuç bulunamadı.",
     "groups": { "job": "İşler", "client": "Müşteriler", "sample": "Numuneler", "report": "Raporlar ve sertifikalar", "invoice": "Faturalar" }
+  },
+  "offline": {
+    "offline": "Çevrimdışı", "queued": "Sırada", "syncing": "Senkronize ediliyor…", "synced": "Senkronize edildi", "failed": "Senkronizasyon başarısız",
+    "conflict": "Çakışma", "pendingCount_one": "{{count}} değişiklik bekliyor", "pendingCount_other": "{{count}} değişiklik bekliyor",
+    "willSyncWhenOnline": "Bu cihazda kaydedildi. Bağlantı gelince sunucuya gönderilecek.",
+    "photoQueued": "Fotoğraf cihazda kaydedildi — bağlantı gelince yüklenecek.",
+    "sampleDraftQueued": "Taslak cihazda kaydedildi — bağlantı gelince numune oluşturulacak.",
+    "retrySync": "Senkronizasyonu yeniden dene", "syncNow": "Şimdi senkronize et",
+    "conflictTitle": "Bu kaydı önce başka biri değiştirdi",
+    "conflictBody": "Değişiklik kaydedilemedi: kayıt, siz görüntülediğinizden sonra sunucuda değişti — başka biri bir değişiklik kaydetti ya da kayıt başka bir sekmede açıktı. Güncel sürümü görmek için yenileyin, sonra değişikliğinizi yeniden uygulayın.",
+    "conflictBanner": "Bu kayıt, siz yükledikten sonra başka biri tarafından değiştirildi.",
+    "refreshAndReview": "Yenile ve incele", "discardMine": "Değişikliğimi at",
+    "actionsRequireOnline": "Sonuç girişi çevrimdışı taslak olarak kaydedilir. Gönderme, inceleme, onaylama ve yayınlama bağlantı gerektirir — bağlantı gelince otomatik olarak gerçekleşmez."
+  },
+  "pwa": {
+    "installTitle": "GSI ERP'yi yükle", "installBody": "Tek dokunuşla erişim ve çevrimdışı saha çalışması için ana ekrana ekleyin.",
+    "install": "Yükle", "dismiss": "Şimdi değil", "installedHint": "Yüklendi — bir dahaki sefere ana ekrandan açın."
   }
 }

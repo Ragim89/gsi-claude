@@ -7,6 +7,8 @@ import { BranchSwitcher } from '../branch';
 import { LANGUAGES } from '../i18n';
 import { GlobalSearchBox } from './GlobalSearchBox';
 import { NotificationBell } from './NotificationBell';
+import { OfflineBadge } from './OfflineBadge';
+import { InstallPrompt } from './InstallPrompt';
 
 interface NavItem {
   to: string;
@@ -134,6 +136,19 @@ export function Layout() {
   // with nothing left to organise. This is the common shape for an own-scope field role.
   const flat = totalItems <= 4;
 
+  // Field-first bottom navigation: the screens an inspector or lab technician actually opens
+  // standing in a warehouse or at a bench, without pulling out the drawer each time. Only
+  // shown to own-scope users — HQ and office roles keep the full sidebar as their one menu.
+  const bottomTabs: NavItem[] = own
+    ? [
+        ...(can('job.read') ? [{ to: '/jobs', label: t('nav.myJobs') }] : []),
+        ...(can('inspection.read') ? [{ to: '/inspections', label: t('nav.myInspections') }] : []),
+        ...(can('sample.read') ? [{ to: '/samples', label: t('nav.mySamples') }] : []),
+        ...(can('lab.test.read') ? [{ to: '/lab', end: true, label: t('nav.myAnalyses') }] : []),
+      ]
+    : [];
+  const hasBottomNav = bottomTabs.length >= 2;
+
   function groupHasActiveRoute(group: NavGroup): boolean {
     return group.items.some((item) =>
       item.end ? location.pathname === item.to : location.pathname.startsWith(item.to),
@@ -163,7 +178,7 @@ export function Layout() {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <div className="shell">
+    <div className={`shell${hasBottomNav ? ' has-bottom-nav' : ''}`}>
       <div className="topbar-mobile">
         <button
           type="button"
@@ -175,6 +190,7 @@ export function Layout() {
           <span aria-hidden="true">☰</span>
         </button>
         <LogoLockup />
+        <OfflineBadge />
       </div>
 
       {mobileOpen && <div className="sidebar-backdrop" onClick={closeMobile} />}
@@ -252,10 +268,25 @@ export function Layout() {
       <main className="main">
         <div className="topbar">
           {can('search.read') && <GlobalSearchBox />}
+          <OfflineBadge />
           {can('notification.read') && <NotificationBell />}
         </div>
+        <InstallPrompt />
         <Outlet />
       </main>
+
+      {hasBottomNav && (
+        <nav className="bottom-nav" aria-label={t('nav.openMenu')}>
+          {bottomTabs.map((item) => (
+            <NavLink key={item.to} to={item.to} end={item.end}>
+              {item.label}
+            </NavLink>
+          ))}
+          <button type="button" onClick={() => setMobileOpen(true)}>
+            {t('nav.more')}
+          </button>
+        </nav>
+      )}
     </div>
   );
 }

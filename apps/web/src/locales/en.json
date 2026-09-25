@@ -10,7 +10,7 @@
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role.",
-    "openMenu": "Open menu", "closeMenu": "Close menu",
+    "openMenu": "Open menu", "closeMenu": "Close menu", "more": "More",
     "groups": {
       "crm": "CRM", "operations": "Operations", "laboratory": "Laboratory",
       "documents": "Documents & Reports", "finance": "Finance", "analytics": "Analytics", "administration": "Administration"
@@ -745,5 +745,22 @@
   "search": {
     "placeholder": "Search jobs, clients, samples, reports, invoices…", "empty": "No matches.",
     "groups": { "job": "Jobs", "client": "Clients", "sample": "Samples", "report": "Reports & certificates", "invoice": "Invoices" }
+  },
+  "offline": {
+    "offline": "Offline", "queued": "Queued", "syncing": "Syncing…", "synced": "All synced", "failed": "Sync failed",
+    "conflict": "Conflict", "pendingCount_one": "{{count}} change waiting", "pendingCount_other": "{{count}} changes waiting",
+    "willSyncWhenOnline": "Saved on this device. It will sync once you're back online.",
+    "photoQueued": "Photo saved on this device — will upload once you're back online.",
+    "sampleDraftQueued": "Draft saved on this device — will be created once you're back online.",
+    "retrySync": "Retry sync", "syncNow": "Sync now",
+    "conflictTitle": "Someone else changed this first",
+    "conflictBody": "This couldn't be saved because the record changed on the server since you last saw it — someone else saved a change, or you had it open in another tab. Refresh to see the current version, then reapply your change.",
+    "conflictBanner": "This was changed by someone else since you loaded it.",
+    "refreshAndReview": "Refresh and review", "discardMine": "Discard my change",
+    "actionsRequireOnline": "Result entry is saved as a draft offline. Submit, review, approve and release need a connection — they never happen silently once you're back online."
+  },
+  "pwa": {
+    "installTitle": "Install GSI ERP", "installBody": "Add it to your home screen for one-tap access and offline field work.",
+    "install": "Install", "dismiss": "Not now", "installedHint": "Installed — open it from your home screen next time."
   }
 }

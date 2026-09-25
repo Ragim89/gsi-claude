@@ -6,9 +6,20 @@ import { ThemeStyle } from '@gsi/ui-kit/react';
 import { ApiError } from './api';
 import { AuthProvider } from './auth';
 import { BranchProvider } from './branch';
+import { OfflineProvider } from './offline/OfflineProvider';
 import { App } from './App';
 import './i18n';
 import './styles.css';
+
+// The shell service worker only touches static assets — see public/sw.js for what it caches
+// and, just as importantly, what it refuses to (anything under /api/).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* offline shell is a progressive enhancement, not a requirement to run the app */
+    });
+  });
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,9 +37,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-            <BranchProvider>
-              <App />
-            </BranchProvider>
+            <OfflineProvider>
+              <BranchProvider>
+                <App />
+              </BranchProvider>
+            </OfflineProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

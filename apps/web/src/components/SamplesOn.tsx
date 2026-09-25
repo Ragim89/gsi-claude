@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -13,10 +13,16 @@ import {
   SamplingMethod,
   localize,
 } from '@gsi/shared-types';
-import { api, blanksToNull } from '../api';
+import { api, ApiError, blanksToNull } from '../api';
 import { useAuth } from '../auth';
+import { offlineQueue, onSynced } from '../offline/queue';
+import { useOffline } from '../offline/OfflineProvider';
 import { SampleStatusBadge, SealBadge } from './SampleBits';
 import { ErrorBox, Loading, useFormatDate, useMediaQuery } from './common';
+
+function isNetworkFailure(err: unknown): boolean {
+  return !(err instanceof ApiError) && err instanceof Error;
+}
 
 /**
  * The samples taken on one inspection, or all the samples on a job.
@@ -37,7 +43,8 @@ export function SamplesOn({
   locationHint?: string | null;
 }) {
   const { t, i18n } = useTranslation();
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const { isOnline, ops } = useOffline();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fmt = useFormatDate();
@@ -71,8 +78,8 @@ export function SamplesOn({
   });
 
   const create = useMutation({
-    mutationFn: () =>
-      api.post<Sample>('/samples', {
+    mutationFn: async (): Promise<{ queued: boolean; sample?: Sample }> => {
+      const body: Record<string, unknown> = {
         ...(inspectionId ? { inspectionId } : { jobId }),
         ...blanksToNull({
           sampleType: form.sampleType,
@@ -87,16 +94,47 @@ export function SamplesOn({
           conditionNotes: form.conditionNotes,
         }),
         quantity: form.quantity === '' ? null : Number(form.quantity),
-      }),
-    onSuccess: (created) => {
+      };
+      if (!isOnline) {
+        if (user) await offlineQueue.queueSampleDraft(user.id, { tempId: crypto.randomUUID(), body });
+        return { queued: true };
+      }
+      try {
+        return { queued: false, sample: await api.post<Sample>('/samples', body) };
+      } catch (err) {
+        if (isNetworkFailure(err) && user) {
+          await offlineQueue.queueSampleDraft(user.id, { tempId: crypto.randomUUID(), body });
+          return { queued: true };
+        }
+        throw err;
+      }
+    },
+    onSuccess: (result) => {
       setAdding(false);
       setForm({ ...form, quantity: '', sealNumber: '', batchLotNumber: '', conditionNotes: '' });
       qc.invalidateQueries({ queryKey: ['inspection-samples'] });
       qc.invalidateQueries({ queryKey: ['job-samples'] });
       qc.invalidateQueries({ queryKey: ['samples'] });
-      navigate(`/samples/${created.id}`);
+      if (!result.queued && result.sample) navigate(`/samples/${result.sample.id}`);
     },
   });
+
+  const queuedDrafts = ops.filter(
+    (o) =>
+      o.payload.kind === 'sample-draft' &&
+      (inspectionId ? o.payload.body.inspectionId === inspectionId : o.payload.body.jobId === jobId),
+  );
+
+  useEffect(() => {
+    return onSynced((op) => {
+      if (op.payload.kind !== 'sample-draft') return;
+      const matches = inspectionId ? op.payload.body.inspectionId === inspectionId : op.payload.body.jobId === jobId;
+      if (!matches) return;
+      qc.invalidateQueries({ queryKey: ['inspection-samples'] });
+      qc.invalidateQueries({ queryKey: ['job-samples'] });
+      qc.invalidateQueries({ queryKey: ['samples'] });
+    });
+  }, [inspectionId, jobId, qc]);
 
   const rows = list.data?.rows ?? [];
   const canAdd =
@@ -196,17 +234,31 @@ export function SamplesOn({
               </Field>
             </div>
           </div>
-          <div>
+          <div className="stack" style={{ gap: 4 }}>
             <Button loading={create.isPending} onClick={() => create.mutate()}>
               {t('samples.create')}
             </Button>
+            {!isOnline && <span className="muted" style={{ fontSize: 12 }}>{t('offline.sampleDraftQueued')}</span>}
           </div>
+        </div>
+      )}
+
+      {queuedDrafts.length > 0 && (
+        <div className="stack" style={{ gap: 6, marginBlockEnd: 'var(--gsi-space-3)' }}>
+          {queuedDrafts.map((op) => (
+            <div key={op.id} className="ins-card">
+              <div className="ins-card__head">
+                <span className="mono">{t('offline.queued')}</span>
+                <span className="muted">{t('offline.sampleDraftQueued')}</span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {list.isLoading ? (
         <Loading />
-      ) : !rows.length ? (
+      ) : !rows.length && !queuedDrafts.length ? (
         <EmptyState>{t('samples.noneHere')}</EmptyState>
       ) : narrow ? (
         <div className="stack">

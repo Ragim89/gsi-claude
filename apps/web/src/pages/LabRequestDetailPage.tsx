@@ -25,8 +25,10 @@ import {
   User,
   localize,
 } from '@gsi/shared-types';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { useAuth } from '../auth';
+import { offlineQueue, onSynced } from '../offline/queue';
+import { useOffline } from '../offline/OfflineProvider';
 import {
   EvaluationBadge,
   LAB_ACTIONS_NEEDING_REASON,
@@ -37,6 +39,11 @@ import {
   useSpecText,
 } from '../components/LabBits';
 import { Breadcrumbs, ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { ConflictBanner } from '../components/ConflictBanner';
+
+function isNetworkFailure(err: unknown): boolean {
+  return !(err instanceof ApiError) && err instanceof Error;
+}
 
 type Tab = 'result' | 'attachments' | 'revisions' | 'history';
 
@@ -84,6 +91,7 @@ export function LabRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const { user, can } = useAuth();
+  const { isOnline } = useOffline();
   const qc = useQueryClient();
   const fmt = useFormatDate();
   const specs = useSpecText();
@@ -139,8 +147,8 @@ export function LabRequestDetailPage() {
   };
 
   const save = useMutation({
-    mutationFn: () => {
-      const body: Record<string, unknown> = { version: r?.result?.version };
+    mutationFn: async (): Promise<{ queued: boolean }> => {
+      const body: Record<string, unknown> = {};
       if (r?.resultType === 'numeric') body.numericValue = draft.numericValue === '' ? null : draft.numericValue;
       if (r?.resultType === 'text') body.textValue = draft.textValue || null;
       if (r?.resultType === 'boolean' || r?.resultType === 'pass_fail') {
@@ -150,13 +158,37 @@ export function LabRequestDetailPage() {
       if (draft.unit.trim()) body.unit = draft.unit.trim();
       if (draft.instrumentId) body.instrumentId = draft.instrumentId;
       body.comments = draft.comments.trim() || null;
-      return api.patch<TestRequest>(`/lab/requests/${id}/result`, body);
+      const version = r?.result?.version ?? null;
+      // Entering a value is a draft edit, not a workflow move — safe to queue offline. Submit,
+      // approve and release stay online-only: those are the moments a result becomes official.
+      if (!isOnline) {
+        if (user) await offlineQueue.queueLabResultDraft(user.id, { requestId: id!, version, body });
+        return { queued: true };
+      }
+      try {
+        await api.patch<TestRequest>(`/lab/requests/${id}/result`, { ...body, version });
+        return { queued: false };
+      } catch (err) {
+        if (isNetworkFailure(err) && user) {
+          await offlineQueue.queueLabResultDraft(user.id, { requestId: id!, version, body });
+          return { queued: true };
+        }
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       setDirty(false);
-      refresh();
+      if (!result.queued) refresh();
     },
   });
+
+  useEffect(
+    () =>
+      onSynced((op) => {
+        if (op.payload.kind === 'lab-result-draft' && op.payload.requestId === id) refresh();
+      }),
+    [id],
+  );
 
   const act = useMutation({
     mutationFn: (v: { path: string; body?: Record<string, unknown> }) =>
@@ -271,7 +303,18 @@ export function LabRequestDetailPage() {
       {result?.reviewComment && r.status === 'in_progress' && (
         <Alert tone="warning">{t('lab.returnedBecause', { reason: result.reviewComment })}</Alert>
       )}
-      <ErrorBox error={act.error ?? save.error} />
+      {save.error instanceof ApiError && save.error.status === 409 ? (
+        <ConflictBanner
+          onRefresh={() => {
+            save.reset();
+            setDirty(false);
+            refresh();
+          }}
+        />
+      ) : (
+        <ErrorBox error={act.error ?? save.error} />
+      )}
+      {!isOnline && actions.length > 0 && <Alert tone="warning">{t('offline.actionsRequireOnline')}</Alert>}
 
       {move && (
         <Card title={t(`testAction.${move}`)}>
@@ -438,6 +481,7 @@ export function LabRequestDetailPage() {
                   {t('lab.saveResult')}
                 </Button>
                 {dirty ? <span className="muted">{t('lab.unsaved')}</span> : null}
+                {!isOnline ? <span className="muted">{t('offline.willSyncWhenOnline')}</span> : null}
               </div>
             </Card>
           ) : null}
@@ -559,7 +603,7 @@ export function LabRequestDetailPage() {
         </Card>
       )}
 
-      <LabActionBar actions={actions} busy={act.isPending} onRun={run} />
+      <LabActionBar actions={actions} busy={act.isPending || !isOnline} onRun={run} />
     </div>
   );
 }

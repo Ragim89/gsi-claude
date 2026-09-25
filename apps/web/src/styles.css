@@ -175,6 +175,7 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
     padding-inline: var(--gsi-space-4);
     background: var(--gsi-color-primary); color: var(--gsi-color-on-primary);
   }
+  .topbar-mobile .offline-badge { margin-inline-start: auto; background: transparent; border-color: var(--gsi-color-primary-hover); color: var(--gsi-color-on-primary); }
   .topbar-mobile__menu-btn {
     border: 1px solid var(--gsi-color-primary-hover); background: transparent; color: var(--gsi-color-on-primary);
     border-radius: var(--gsi-radius-sm); width: 40px; height: 40px; font-size: 18px; line-height: 1;
@@ -717,3 +718,47 @@ td.negative { color: var(--gsi-color-danger); }
 
 /* The test whose methods are shown beside the catalogue list. */
 .row--selected td { background: var(--gsi-color-background); font-weight: var(--gsi-font-weight-bold); }
+
+/* ---- PHASE 11: offline status, install banner, field bottom nav ---------------------- */
+.offline-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--gsi-color-border-strong); background: var(--gsi-color-surface);
+  border-radius: 999px; padding: 4px 10px; font-size: var(--gsi-font-size-xs);
+  font-family: inherit; color: var(--gsi-color-text); cursor: default;
+}
+.offline-badge:disabled { opacity: 1; }
+.offline-badge__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gsi-color-text-muted); flex: none; }
+.offline-badge--offline .offline-badge__dot { background: var(--gsi-color-text-muted); }
+.offline-badge--queued .offline-badge__dot,
+.offline-badge--syncing .offline-badge__dot { background: var(--gsi-color-accent); }
+.offline-badge--failed .offline-badge__dot,
+.offline-badge--conflict .offline-badge__dot { background: var(--gsi-color-danger); }
+.offline-badge--queued, .offline-badge--failed { cursor: pointer; }
+.offline-badge--conflict { border-color: var(--gsi-color-danger); color: var(--gsi-color-danger); }
+
+.install-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--gsi-space-3); flex-wrap: wrap;
+  background: var(--gsi-color-surface); border: 1px solid var(--gsi-color-border-strong);
+  border-radius: var(--gsi-radius-md); padding: var(--gsi-space-3) var(--gsi-space-4);
+  margin-block-end: var(--gsi-space-4);
+}
+
+/* Bottom tab bar for own-scope field roles (inspector / lab technician) on a phone. The
+   drawer from PHASE 10.5 stays reachable via "More" — this only fronts the screens someone
+   standing in the field opens dozens of times a shift. */
+.bottom-nav { display: none; }
+@media (max-width: 900px) {
+  .shell.has-bottom-nav { padding-block-end: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  .bottom-nav {
+    display: flex; position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 26;
+    background: var(--gsi-color-surface); border-block-start: 1px solid var(--gsi-color-border);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+  .bottom-nav a, .bottom-nav button {
+    flex: 1 1 0; display: flex; align-items: center; justify-content: center;
+    padding-block: 15px; min-height: 52px; text-decoration: none;
+    color: var(--gsi-color-text-muted); font-size: var(--gsi-font-size-xs); font-weight: var(--gsi-font-weight-medium);
+    border: 0; border-block-start: 2px solid transparent; background: transparent; font-family: inherit;
+  }
+  .bottom-nav a.active, .bottom-nav button.active { color: var(--gsi-color-primary); border-block-start-color: var(--gsi-color-primary); }
+}
