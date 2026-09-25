@@ -14,3 +14,4 @@ export * from './reports';
 export * from './quotes';
 export * from './pricing';
 export * from './payments';
+export * from './analytics';

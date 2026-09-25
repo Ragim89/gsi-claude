@@ -1,7 +1,7 @@
 {
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
-    "dashboard": "Dashboard", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
+    "dashboard": "Dashboard", "analytics": "Analytics", "myAnalytics": "My performance", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "quotes": "Quotes", "payments": "Payments", "pricing": "Pricing",
     "assets": "Assets", "branches": "Branches", "import": "Data import",
     "reports": "Documents", "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
@@ -45,7 +45,7 @@
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
     "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch",
-    "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive"
+    "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive", "name": "Name"
   },
   "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
@@ -587,6 +587,22 @@
     "reportsIssued": "Reports issued", "avgCycle": "Job → report", "days2": "{{days}} days",
     "inspectorLoad": "Jobs per inspector", "activeInspectors": "{{count}} active inspectors",
     "payable": "Payable", "unallocatedCash": "Unallocated cash", "quotePipeline": "Quote pipeline"
+  },
+  "analytics": {
+    "title": "Analytics", "myTitle": "My performance",
+    "jobsTotal": "Jobs", "jobsByMonth": "Jobs by month",
+    "byStatus": "By status", "byService": "By service", "byClient": "By client", "byCountry": "By country",
+    "stagesTitle": "Turnaround by stage", "stage": "Stage", "avg": "Average", "median": "Median", "p90": "P90", "sample": "Sample",
+    "sampleSize": "{{count}} jobs", "noData": "No data yet",
+    "turnaroundTrend": "Job → report, by month issued", "turnaroundTrendSub": "Average calendar days, monthly trend",
+    "stages": {
+      "jobToInspection": "Job → inspection", "inspectionToLab": "Inspection → lab",
+      "labToReleased": "Lab → released result", "releasedToReport": "Released result → report",
+      "jobToReport": "Job → report (overall)"
+    },
+    "inspectors": "Inspectors", "samplers": "Samplers", "labAnalysts": "Laboratory analysts",
+    "reviewers": "Report reviewers", "laboratories": "Laboratories",
+    "active": "Active", "completed": "Completed", "empty": "No data for this period"
   },
   "invoices": {
     "title": "Invoices", "status": "Status", "new": "New invoice", "number": "Invoice no.", "issued": "Issued", "due": "Due date",

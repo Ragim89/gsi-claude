@@ -21,6 +21,9 @@ export function Layout() {
         <BranchSwitcher />
         <nav>
           {can('dashboard.read') && <NavLink to="/finance" end>{t('nav.dashboard')}</NavLink>}
+          {can('analytics.read') && (
+            <NavLink to="/analytics">{user?.scope === 'own' ? t('nav.myAnalytics') : t('nav.analytics')}</NavLink>
+          )}
           {can('branch.read') && <NavLink to="/branches">{t('nav.branches')}</NavLink>}
           {can('job.read') && (
             <NavLink to="/jobs">{user?.scope === 'own' ? t('nav.myJobs') : t('nav.jobs')}</NavLink>

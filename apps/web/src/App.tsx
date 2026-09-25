@@ -17,6 +17,7 @@ import { ClientDetailPage } from './pages/ClientDetailPage';
 import { UsersPage } from './pages/UsersPage';
 import { VerifyPage } from './pages/VerifyPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage';
@@ -93,6 +94,7 @@ export function App() {
       >
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/finance" element={<RequireAuth need={['dashboard.read']}><DashboardPage /></RequireAuth>} />
+        <Route path="/analytics" element={<RequireAuth need={['analytics.read']}><AnalyticsPage /></RequireAuth>} />
         <Route path="/finance/invoices" element={<RequireAuth need={['finance.read']}><InvoicesPage /></RequireAuth>} />
         <Route path="/finance/invoices/:id" element={<RequireAuth need={['finance.read']}><InvoiceDetailPage /></RequireAuth>} />
         <Route path="/finance/expenses" element={<RequireAuth need={['finance.read']}><ExpensesPage /></RequireAuth>} />

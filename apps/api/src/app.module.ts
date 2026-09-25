@@ -11,6 +11,7 @@ import { SamplesModule } from './samples/samples.module';
 import { LaboratoryModule } from './laboratory/laboratory.module';
 import { DocumentsModule } from './documents/documents.module';
 import { FinanceModule } from './finance/finance.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { ReferenceModule } from './reference/reference.module';
 import { AssetsModule } from './assets/assets.module';
 import { ExportModule } from './export/export.module';
@@ -43,6 +44,7 @@ import { config } from './config';
     LaboratoryModule,
     DocumentsModule,
     FinanceModule,
+    AnalyticsModule,
     ReferenceModule,
     AssetsModule,
     ExportModule,

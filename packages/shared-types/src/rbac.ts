@@ -54,6 +54,8 @@ export const PERMISSIONS = [
   'audit.read',
   // Data movement
   'export.run', 'import.run',
+  // Analytics
+  'analytics.read', 'analytics.workload',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

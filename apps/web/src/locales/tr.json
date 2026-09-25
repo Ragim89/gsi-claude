@@ -1,7 +1,7 @@
 {
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
-    "dashboard": "Gösterge paneli", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
+    "dashboard": "Gösterge paneli", "analytics": "Analitik", "myAnalytics": "Performansım", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "quotes": "Teklifler", "payments": "Ödemeler", "pricing": "Fiyatlandırma",
     "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "reports": "Belgeler", "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
@@ -45,7 +45,7 @@
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
     "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube",
-    "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif"
+    "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif", "name": "Ad"
   },
   "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
@@ -589,6 +589,22 @@
     "reportsIssued": "Düzenlenen rapor", "avgCycle": "İş → rapor", "days2": "{{days}} gün",
     "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper",
     "payable": "Borçlar", "unallocatedCash": "Eşleşmemiş tahsilat", "quotePipeline": "Teklif hattı"
+  },
+  "analytics": {
+    "title": "Analitik", "myTitle": "Performansım",
+    "jobsTotal": "İşler", "jobsByMonth": "Aya göre işler",
+    "byStatus": "Duruma göre", "byService": "Hizmete göre", "byClient": "Müşteriye göre", "byCountry": "Ülkeye göre",
+    "stagesTitle": "Aşamaya göre süre", "stage": "Aşama", "avg": "Ortalama", "median": "Medyan", "p90": "P90", "sample": "Örneklem",
+    "sampleSize": "{{count}} iş", "noData": "Henüz veri yok",
+    "turnaroundTrend": "İş → rapor, yayın ayına göre", "turnaroundTrendSub": "Ortalama takvim günü, aylık eğilim",
+    "stages": {
+      "jobToInspection": "İş → muayene", "inspectionToLab": "Muayene → laboratuvar",
+      "labToReleased": "Laboratuvar → yayınlanan sonuç", "releasedToReport": "Sonuç → rapor",
+      "jobToReport": "İş → rapor (toplam)"
+    },
+    "inspectors": "Müfettişler", "samplers": "Numune alıcılar", "labAnalysts": "Laboratuvar analistleri",
+    "reviewers": "Rapor incelemecileri", "laboratories": "Laboratuvarlar",
+    "active": "Aktif", "completed": "Tamamlandı", "empty": "Bu dönem için veri yok"
   },
   "invoices": {
     "title": "Faturalar", "status": "Durum", "new": "Yeni fatura", "number": "Fatura no.", "issued": "Düzenlendi", "due": "Vade",

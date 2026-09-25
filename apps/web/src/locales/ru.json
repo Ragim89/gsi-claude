@@ -1,7 +1,7 @@
 {
   "app": { "name": "GSI ERP", "tagline": "General Survey Inspection" },
   "nav": {
-    "dashboard": "Дашборд", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
+    "dashboard": "Дашборд", "analytics": "Аналитика", "myAnalytics": "Моя эффективность", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
     "invoices": "Счета", "expenses": "Расходы", "quotes": "Предложения", "payments": "Платежи", "pricing": "Тарифы",
     "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
     "reports": "Документы", "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
@@ -45,7 +45,7 @@
     "save": "Сохранить", "cancel": "Отмена", "edit": "Изменить", "delete": "Удалить", "create": "Создать", "back": "Назад",
     "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
     "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал",
-    "description": "Описание", "retry": "Повторить", "active": "Активно", "inactive": "Неактивно"
+    "description": "Описание", "retry": "Повторить", "active": "Активно", "inactive": "Неактивно", "name": "Имя"
   },
   "roleNames": {
     "inspector": "Инспектор", "lab_technician": "Лаборант", "supervisor": "Супервайзер",
@@ -593,6 +593,22 @@
     "reportsIssued": "Выпущено отчётов", "avgCycle": "Заявка → отчёт", "days2": "{{days}} дн.",
     "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}",
     "payable": "Кредиторка", "unallocatedCash": "Неразнесённые платежи", "quotePipeline": "Воронка предложений"
+  },
+  "analytics": {
+    "title": "Аналитика", "myTitle": "Моя эффективность",
+    "jobsTotal": "Заявки", "jobsByMonth": "Заявки по месяцам",
+    "byStatus": "По статусу", "byService": "По услуге", "byClient": "По клиенту", "byCountry": "По стране",
+    "stagesTitle": "Сроки по этапам", "stage": "Этап", "avg": "Среднее", "median": "Медиана", "p90": "P90", "sample": "Выборка",
+    "sampleSize": "{{count}} заявок", "noData": "Данных пока нет",
+    "turnaroundTrend": "Заявка → отчёт, по месяцу выпуска", "turnaroundTrendSub": "Среднее число календарных дней, тренд по месяцам",
+    "stages": {
+      "jobToInspection": "Заявка → инспекция", "inspectionToLab": "Инспекция → лаборатория",
+      "labToReleased": "Лаборатория → выпущенный результат", "releasedToReport": "Результат → отчёт",
+      "jobToReport": "Заявка → отчёт (итого)"
+    },
+    "inspectors": "Инспекторы", "samplers": "Пробоотборщики", "labAnalysts": "Лаборанты",
+    "reviewers": "Рецензенты отчётов", "laboratories": "Лаборатории",
+    "active": "В работе", "completed": "Завершено", "empty": "Нет данных за период"
   },
   "invoices": {
     "title": "Счета", "status": "Статус", "new": "Новый счёт", "number": "№ счёта", "issued": "Выставлен", "due": "Срок оплаты",

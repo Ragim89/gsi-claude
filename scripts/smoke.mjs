@@ -139,6 +139,11 @@ if (invoice) {
   check('invoice prints', pdf.status === 200 && pdf.body.byteLength > 1000, String(pdf.status));
 }
 
+console.log('\nAnalytics');
+check('jobs', ok(await get('/analytics/jobs')));
+check('turnaround', ok(await get('/analytics/turnaround')));
+check('workload', ok(await get('/analytics/workload')));
+
 console.log('\nAssets, organisation, audit');
 check('assets', ok(await get('/assets')));
 check('organisation tree', ok(await get('/org')));
