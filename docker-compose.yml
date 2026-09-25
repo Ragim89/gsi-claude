@@ -129,6 +129,8 @@ services:
       - ./apps/api/tsconfig.json:/repo/apps/api/tsconfig.json:ro
       - ./apps/api/tsconfig.test.json:/repo/apps/api/tsconfig.test.json:ro
       - ./apps/api/.eslintrc.cjs:/repo/apps/api/.eslintrc.cjs:ro
+      # The smoke sweep runs from here against the development stack, not against gsi_test.
+      - ./scripts:/repo/scripts:ro
     command: ["npm", "test"]
 
 volumes:

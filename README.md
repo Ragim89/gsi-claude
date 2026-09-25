@@ -77,9 +77,30 @@ PDF rendering needs Chromium. Set `PUPPETEER_EXECUTABLE_PATH` to the Chrome or C
 
 Everything runs inside Docker, so no local Node installation is needed.
 
+### Verification in one command
+
 ```bash
-docker compose --profile test run --rm test
+bash scripts/verify.sh
 ```
+
+Unit tests → integration tests → lint → typecheck → API build → web build, in that order,
+stopping at the first failure. Nothing it runs touches the development database or the running
+stack.
+
+```bash
+bash scripts/verify-full.sh
+```
+
+Everything above, then the Docker image builds, the stack brought up with its migrations
+applied, `/api/health/ready`, and a smoke sweep over every module against the real database and
+object store. It leaves the stack running.
+
+Both are the Docker spelling of the npm scripts, which are what actually defines the sequence
+(`npm run verify` at the root, `npm run verify` in `@gsi/api`) for a machine that has the
+workspaces installed. "Lint" means the API: the web workspace has no ESLint configuration, and
+its `build` runs `tsc --noEmit` before Vite, so it is type-checked as it is built.
+
+### One check at a time
 
 | Command | What it runs |
 |---|---|
@@ -88,6 +109,7 @@ docker compose --profile test run --rm test
 | `docker compose --profile test run --rm test npm run test:integration` | boots the real API against a throwaway `gsi_test` database |
 | `docker compose --profile test run --rm test npm run typecheck` | TypeScript, including tests |
 | `docker compose --profile test run --rm test npm run lint` | ESLint |
+| `docker compose --profile test run --rm test node /repo/scripts/smoke.mjs` | every module, read-only, against the **development** stack |
 
 The integration suite creates and migrates its own database (`gsi_test`) and seeds the
 reference data without the demo volume. It never touches the development database, and

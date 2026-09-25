@@ -16,7 +16,10 @@
     "dev:web": "npm run dev -w @gsi/web",
     "db:migrate": "npm run db:migrate -w @gsi/api",
     "db:seed": "npm run db:seed -w @gsi/api",
-    "typecheck": "npm run build:packages && npm run typecheck -w @gsi/api -w @gsi/web"
+    "lint": "npm run lint -w @gsi/api",
+    "typecheck": "npm run build:packages && npm run typecheck -w @gsi/api -w @gsi/web",
+    "verify": "npm run build:packages && npm run verify -w @gsi/api && npm run build -w @gsi/web",
+    "smoke": "node scripts/smoke.mjs"
   },
   "engines": {
     "node": ">=20"
