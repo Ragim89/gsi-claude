@@ -19,6 +19,7 @@ import {
   IsIn,
   IsInt,
   IsObject,
+  ValidateNested,
   IsOptional,
   IsString,
   IsUUID,
@@ -40,6 +41,14 @@ import { ReportDocumentsService } from './report-documents.service';
 import { ReportTemplatesService } from './report-templates.service';
 import { ReportDataService } from './report-data.service';
 
+/**
+ * The authored part of a document.
+ *
+ * Declared as a nested DTO and validated as one: without `@ValidateNested` on the field that
+ * carries it, class-validator walks past the object entirely, and a paragraph filed under a
+ * name the renderer does not read would be stored, never printed, and never complained about.
+ * A surveyor who writes a conclusion and does not see it on the page should be told why.
+ */
 class ContentDto {
   @IsOptional() @IsString() @MaxLength(20000) executiveSummary?: string | null;
   @IsOptional() @IsString() @MaxLength(20000) observations?: string | null;
@@ -60,14 +69,14 @@ class CreateReportDto {
   @IsOptional() @IsUUID() templateId?: string | null;
   @IsOptional() @IsUUID() inspectionId?: string | null;
   @IsOptional() @IsUUID() sampleId?: string | null;
-  @IsOptional() @Type(() => ContentDto) content?: ContentDto;
+  @IsOptional() @ValidateNested() @Type(() => ContentDto) content?: ContentDto;
 }
 
 class UpdateReportDto {
   @IsOptional() @IsString() @MaxLength(300) title?: string | null;
   @IsOptional() @IsIn(['en', 'tr', 'ru']) language?: string;
   @IsOptional() @IsUUID() templateId?: string | null;
-  @IsOptional() @Type(() => ContentDto) content?: ContentDto;
+  @IsOptional() @ValidateNested() @Type(() => ContentDto) content?: ContentDto;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) lockVersion?: number;
 }
 

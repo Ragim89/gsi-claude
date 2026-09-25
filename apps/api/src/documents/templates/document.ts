@@ -4,6 +4,8 @@ import {
   ReportSectionSpec,
   ReportTemplateDefinition,
   ReportType,
+  SERVICE_TYPE_LABELS,
+  ServiceType,
   localize,
 } from '@gsi/shared-types';
 import { toCssVariables } from '@gsi/ui-kit';
@@ -133,6 +135,17 @@ const T: Record<string, Record<Lang, string>> = {
 
 const t = (key: string, lang: Lang): string => T[key]?.[lang] ?? key;
 
+/**
+ * The service, in the language of the document.
+ *
+ * A Russian certificate that says "sampling" under «Услуга» is a Russian certificate with an
+ * English word on it. The wording is the same table the screens use, so the two cannot drift.
+ */
+const serviceName = (type: string, lang: Lang): string => {
+  const label = SERVICE_TYPE_LABELS[type as ServiceType];
+  return label ? localize(label, lang) : type.replace(/_/g, ' ');
+};
+
 function esc(v: unknown): string {
   if (v === null || v === undefined) return '';
   return String(v)
@@ -235,6 +248,8 @@ table.grid td.mono { font-family: var(--gsi-font-family-mono, monospace); white-
 .sign { border-top: 1px solid var(--gsi-color-border); padding-top: 5px; font-size: 8.5pt; }
 .sign .role { color: var(--gsi-color-text-muted); font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.04em; }
 .sign .name { font-weight: 700; }
+/* Kept even when there is no date, so the three signature lines sit at the same height. */
+.sign .when { font-size: 7.5pt; min-height: 10pt; color: var(--gsi-color-text-muted); }
 .sign .line { margin-top: 20px; border-bottom: 1px dotted var(--gsi-color-border-strong); }
 
 .verify { display: flex; gap: 14px; align-items: center; margin-top: 14px; break-inside: avoid; }
@@ -302,7 +317,7 @@ function renderJob(ctx: Ctx): string {
     t('job', lang),
     `<table class="info">
       ${infoRow(t('jobNo', lang), s.job.jobNumber)}
-      ${infoRow(t('service', lang), s.job.type.replace(/_/g, ' '))}
+      ${infoRow(t('service', lang), serviceName(s.job.type, lang))}
       ${s.job.location ? infoRow(t('place', lang), [s.job.location, s.job.city].filter(Boolean).join(', ')) : ''}
       ${s.job.vesselOrObject ? infoRow(t('object', lang), s.job.vesselOrObject) : ''}
       ${s.job.commodity ? infoRow(t('commodity', lang), s.job.commodity) : ''}
@@ -318,7 +333,7 @@ function renderInspection(ctx: Ctx): string {
     .map(
       (i) => `<table class="info">
         ${infoRow(t('inspectionNo', lang), i.inspectionNumber)}
-        ${infoRow(t('service', lang), i.type.replace(/_/g, ' '))}
+        ${infoRow(t('service', lang), serviceName(i.type, lang))}
         ${infoRow(
           t('period', lang),
           i.actualEnd
@@ -549,7 +564,7 @@ function renderSignatures(ctx: Ctx): string {
     <div class="sign">
       <div class="role">${esc(role)}</div>
       <div class="name">${esc(name) || '—'}</div>
-      <div class="muted" style="font-size:7.5pt">${at ? esc(fmtDate(at, tz, lang, false)) : ''}</div>
+      <div class="when">${at ? esc(fmtDate(at, tz, lang, false)) : ''}</div>
       <div class="line"></div>
       <div class="muted" style="font-size:7pt">${esc(t('signature', lang))}</div>
     </div>`;

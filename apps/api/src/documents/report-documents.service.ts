@@ -17,6 +17,7 @@ import {
   ReportDocument,
   ReportHistoryEntry,
   ReportStatus,
+  ReportTemplateDefinition,
   ReportType,
   ReportVersion,
   REPORT_EDITABLE_STATUSES,
@@ -405,8 +406,13 @@ export class ReportDocumentsService {
         issuedAt: new Date().toISOString(),
       });
 
+      // The form as it stands at this moment, kept with the revision: "issued on form v1" has
+      // to stay answerable after the form itself has moved on to v2.
+      const template = version.templateId ? await this.templates.byId(tx, version.templateId) : null;
+      const form = template?.definition ?? null;
+
       const token = randomBytes(18).toString('base64url');
-      const { buffer, sha256 } = await this.render(tx, report, version, snapshot, token, false);
+      const { buffer, sha256 } = await this.render(tx, report, version, snapshot, token, false, form);
       const key = `reports/${snapshot.branch.code}/${report.clientId ?? 'unknown'}/` +
         `${report.reportNumber}-r${version.versionNumber}.pdf`;
       await this.storage.put(key, buffer, 'application/pdf', { sha256 });
@@ -420,9 +426,11 @@ export class ReportDocumentsService {
         `UPDATE report_versions
          SET status = 'issued'::report_status, issued_by = $2, issued_at = now(),
              data_snapshot = $3::jsonb, pdf_storage_key = $4, pdf_sha256 = $5, pdf_bytes = $6,
-             qr_token = $7, updated_at = now()
+             qr_token = $7, template_version = COALESCE($8, template_version),
+             template_definition = $9::jsonb, updated_at = now()
          WHERE id = $1`,
-        [version.id, user.id, JSON.stringify(snapshot), key, sha256, buffer.length, token],
+        [version.id, user.id, JSON.stringify(snapshot), key, sha256, buffer.length, token,
+         template?.version ?? null, form ? JSON.stringify(form) : null],
       );
 
       this.logger.log(`issued ${report.reportNumber} r${version.versionNumber} (${buffer.length} bytes)`);
@@ -533,7 +541,8 @@ export class ReportDocumentsService {
       issuedAt: new Date().toISOString(),
     });
 
-    const { buffer, sha256 } = await this.render(tx, report, version, snapshot, token, false);
+    const { buffer, sha256 } = await this.render(tx, report, version, snapshot, token, false,
+      template?.definition ?? null);
     const key = `reports/${snapshot.branch.code}/${job.client_id}/${number}-r1.pdf`;
     await this.storage.put(key, buffer, 'application/pdf', { sha256 });
 
@@ -542,13 +551,15 @@ export class ReportDocumentsService {
     await tx.exec(
       `INSERT INTO report_versions (report_id, branch_id, version_number, status, content, data_snapshot,
                                     language, template_id, template_code, template_version,
+                                    template_definition,
                                     pdf_storage_key, pdf_sha256, pdf_bytes, qr_token,
                                     prepared_by, submitted_by, submitted_at, reviewed_by, reviewed_at,
                                     approved_by, approved_at, issued_by, issued_at)
-       VALUES ($1, $2, 1, 'issued'::report_status, '{}'::jsonb, $3::jsonb, $4, $5, $6, $7,
-               $8, $9, $10, $11, $12, $12, now(), $12, now(), $12, now(), $12, now())`,
+       VALUES ($1, $2, 1, 'issued'::report_status, '{}'::jsonb, $3::jsonb, $4, $5, $6, $7, $8::jsonb,
+               $9, $10, $11, $12, $13, $13, now(), $13, now(), $13, now(), $13, now())`,
       [report.id, job.branch_id, JSON.stringify(snapshot), job.locale,
        template?.id ?? null, template?.code ?? null, template?.version ?? null,
+       template?.definition ? JSON.stringify(template.definition) : null,
        key, sha256, buffer.length, token, user.id],
     );
     await tx.exec(
@@ -663,10 +674,15 @@ export class ReportDocumentsService {
     snapshot: ReportDataSnapshot,
     token: string | null,
     draft: boolean,
+    /**
+     * The form to print on. Issue passes the definition it captured, so the revision and the file
+     * it stored came off the same layout; a draft preview passes nothing and sees today's form,
+     * which is what a draft should show.
+     */
+    form?: ReportTemplateDefinition | null,
   ): Promise<{ buffer: Buffer; sha256: string }> {
-    const definition = version.templateId
-      ? (await this.templates.byId(tx, version.templateId))?.definition
-      : null;
+    const definition = form
+      ?? (version.templateId ? (await this.templates.byId(tx, version.templateId))?.definition : null);
 
     // Images are fetched once and inlined; Chromium renders with no network access at all.
     const images = new Map<string, string>();
