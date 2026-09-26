@@ -29,9 +29,21 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .sidebar__mark { font-size: 28px; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.08em; color: var(--gsi-color-accent); line-height: 1; }
 .sidebar__tag { font-size: var(--gsi-font-size-xs); opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; margin-block-start: 4px; }
 .sidebar nav {
-  display: flex; flex-direction: column; gap: 2px; padding-inline: var(--gsi-space-3);
+  display: flex; flex-direction: column; gap: 3px; padding-inline: var(--gsi-space-3);
   flex: 1; min-height: 0; overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
+.sidebar nav:hover,
+.sidebar nav:focus-within {
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+.sidebar nav::-webkit-scrollbar { width: 4px; }
+.sidebar nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
+.sidebar nav:hover::-webkit-scrollbar-thumb,
+.sidebar nav:focus-within::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); }
+.sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.34); }
 .sidebar nav a {
   color: var(--gsi-color-on-primary);
   text-decoration: none;
@@ -39,27 +51,27 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
   padding-inline: var(--gsi-space-3);
   border-radius: var(--gsi-radius-md);
   opacity: 0.82;
-  border-inline-start: 3px solid transparent;
+  border-inline-start: 2px solid transparent;
 }
-.sidebar nav a:hover { opacity: 1; background: var(--gsi-color-primary-hover); }
-.sidebar nav a.active { opacity: 1; background: var(--gsi-color-primary-hover); border-inline-start-color: var(--gsi-color-accent); }
+.sidebar nav a:hover { opacity: 1; background: rgba(255, 255, 255, 0.06); }
+.sidebar nav a.active { opacity: 1; background: rgba(255, 255, 255, 0.1); border-inline-start-color: var(--gsi-color-accent); }
 .sidebar__footer {
   margin-block-start: auto; padding-inline: var(--gsi-space-5); padding-block-start: var(--gsi-space-3);
   font-size: var(--gsi-font-size-sm); display: flex; flex-direction: column; gap: var(--gsi-space-2); flex: none;
 }
 
 /* ---- Grouped navigation (PHASE 10.5) ------------------------------------------------ */
-.nav-group { display: flex; flex-direction: column; }
+.nav-group { display: flex; flex-direction: column; margin-block-end: 2px; }
 .nav-group__head {
   display: flex; align-items: center; justify-content: space-between; gap: var(--gsi-space-2);
   border: 0; background: transparent; color: var(--gsi-color-on-primary); opacity: 0.7;
   font-family: inherit; font-size: var(--gsi-font-size-xs); text-transform: uppercase; letter-spacing: 0.05em;
-  padding: 10px var(--gsi-space-3) 6px; cursor: pointer;
+  padding: 12px var(--gsi-space-3) 6px; cursor: pointer;
 }
 .nav-group__head:hover { opacity: 1; }
 .nav-group__chevron { display: inline-block; transition: transform 120ms ease; font-size: 14px; line-height: 1; }
 .nav-group.is-open .nav-group__chevron { transform: rotate(90deg); }
-.nav-group__items { display: flex; flex-direction: column; gap: 2px; }
+.nav-group__items { display: flex; flex-direction: column; gap: 3px; padding-block-end: 4px; }
 .sidebar__user { font-weight: var(--gsi-font-weight-medium); }
 .sidebar__role { opacity: 0.75; font-size: var(--gsi-font-size-xs); }
 .sidebar select {
@@ -69,6 +81,7 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .sidebar select option { color: var(--gsi-color-text); }
 .sidebar .gsi-btn--ghost { color: var(--gsi-color-on-primary); justify-content: flex-start; padding-inline: 0; }
 .sidebar .gsi-btn--ghost:hover:not(:disabled) { background: transparent; text-decoration: underline; }
+.sidebar__footer-actions { display: flex; flex-direction: column; gap: 2px; }
 
 .main { padding: var(--gsi-space-5) var(--gsi-space-6); min-width: 0; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gsi-space-3); flex-wrap: wrap; margin-block-end: var(--gsi-space-5); }
