@@ -126,7 +126,65 @@ export function IconInvoice(props: IconProps) {
   return (
     <svg {...base} {...props}>
       <path d="M6 2h9l4 4v16H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" />
+      <path d="M14 2v5h5" />
       <path d="M9 8h6M9 12h6M9 16h4" />
+    </svg>
+  );
+}
+
+export function IconBuilding(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="3" width="11" height="18" rx="1" />
+      <path d="M15 8h5v13h-5" />
+      <path d="M8 7v.01M12 7v.01M8 11v.01M12 11v.01M8 15v.01M12 15v.01" />
+    </svg>
+  );
+}
+
+export function IconBox(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M3 8 12 3l9 5-9 5-9-5Z" />
+      <path d="M3 8v9l9 5 9-5V8" />
+      <path d="M12 13v9" />
+    </svg>
+  );
+}
+
+export function IconShield(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z" />
+      <path d="m9.5 12 1.8 1.8L15 10" />
+    </svg>
+  );
+}
+
+export function IconChart(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 20V10M11 20V4M18 20v-7" />
+      <path d="M2 20h20" />
+    </svg>
+  );
+}
+
+export function IconTag(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M11.5 3H4v7.5L14 20.5a2 2 0 0 0 2.8 0l4.7-4.7a2 2 0 0 0 0-2.8L11.5 3Z" />
+      <path d="M8.2 8.2h.01" />
+    </svg>
+  );
+}
+
+export function IconGauge(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 15a8 8 0 1 1 16 0" />
+      <path d="M12 15 15.5 9" />
+      <path d="M12 15v.01" />
     </svg>
   );
 }

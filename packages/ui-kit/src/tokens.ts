@@ -87,8 +87,10 @@ export const tokens = {
     greenBg: '#E3F3EA',
     purple: '#6B3FA0',
     purpleBg: '#EEE6F6',
-    amber: '#9A6A00',
-    amberBg: '#FBF1D9',
+    // A clean, saturated gold rather than the muddy brown you get by reusing the `warning`
+    // hue at low lightness — this one is its own value, not shared with any semantic colour.
+    amber: '#C2760C',
+    amberBg: '#FCEFDA',
   },
   font: {
     // ASSUMPTION: the wordmark is set in a bold italic grotesque; the exact typeface is not

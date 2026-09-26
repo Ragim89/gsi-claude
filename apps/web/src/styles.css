@@ -50,6 +50,9 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .sidebar nav:focus-within::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.18); }
 .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 .sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--gsi-space-2);
   color: var(--gsi-color-sidebar-text);
   text-decoration: none;
   padding-block: 9px;
@@ -60,6 +63,16 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
   border-inline-start: 2px solid transparent;
   transition: background-color 0.12s, opacity 0.12s;
 }
+.nav-icon {
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--gsi-color-sidebar-text-muted);
+}
+.nav-icon svg { width: 100%; height: 100%; }
+.sidebar nav a:hover .nav-icon,
+.sidebar nav a.active .nav-icon { color: currentColor; opacity: 0.9; }
 .sidebar nav a:hover { opacity: 1; background: var(--gsi-color-sidebar-hover); }
 .sidebar nav a.active {
   opacity: 1;
@@ -83,6 +96,8 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
   padding: 14px var(--gsi-space-3) 6px; cursor: pointer;
 }
 .nav-group__head:hover { color: var(--gsi-color-sidebar-text); }
+.nav-group__label { display: flex; align-items: center; gap: var(--gsi-space-2); }
+.nav-group__label .nav-icon { width: 16px; height: 16px; color: inherit; }
 .nav-group__chevron { display: inline-block; transition: transform 120ms ease; font-size: 14px; line-height: 1; }
 .nav-group.is-open .nav-group__chevron { transform: rotate(90deg); }
 .nav-group__items { display: flex; flex-direction: column; gap: 2px; padding-block-end: 4px; }
@@ -804,12 +819,12 @@ td.negative { color: var(--gsi-color-danger); }
   min-height: 200px;
   display: flex;
   align-items: flex-end;
-  background: linear-gradient(120deg, var(--gsi-color-primary-deep), var(--gsi-color-primary));
+  background: linear-gradient(120deg, var(--gsi-color-primary-deep) 0%, var(--gsi-color-primary) 55%, var(--gsi-color-accent) 130%);
   box-shadow: var(--gsi-shadow-card);
 }
 .dash-hero__art {
   position: absolute; inset: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.55);
 }
 .dash-hero__art svg, .dash-hero__art img {
   width: 100%; height: 100%; object-fit: cover; display: block;

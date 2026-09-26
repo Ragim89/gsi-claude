@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, LogoLockup } from '@gsi/ui-kit/react';
@@ -10,16 +10,34 @@ import { GlobalSearchBox } from './GlobalSearchBox';
 import { NotificationBell } from './NotificationBell';
 import { OfflineBadge } from './OfflineBadge';
 import { InstallPrompt } from './InstallPrompt';
+import {
+  IconBanknote,
+  IconBox,
+  IconBriefcase,
+  IconBuilding,
+  IconChart,
+  IconClipboardCheck,
+  IconDocument,
+  IconFlask,
+  IconGauge,
+  IconInvoice,
+  IconShield,
+  IconTag,
+  IconUpload,
+  IconUsers,
+} from './icons';
 
 interface NavItem {
   to: string;
   end?: boolean;
   label: string;
+  icon?: ReactNode;
 }
 
 interface NavGroup {
   key: string;
   labelKey: string;
+  icon: ReactNode;
   items: NavItem[];
 }
 
@@ -51,27 +69,40 @@ export function Layout() {
     {
       key: 'crm',
       labelKey: 'nav.groups.crm',
+      icon: <IconUsers />,
       items: [
-        ...(can('client.read') ? [{ to: '/clients', label: t('nav.clients') }] : []),
-        ...(can('contract.read') ? [{ to: '/contracts', label: t('nav.contracts') }] : []),
+        ...(can('client.read') ? [{ to: '/clients', label: t('nav.clients'), icon: <IconUsers /> }] : []),
+        ...(can('contract.read') ? [{ to: '/contracts', label: t('nav.contracts'), icon: <IconDocument /> }] : []),
       ],
     },
     {
       key: 'operations',
       labelKey: 'nav.groups.operations',
+      icon: <IconClipboardCheck />,
       items: [
-        ...(can('job.read') ? [{ to: '/jobs', label: own ? t('nav.myJobs') : t('nav.jobs') }] : []),
-        ...(can('inspection.read')
-          ? [{ to: '/inspections', label: own ? t('nav.myInspections') : t('nav.inspections') }]
+        ...(can('job.read')
+          ? [{ to: '/jobs', label: own ? t('nav.myJobs') : t('nav.jobs'), icon: <IconBriefcase /> }]
           : []),
-        ...(can('sample.read') ? [{ to: '/samples', label: own ? t('nav.mySamples') : t('nav.samples') }] : []),
-        ...(can('branch.read') ? [{ to: '/branches', label: t('nav.branches') }] : []),
-        ...(can('asset.read') ? [{ to: '/assets', label: t('nav.assets') }] : []),
+        ...(can('inspection.read')
+          ? [
+              {
+                to: '/inspections',
+                label: own ? t('nav.myInspections') : t('nav.inspections'),
+                icon: <IconClipboardCheck />,
+              },
+            ]
+          : []),
+        ...(can('sample.read')
+          ? [{ to: '/samples', label: own ? t('nav.mySamples') : t('nav.samples'), icon: <IconFlask /> }]
+          : []),
+        ...(can('branch.read') ? [{ to: '/branches', label: t('nav.branches'), icon: <IconBuilding /> }] : []),
+        ...(can('asset.read') ? [{ to: '/assets', label: t('nav.assets'), icon: <IconBox /> }] : []),
       ],
     },
     {
       key: 'laboratory',
       labelKey: 'nav.groups.laboratory',
+      icon: <IconFlask />,
       items: [
         ...(can('lab.test.read')
           ? [
@@ -79,55 +110,70 @@ export function Layout() {
                 to: '/lab',
                 end: true,
                 label: can('lab.result.enter') && !can('lab.test.assign') ? t('nav.myAnalyses') : t('nav.labQueue'),
+                icon: <IconFlask />,
               },
             ]
           : []),
-        ...(can('lab.method.read') ? [{ to: '/lab/catalogue', label: t('nav.labCatalogue') }] : []),
-        ...(can('lab.specification.read')
-          ? [{ to: '/lab/specifications', label: t('nav.labSpecifications') }]
+        ...(can('lab.method.read')
+          ? [{ to: '/lab/catalogue', label: t('nav.labCatalogue'), icon: <IconDocument /> }]
           : []),
-        ...(can('lab.instrument.read') ? [{ to: '/lab/instruments', label: t('nav.labInstruments') }] : []),
+        ...(can('lab.specification.read')
+          ? [{ to: '/lab/specifications', label: t('nav.labSpecifications'), icon: <IconClipboardCheck /> }]
+          : []),
+        ...(can('lab.instrument.read')
+          ? [{ to: '/lab/instruments', label: t('nav.labInstruments'), icon: <IconGauge /> }]
+          : []),
       ],
     },
     {
       key: 'documents',
       labelKey: 'nav.groups.documents',
-      items: [...(can('report.read') ? [{ to: '/reports', label: t('nav.reports') }] : [])],
+      icon: <IconDocument />,
+      items: [...(can('report.read') ? [{ to: '/reports', label: t('nav.reports'), icon: <IconDocument /> }] : [])],
     },
     {
       key: 'finance',
       labelKey: 'nav.groups.finance',
+      icon: <IconBanknote />,
       items: [
-        ...(can('dashboard.read') ? [{ to: '/finance', end: true, label: t('nav.dashboard') }] : []),
-        ...(can('quote.read') ? [{ to: '/finance/quotes', label: t('nav.quotes') }] : []),
+        ...(can('dashboard.read')
+          ? [{ to: '/finance', end: true, label: t('nav.dashboard'), icon: <IconChart /> }]
+          : []),
+        ...(can('quote.read') ? [{ to: '/finance/quotes', label: t('nav.quotes'), icon: <IconTag /> }] : []),
         ...(finance
           ? [
-              { to: '/finance/invoices', label: t('nav.invoices') },
-              { to: '/finance/expenses', label: t('nav.expenses') },
+              { to: '/finance/invoices', label: t('nav.invoices'), icon: <IconInvoice /> },
+              { to: '/finance/expenses', label: t('nav.expenses'), icon: <IconBanknote /> },
             ]
           : []),
-        ...(can('payment.read') ? [{ to: '/finance/payments', label: t('nav.payments') }] : []),
-        ...(can('service.read') ? [{ to: '/finance/pricing', label: t('nav.pricing') }] : []),
+        ...(can('payment.read')
+          ? [{ to: '/finance/payments', label: t('nav.payments'), icon: <IconBanknote /> }]
+          : []),
+        ...(can('service.read') ? [{ to: '/finance/pricing', label: t('nav.pricing'), icon: <IconTag /> }] : []),
       ],
     },
     {
       key: 'analytics',
       labelKey: 'nav.groups.analytics',
+      icon: <IconChart />,
       items: [
         ...(can('analytics.read')
-          ? [{ to: '/analytics', label: own ? t('nav.myAnalytics') : t('nav.analytics') }]
+          ? [{ to: '/analytics', label: own ? t('nav.myAnalytics') : t('nav.analytics'), icon: <IconChart /> }]
           : []),
       ],
     },
     {
       key: 'administration',
       labelKey: 'nav.groups.administration',
+      icon: <IconShield />,
       items: [
-        ...(can('import.run') ? [{ to: '/import', label: t('nav.import') }] : []),
-        ...(can('user.read') ? [{ to: '/users', label: t('nav.users') }] : []),
-        ...(can('role.manage') ? [{ to: '/admin/roles', label: t('nav.roles') }] : []),
-        ...(can('org.manage') ? [{ to: '/admin/laboratories', label: t('nav.laboratories') }] : []),
-        ...(can('audit.read') ? [{ to: '/admin/audit', label: t('nav.audit') }] : []),
+        ...(can('import.run') ? [{ to: '/import', label: t('nav.import'), icon: <IconUpload /> }] : []),
+        ...(can('user.read') ? [{ to: '/users', label: t('nav.users'), icon: <IconUsers /> }] : []),
+        ...(can('role.manage') ? [{ to: '/admin/roles', label: t('nav.roles'), icon: <IconShield /> }] : []),
+        ...(can('org.manage')
+          ? [{ to: '/admin/laboratories', label: t('nav.laboratories'), icon: <IconBuilding /> }]
+          : []),
+        ...(can('audit.read') ? [{ to: '/admin/audit', label: t('nav.audit'), icon: <IconClipboardCheck /> }] : []),
       ],
     },
   ];
@@ -215,6 +261,9 @@ export function Layout() {
             ? visibleGroups.flatMap((g) =>
                 g.items.map((item) => (
                   <NavLink key={item.to} to={item.to} end={item.end}>
+                    <span className="nav-icon" aria-hidden="true">
+                      {item.icon}
+                    </span>
                     {item.label}
                   </NavLink>
                 )),
@@ -232,7 +281,12 @@ export function Layout() {
                         toggleGroup(g.key, g);
                       }}
                     >
-                      <span>{t(g.labelKey)}</span>
+                      <span className="nav-group__label">
+                        <span className="nav-icon" aria-hidden="true">
+                          {g.icon}
+                        </span>
+                        {t(g.labelKey)}
+                      </span>
                       <span className="nav-group__chevron" aria-hidden="true">
                         ›
                       </span>
@@ -241,6 +295,9 @@ export function Layout() {
                       <div className="nav-group__items">
                         {g.items.map((item) => (
                           <NavLink key={item.to} to={item.to} end={item.end}>
+                            <span className="nav-icon" aria-hidden="true">
+                              {item.icon}
+                            </span>
                             {item.label}
                           </NavLink>
                         ))}
