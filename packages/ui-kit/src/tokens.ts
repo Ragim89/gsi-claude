@@ -40,6 +40,16 @@ export const tokens = {
     dangerBg: '#FDE8E6',
     info: '#105098',
     infoBg: '#E4EDF9',
+    // Sidebar shell — a fixed deep-navy base for the "premium enterprise" shell chrome.
+    // Deliberately not part of the brand override: the organization's primary/accent still
+    // drive the active-item highlight and logo, but the shell itself stays one consistent navy
+    // across every deployment so white-labelled tenants don't end up with a sidebar in an
+    // arbitrary brand hue that clashes with its own logo.
+    sidebar: '#0B1B33',
+    sidebarHover: '#122A4D',
+    sidebarBorder: 'rgba(255, 255, 255, 0.08)',
+    sidebarText: '#EAF0FA',
+    sidebarTextMuted: '#93A2BD',
   },
   /**
    * Data-visualisation palette, kept separate from UI colours.
@@ -79,9 +89,9 @@ export const tokens = {
     weightBold: '700',
   },
   radius: {
-    sm: '4px',
-    md: '6px',
-    lg: '10px',
+    sm: '6px',
+    md: '8px',
+    lg: '12px',
   },
   space: {
     1: '4px',
@@ -93,7 +103,9 @@ export const tokens = {
     7: '48px',
   },
   shadow: {
-    card: '0 1px 2px rgba(11, 31, 58, 0.06), 0 1px 3px rgba(11, 31, 58, 0.08)',
+    // Kept deliberately light — "premium enterprise" reads as flat surfaces with a hairline
+    // border doing most of the separation, not drop shadows.
+    card: '0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 2px rgba(16, 24, 40, 0.06)',
   },
 } as const;
 

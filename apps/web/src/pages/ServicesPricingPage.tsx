@@ -62,7 +62,7 @@ export function ServicesPricingPage() {
                   key={s.id}
                   className="link-row"
                   onClick={() => setSelected(s.id === selected ? '' : s.id)}
-                  style={{ background: s.id === selected ? 'var(--gsi-surface-2)' : undefined }}
+                  style={{ background: s.id === selected ? 'var(--gsi-color-background)' : undefined }}
                 >
                   <td className="mono">{s.code}</td>
                   <td>{s.name.en ?? s.code}</td>

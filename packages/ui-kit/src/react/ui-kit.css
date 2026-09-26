@@ -15,7 +15,7 @@
   transition: background-color 0.12s, border-color 0.12s, color 0.12s;
 }
 .gsi-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.gsi-btn:focus-visible { outline: 2px solid var(--gsi-color-accent); outline-offset: 2px; }
+.gsi-btn:focus-visible { outline: 2px solid var(--gsi-color-primary); outline-offset: 2px; }
 .gsi-btn--md { padding-block: 8px; padding-inline: 14px; font-size: var(--gsi-font-size-md); min-height: 36px; }
 .gsi-btn--sm { padding-block: 4px; padding-inline: 10px; font-size: var(--gsi-font-size-sm); min-height: 28px; }
 .gsi-btn--primary { background: var(--gsi-color-primary); color: var(--gsi-color-on-primary); }
@@ -84,6 +84,7 @@
   min-height: 36px;
 }
 .gsi-input:focus { outline: none; border-color: var(--gsi-color-primary); box-shadow: 0 0 0 3px var(--gsi-color-info-bg); }
+.gsi-select { cursor: pointer; }
 .gsi-input:disabled { background: var(--gsi-color-background); color: var(--gsi-color-text-muted); }
 .gsi-textarea { min-height: 72px; resize: vertical; }
 
