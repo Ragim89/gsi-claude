@@ -3,7 +3,11 @@ dist/
 *.tsbuildinfo
 .env
 .env.local
+.env.production
+.env.staging
 coverage/
 .DS_Store
 *.log
 tmp-demo/
+backups/
+.restore-drill-*

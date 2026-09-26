@@ -1,0 +1,108 @@
+name: CI
+
+# Runs the same checks docs/AI_EXECUTION_RULES.md requires before any commit — everything in
+# Docker, nothing against a developer's machine — so a PR gets the identical verdict a phase's
+# own verify.sh/verify-full.sh gave locally. Deliberately does not deploy anything: production
+# needs its own target and credentials (docs/DEPLOYMENT.md), which this workflow has neither.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push on the same PR cancels an older run in flight — no point finishing a check whose
+# result is already stale.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Install, unit + integration, lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # scripts/verify.sh builds the test image itself (`npm install` happens inside that build,
+      # against the lockfile — the same install every other step in this job reuses), then runs,
+      # in order: unit tests, integration tests, lint, typecheck, the API build, and the web
+      # build. All of it inside `docker compose --profile test`, against a throwaway database —
+      # nothing here touches a real one.
+      - name: verify.sh (install, unit, integration, lint, typecheck, API + web build)
+        run: bash scripts/verify.sh
+
+  migration-check:
+    name: Migration validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start a fresh database
+        run: |
+          docker run -d --name ci-migrate-db \
+            -e POSTGRES_DB=gsi -e POSTGRES_USER=gsi -e POSTGRES_PASSWORD=gsi \
+            -p 5432:5432 postgres:16-alpine
+          for _ in $(seq 1 30); do
+            docker exec ci-migrate-db pg_isready -U gsi -d gsi >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+      - name: Build the api image (migrations run from its dist/db/migrate.js)
+        run: docker compose build api
+
+      # Migrations are additive and forward-only (AI_EXECUTION_RULES #5): every one of them must
+      # apply cleanly to an empty database, and applying the same set again must be a no-op —
+      # the exact property `scripts/db/migrate.js`'s own tracking table exists to guarantee, and
+      # the one a bad migration (a missing `IF NOT EXISTS`, a non-idempotent backfill) breaks.
+      - name: Apply migrations to an empty database
+        run: |
+          docker run --rm --network host \
+            -e DATABASE_OWNER_URL=postgres://gsi:gsi@localhost:5432/gsi \
+            -e DATABASE_URL=postgres://gsi_app:gsi_app@localhost:5432/gsi \
+            -e APP_DB_PASSWORD=gsi_app \
+            gsi-erp-api node dist/db/migrate.js
+
+      - name: Re-apply migrations (must be a no-op)
+        run: |
+          docker run --rm --network host \
+            -e DATABASE_OWNER_URL=postgres://gsi:gsi@localhost:5432/gsi \
+            -e DATABASE_URL=postgres://gsi_app:gsi_app@localhost:5432/gsi \
+            -e APP_DB_PASSWORD=gsi_app \
+            gsi-erp-api node dist/db/migrate.js | tee /tmp/second-run.log
+          if grep -q "^applying " /tmp/second-run.log; then
+            echo "::error::a migration applied on the second run — migrations are not idempotent" >&2
+            exit 1
+          fi
+
+      - name: Table count sanity check
+        if: always()
+        run: |
+          docker exec ci-migrate-db psql -U gsi -d gsi -Atc \
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+
+      - name: Clean up
+        if: always()
+        run: docker rm -f ci-migrate-db
+
+  docker-build:
+    name: Docker build (api, web)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build both images
+        run: docker compose build api web
+
+      # A build that only produces an image nobody starts is not proof of much; verify-full.sh
+      # brings the whole stack up with migrations applied on boot, waits for /api/health/ready,
+      # then runs the smoke sweep (scripts/smoke.mjs) against every module over the real network
+      # path — the same command a phase runs by hand before a tag.
+      - name: verify-full.sh (build, up, health, smoke)
+        run: bash scripts/verify-full.sh
+
+      - name: Stack logs (only kept on failure)
+        if: failure()
+        run: docker compose logs --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

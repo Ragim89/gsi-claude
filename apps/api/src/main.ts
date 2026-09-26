@@ -4,13 +4,15 @@ import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import { config } from './config';
+import { assertProductionSafe, config } from './config';
 import { migrate } from './db/migrate';
 import { seed } from './db/seed';
 import { seedReports } from './db/seed-reports';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+
+  assertProductionSafe();
 
   if (process.env.MIGRATE_ON_START === 'true') await migrate((m) => logger.log(m));
   if (process.env.SEED_ON_START === 'true') await seed();

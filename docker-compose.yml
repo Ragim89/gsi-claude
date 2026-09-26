@@ -50,6 +50,11 @@ services:
       minio:
         condition: service_healthy
     environment:
+      # The Dockerfile bakes NODE_ENV=production into the image (a production build needs no
+      # source maps or dev middleware); this stack overrides it back to development so
+      # config.isProduction — the Secure cookie flag, the production secret checks added in
+      # PHASE 13 — reflects what this stack actually is, not what the image defaults to.
+      NODE_ENV: development
       PORT: 3000
       # The API itself connects as `gsi_app` (no BYPASSRLS) so Row-Level Security is always enforced.
       DATABASE_URL: postgres://gsi_app:${APP_DB_PASSWORD:-gsi_app}@db:5432/gsi

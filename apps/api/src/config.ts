@@ -116,3 +116,49 @@ export const config = {
     },
   },
 };
+
+/**
+ * Fail fast on the mistake that is easy to make once and expensive to find later: shipping a
+ * container built for `docker compose up` — dev passwords, an HTTP public URL, MinIO's own
+ * `minioadmin` — straight into production. Every value here has a working, harmless default in
+ * development; in production none of them may keep it. Called once at boot, before the app opens
+ * a port, so a misconfigured deploy dies in the orchestrator's crash loop instead of serving
+ * traffic with `gsi_app` / `gsi_app` as its database password.
+ */
+export function assertProductionSafe(): void {
+  if (!config.isProduction) return;
+
+  const problems: string[] = [];
+  const insecure = (name: string, value: string, bad: string | RegExp) => {
+    const isBad = typeof bad === 'string' ? value === bad : bad.test(value);
+    if (isBad) problems.push(`${name} still has its development value`);
+  };
+
+  insecure('DATABASE_URL', config.databaseUrl, /:\/\/gsi_app:gsi_app@|localhost/);
+  insecure('DATABASE_OWNER_URL', config.databaseOwnerUrl, /:\/\/gsi:gsi@|localhost/);
+  insecure('APP_DB_PASSWORD', config.appDbPassword, 'gsi_app');
+  insecure('S3_ACCESS_KEY', config.s3.accessKey, 'minioadmin');
+  insecure('S3_SECRET_KEY', config.s3.secretKey, 'minioadmin');
+  if (process.env.SEED_PASSWORD === 'ChangeMe123!' && process.env.SEED_DEMO === 'true') {
+    problems.push('SEED_PASSWORD still has its development value');
+  }
+  if (!/^https:\/\//.test(config.publicWebUrl)) {
+    problems.push(`PUBLIC_WEB_URL must be an https:// URL in production (got "${config.publicWebUrl}")`);
+  }
+  if (config.corsOrigins.some((o) => /localhost|127\.0\.0\.1/.test(o))) {
+    problems.push('CORS_ORIGINS still lists a localhost origin');
+  }
+  if (process.env.SEED_ON_START === 'true' && process.env.SEED_DEMO !== 'true') {
+    // seed.ts itself refuses demo data without SEED_DEMO=true; this only guards the reference
+    // data path (branches, catalogues), which is meant to run once and is safe to repeat, but a
+    // long-lived container should not keep re-running it on every restart.
+    // eslint-disable-next-line no-console
+    console.warn('WARNING: SEED_ON_START=true in production — reference data seeding runs on every boot');
+  }
+
+  if (problems.length) {
+    throw new Error(
+      `Refusing to start in production with insecure configuration:\n  - ${problems.join('\n  - ')}`,
+    );
+  }
+}

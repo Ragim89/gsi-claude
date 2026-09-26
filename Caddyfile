@@ -1,0 +1,24 @@
+# Production reverse proxy for GSI ERP.
+#
+# Caddy gets automatic HTTPS (Let's Encrypt/ZeroSSL) and an HTTP→HTTPS redirect for free —
+# nothing below asks for either explicitly, because that is Caddy's default behaviour for any
+# site block that names a real domain. `docs/DEPLOYMENT.md` has the DNS and firewall prerequisites
+# (ports 80 and 443 reachable from the internet for the ACME challenge).
+{
+	email {$ACME_EMAIL}
+}
+
+# Web app + API (apps/web/nginx.conf already proxies /api/* to the api container internally,
+# so Caddy only ever needs to know about one upstream here).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:80
+}
+
+# Optional: a public endpoint for self-hosted MinIO, only needed because presigned photo/report
+# URLs are handed to the browser directly (S3_PUBLIC_ENDPOINT) rather than proxied through the
+# API. Skip this block entirely — and drop the `minio` service from docker-compose.prod.yml — if
+# S3_ENDPOINT/S3_PUBLIC_ENDPOINT point at a managed provider (AWS S3, Backblaze B2, etc.) instead.
+{$STORAGE_DOMAIN} {
+	reverse_proxy minio:9000
+}
