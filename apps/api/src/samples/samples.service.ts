@@ -160,9 +160,21 @@ const COLUMNS = `
  */
 const FROM = `
   samples s
-  JOIN branches b ON b.id = s.branch_id
-  JOIN inspection_jobs j ON j.id = s.job_id
-  JOIN clients c ON c.id = s.client_id
+  /*
+   * LEFT, not JOIN: a sample dispatched to a laboratory in another office is visible on
+   * samples itself by policy (app_sees_laboratory, migrations/014_samples.sql), but
+   * branches/inspection_jobs/clients carry no such exception in their own RLS policies
+   * (app_can_see_branch(branch_id) only) — an inner join here silently dropped the whole row
+   * for that office's laboratory staff, so receive/accept 404'd with "Sample not found"
+   * (found by the PHASE 13 acceptance run, apps/api/test/acceptance.spec.ts). A left join keeps
+   * the sample row and lets branchCode/jobNumber/clientName come back null instead — exactly
+   * the fields lab_sample_brief() already discloses to a receiving office on purpose
+   * (migrations/017_reports.sql), never more. An unrelated office still sees nothing: the
+   * samples row itself stays gated by its own policy regardless of this join type.
+   */
+  LEFT JOIN branches b ON b.id = s.branch_id
+  LEFT JOIN inspection_jobs j ON j.id = s.job_id
+  LEFT JOIN clients c ON c.id = s.client_id
   LEFT JOIN inspections i ON i.id = s.inspection_id
   LEFT JOIN commodities cm ON cm.id = s.commodity_id
   LEFT JOIN laboratories l ON l.id = s.destination_laboratory_id

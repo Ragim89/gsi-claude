@@ -656,8 +656,26 @@ describe('documents: the receiving laboratory sees the work and not the commerce
     expect((invoices.rows ?? invoices).map((i: { id: string }) => i.id)).not.toContain(invoiceId);
   });
 
-  it('does not open the job or the full sample card', async () => {
+  it('does not open the job, and opens the sample card with nothing commercial on it', async () => {
     await as(app, supervisorRo).get(`/api/jobs/${jobId}`).expect(404);
-    await as(app, supervisorRo).get(`/api/samples/${sampleId}`).expect(404);
+
+    // PHASE 13: the full sample card used to 404 for a receiving office too, because it is read
+    // through a join to `inspection_jobs`/`clients` — the same tables the two assertions above
+    // are denied outright — and neither table's RLS knows about the laboratory exception. That
+    // silently broke `receive`/`accept` for the receiving office's own staff, not just the read.
+    // The fix (samples.service.ts) lets the sample row itself survive (it was already visible by
+    // policy, `app_sees_laboratory`) while the join columns fall back to null exactly where RLS
+    // would have hidden them anyway — no commercial data crosses that was not crossing before.
+    const card = (await as(app, supervisorRo).get(`/api/samples/${sampleId}`).expect(200)).body;
+    expect(card.clientName).toBeNull();
+    expect(card.jobNumber).toBeNull();
+    expect(card.branchCode).toBeNull();
+    expect(card).not.toHaveProperty('contractId');
+    expect(card).not.toHaveProperty('invoiceId');
+    expect(card).not.toHaveProperty('clientAddress');
+    const printed = JSON.stringify(card);
+    expect(printed).not.toMatch(/negotiated/i);
+    expect(printed).not.toMatch(/Liman Mahallesi/);
+    expect(printed).not.toMatch(/4200|480000/);
   });
 });

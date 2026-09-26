@@ -253,7 +253,7 @@
 
 Дополнительно: `apps/api/src/config.ts#assertProductionSafe()` — production-контейнер отказывается стартовать с dev-паролями/URL; `docker-compose.yml` (dev) стал явно ставить `NODE_ENV: development` — раньше это неявно наследовалось из Dockerfile как `production`, что делало cookie `Secure` и логи JSON на голом `localhost`, никем не замеченное до этой проверки; `scripts/bootstrap-admin.mjs` — единственный способ создать первую страну/офис/администратора в пустой production-базе; `.github/workflows/ci.yml` — install/тесты/lint/typecheck/сборка/миграции на пустой базе/сборка образов/smoke, без автодеплоя.
 
-Найдено и сознательно не исправлено в рамках этой фазы (см. `docs/SECURITY.md`, `docs/DEPLOYMENT.md` раздел 10): RLS-пробел при отправке пробы в лабораторию другого офиса (`404` на `receive`/`accept`, JOIN с `inspection_jobs`/`clients` не наследует исключение для лаборатории); `invoice.create`/`issue`/`pay` не пишут в `audit_logs`. Оба — задачи для отдельной, небольшой фазы, не блокирующие production-запуск при известных обходных путях.
+Найдено приёмочным прогоном и закрыто отдельной точечной правкой сразу вслед за фазой (см. `docs/SECURITY.md`): RLS-пробел при отправке пробы в лабораторию другого офиса (`404` на `receive`/`accept` — `LEFT JOIN` вместо `JOIN` на `inspection_jobs`/`clients`/`branches`, RLS-политики не тронуты, ничего коммерческого не раскрыто, `cross-office-lab-rls.spec.ts`); `invoice.create`/`issue`/`pay` теперь пишут в `audit_logs` (`invoice-audit.spec.ts`). Тег `production-gaps-rls-finance-audit-verified`.
 
 ---
 

@@ -323,7 +323,22 @@ export class InvoicesService {
           description: l.description, quantity: l.quantity, unit_price: l.unitPrice, ord: (i + 1) * 10,
         })))],
       );
-      return this.load(tx, row!.id);
+      const invoice = await this.load(tx, row!.id);
+      await this.audit.record(tx, user, {
+        action: 'invoice.create',
+        entityType: 'invoice',
+        entityId: invoice.id,
+        entityLabel: invoice.invoiceNumber,
+        branchId: client.branch_id,
+        after: {
+          status: invoice.status,
+          currency: invoice.currency,
+          amountTotal: invoice.amountTotal,
+          clientId: invoice.clientId,
+          jobId: invoice.jobId,
+        },
+      });
+      return invoice;
     });
   }
 
@@ -347,6 +362,16 @@ export class InvoicesService {
             ? [{ account: 'tax.output_vat', group: 'tax' as const, credit: Number(inv.tax_amount) }]
             : []),
         ],
+      });
+      await this.audit.record(tx, user, {
+        action: 'invoice.issue',
+        entityType: 'invoice',
+        entityId: id,
+        entityLabel: inv.invoice_number,
+        branchId: inv.branch_id,
+        before: { status: inv.status },
+        after: { status: 'issued' },
+        metadata: { currency: inv.currency, amountTotal: Number(inv.amount_total) },
       });
       return this.load(tx, id);
     });
@@ -380,7 +405,18 @@ export class InvoicesService {
         allocations: [{ invoiceId: id, amount: paid }],
       });
 
-      return this.load(tx, id);
+      const after = await this.load(tx, id);
+      await this.audit.record(tx, user, {
+        action: 'invoice.pay',
+        entityType: 'invoice',
+        entityId: id,
+        entityLabel: inv.invoice_number,
+        branchId: inv.branch_id,
+        before: { status: inv.status, amountPaid: Number(inv.amount_paid) },
+        after: { status: after.status, amountPaid: after.amountPaid },
+        metadata: { currency: inv.currency, amountApplied: paid },
+      });
+      return after;
     });
   }
 

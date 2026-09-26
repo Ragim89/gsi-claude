@@ -656,9 +656,17 @@ describe('documents: least privilege across offices', () => {
     expect(brief.body).not.toHaveProperty('internalNotes');
   });
 
-  it('still refuses the full sample card and the client behind it', async () => {
-    // The full card joins the job and the client, which belong to the sending office.
-    await as(app, supervisorRo).get(`/api/samples/${sampleId}`).expect(404);
+  it('opens the full sample card with nothing commercial on it', async () => {
+    // PHASE 13: this used to 404 (the card joins `inspection_jobs`/`clients`, belonging to the
+    // sending office), which also broke `receive`/`accept` for the receiving office's own staff
+    // — not just this read. samples.service.ts now left-joins those two tables instead of inner
+    // joining them: the sample row survives (already visible by policy), and the join columns
+    // fall back to null exactly where RLS would have hidden them anyway.
+    const card = (await as(app, supervisorRo).get(`/api/samples/${sampleId}`).expect(200)).body;
+    expect(card.clientName).toBeNull();
+    expect(card.jobNumber).toBeNull();
+    expect(card).not.toHaveProperty('contractId');
+    expect(card).not.toHaveProperty('clientAddress');
   });
 
   it('gives the brief to nobody else', async () => {
