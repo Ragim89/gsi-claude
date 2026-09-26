@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@gsi/ui-kit/react';
+import { useBrand } from '../brand';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -17,6 +18,7 @@ const DISMISSED_KEY = 'gsi.pwa.installDismissed';
  */
 export function InstallPrompt() {
   const { t } = useTranslation();
+  const brand = useBrand();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -49,7 +51,7 @@ export function InstallPrompt() {
   return (
     <div className="install-banner" role="complementary">
       <div>
-        <strong>{t('pwa.installTitle')}</strong>
+        <strong>{t('pwa.installTitle', { name: brand?.productName ?? brand?.name ?? t('pwa.installTitleFallback') })}</strong>
         <div className="muted">{t('pwa.installBody')}</div>
       </div>
       <div className="row-actions">

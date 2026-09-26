@@ -99,12 +99,20 @@ export const tokens = {
 
 export type Tokens = typeof tokens;
 
+/**
+ * Same shape as `Tokens`, but every leaf is a plain `string` rather than the literal type
+ * `as const` gives the built-in palette — what an organization-branded override (PHASE 13.5,
+ * ThemeStyle's `brand` prop) actually is: the same groups, with a couple of values replaced by
+ * whatever hex string the organization configured.
+ */
+export type TokensLike = { [G in keyof Tokens]: Record<string, string> };
+
 function kebab(s: string): string {
   return s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 /** Flattens tokens to CSS custom properties: tokens.color.primary → --gsi-color-primary. */
-export function tokenVariables(t: Tokens = tokens): Record<string, string> {
+export function tokenVariables(t: TokensLike = tokens): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [group, values] of Object.entries(t)) {
     for (const [name, value] of Object.entries(values as Record<string, string>)) {
@@ -115,7 +123,7 @@ export function tokenVariables(t: Tokens = tokens): Record<string, string> {
 }
 
 /** Renders tokens as a CSS rule, e.g. `:root { --gsi-color-primary: #0B1F3A; … }`. */
-export function toCssVariables(t: Tokens = tokens, selector = ':root'): string {
+export function toCssVariables(t: TokensLike = tokens, selector = ':root'): string {
   const body = Object.entries(tokenVariables(t))
     .map(([k, v]) => `  ${k}: ${v};`)
     .join('\n');

@@ -51,6 +51,12 @@ export class ReportsService {
     const job = await tx.one<InspectionJob>(`SELECT ${JOB_COLUMNS} FROM ${JOB_FROM} WHERE j.id = $1`, [jobId]);
     if (!job) throw new NotFoundException('Job not found');
     const branch = (await tx.one<Branch>(`SELECT ${BRANCH_COLUMNS} FROM branches WHERE id = $1`, [job.branchId]))!;
+    const organization = (await tx.one<ReportTemplateData['organization']>(
+      `SELECT o.name, o.short_name AS "shortName", o.product_name AS "productName", o.logo_url AS "logoUrl"
+       FROM branches b JOIN countries c ON c.id = b.country_id JOIN organizations o ON o.id = c.organization_id
+       WHERE b.id = $1`,
+      [job.branchId],
+    ))!;
     const client = (await tx.one<ReportTemplateData['client']>(
       `SELECT name, gafta_fosfa_ref AS "gaftaFosfaRef", address, country FROM clients WHERE id = $1`,
       [job.clientId],
@@ -87,6 +93,7 @@ export class ReportsService {
     );
 
     return {
+      organization,
       branch,
       client,
       job,

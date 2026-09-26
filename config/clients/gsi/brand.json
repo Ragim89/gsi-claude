@@ -1,0 +1,11 @@
+{
+  "_comment": "Organization branding for the GSI deployment. Consumed by scripts/bootstrap-admin.mjs (ORG_* env vars override any field here) and documented in docs/WHITE_LABEL.md. These are exactly the values migration 027 backfills into the pre-existing GSI organizations row, so a fresh GSI deployment and the original one end up identical.",
+  "shortName": "GSI",
+  "productName": "GSI ONE",
+  "primaryColor": "#105098",
+  "secondaryColor": "#5888C0",
+  "supportEmail": null,
+  "supportPhone": null,
+  "logoUrl": null,
+  "logoLightUrl": null
+}

@@ -1,6 +1,6 @@
 import type { ChecklistResult, JobStatus, MediaType, ReportStatus, Role, ServiceType } from './enums';
 import type { LocalizedText, ChecklistInputKind } from './checklist-templates';
-import type { AccessScope, Permission } from './rbac';
+import type { AccessScope, Organization, Permission } from './rbac';
 import type { AssignmentRole, JobAction, JobObjectKind, JobPriority } from './job-workflow';
 
 /** ISO-8601 timestamp string as returned by the API. */
@@ -42,6 +42,12 @@ export interface Branch {
   headPhotoUrl?: string | null;
   photoUrl?: string | null;
 }
+
+/** The subset of `Organization` (./rbac) safe to serve without authentication (login screen, PWA shell). */
+export type OrganizationBrand = Pick<
+  Organization,
+  'name' | 'shortName' | 'productName' | 'primaryColor' | 'secondaryColor' | 'logoUrl' | 'logoLightUrl' | 'supportEmail' | 'supportPhone'
+>;
 
 export interface User {
   id: string;

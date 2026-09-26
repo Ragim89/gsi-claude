@@ -250,6 +250,16 @@ export interface ReportSnapshotResult {
  */
 export interface ReportDataSnapshot {
   takenAt: string;
+  /**
+   * Branding as it was at issue time (PHASE 13.5). Frozen the same way everything else in this
+   * snapshot is: a later rebrand must never change what an already-issued document says.
+   */
+  organization: {
+    name: string;
+    shortName: string | null;
+    productName: string | null;
+    logoUrl: string | null;
+  };
   branch: {
     code: string;
     legalName: string | null;

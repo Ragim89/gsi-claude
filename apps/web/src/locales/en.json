@@ -760,7 +760,7 @@
     "actionsRequireOnline": "Result entry is saved as a draft offline. Submit, review, approve and release need a connection — they never happen silently once you're back online."
   },
   "pwa": {
-    "installTitle": "Install GSI ERP", "installBody": "Add it to your home screen for one-tap access and offline field work.",
+    "installTitle": "Install {{name}}", "installTitleFallback": "this app", "installBody": "Add it to your home screen for one-tap access and offline field work.",
     "install": "Install", "dismiss": "Not now", "installedHint": "Installed — open it from your home screen next time."
   }
 }

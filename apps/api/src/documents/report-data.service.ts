@@ -96,7 +96,16 @@ export class ReportDataService {
     );
     if (!job) throw new NotFoundException('Job not found');
 
-    const [branch, client, inspections, samples, results, photos] = await Promise.all([
+    const [organization, branch, client, inspections, samples, results, photos] = await Promise.all([
+      tx.one<ReportDataSnapshot['organization']>(
+        `SELECT o.name, o.short_name AS "shortName", o.product_name AS "productName",
+                o.logo_url AS "logoUrl"
+         FROM branches b
+         JOIN countries c ON c.id = b.country_id
+         JOIN organizations o ON o.id = c.organization_id
+         WHERE b.id = $1`,
+        [job.branch_id],
+      ),
       tx.one<ReportDataSnapshot['branch']>(
         `SELECT code, legal_name AS "legalName", address, phone, email, accreditation, country, timezone
          FROM branches WHERE id = $1`,
@@ -115,6 +124,7 @@ export class ReportDataService {
 
     return {
       takenAt: new Date().toISOString(),
+      organization: organization!,
       branch: branch!,
       client: client!,
       job: {

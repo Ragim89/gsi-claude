@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/apply-client-profile.mjs",
     "dev": "vite",
+    "prebuild": "node ../../scripts/apply-client-profile.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"

@@ -22,6 +22,9 @@ RUN npm install --workspace @gsi/api --workspace @gsi/shared-types --workspace @
 COPY packages/shared-types packages/shared-types
 COPY packages/ui-kit packages/ui-kit
 COPY apps/api apps/api
+# White-label (PHASE 13.5): config/clients/<profile>/brand.json, read by bootstrap-admin.mjs
+# when it is bind-mounted in at deploy time (docs/DEPLOYMENT.md, docs/WHITE_LABEL.md).
+COPY config config
 RUN npm run build -w @gsi/shared-types -w @gsi/ui-kit -w @gsi/api
 
 ENV NODE_ENV=production

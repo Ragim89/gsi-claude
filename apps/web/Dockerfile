@@ -11,6 +11,13 @@ RUN npm install --workspace @gsi/web --workspace @gsi/ui-kit --workspace @gsi/sh
 COPY packages/shared-types packages/shared-types
 COPY packages/ui-kit packages/ui-kit
 COPY apps/web apps/web
+# White-label (PHASE 13.5): apps/web's prebuild hook applies config/clients/<profile>, selected at
+# image-build time — `docker build --build-arg CLIENT_PROFILE=acme`. Defaults to 'gsi', so an
+# unmodified build is unaffected (docs/WHITE_LABEL.md).
+COPY scripts/apply-client-profile.mjs scripts/apply-client-profile.mjs
+COPY config config
+ARG CLIENT_PROFILE=gsi
+ENV CLIENT_PROFILE=$CLIENT_PROFILE
 RUN npm run build -w @gsi/web
 
 FROM nginx:1.27-alpine

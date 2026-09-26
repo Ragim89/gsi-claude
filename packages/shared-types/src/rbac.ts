@@ -116,6 +116,12 @@ export interface AuditEntry {
   requestId: string | null;
 }
 
+/**
+ * The group itself, and everything that lets one deployment of this core look like a different
+ * inspection company (PHASE 13.5, docs/WHITE_LABEL.md). Branding fields are nullable: `null`
+ * means "no override for this deployment", not "blank" — callers fall back to the built-in
+ * defaults (see each consumer: `ThemeStyle`, `Logo`/`LogoLockup`, the PDF templates).
+ */
 export interface Organization {
   id: string;
   code: string;
@@ -123,6 +129,14 @@ export interface Organization {
   legalName: string | null;
   baseCurrency: string;
   website: string | null;
+  shortName: string | null;
+  productName: string | null;
+  primaryColor: string | null;
+  secondaryColor: string | null;
+  logoUrl: string | null;
+  logoLightUrl: string | null;
+  supportEmail: string | null;
+  supportPhone: string | null;
 }
 
 export interface Country {

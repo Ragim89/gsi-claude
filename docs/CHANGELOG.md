@@ -2,6 +2,25 @@
 
 Формат: обратный хронологический порядок, по фазам из [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
+## PHASE 13.5 — Productization / White-label Core · 2026-09-26
+
+Архитектура: один core repo + client profiles (`config/clients/<name>/`) + отдельный deployment/база/storage на компанию. Подробности и порядок действий — [`WHITE_LABEL.md`](WHITE_LABEL.md).
+
+### Добавлено
+- **Миграция 027**: `organizations` получает `short_name`, `product_name`, `primary_color`, `secondary_color`, `logo_url`, `logo_light_url`, `support_email`, `support_phone` — все nullable, `NULL` = «нет override». Строка GSI (заведённая миграцией 007) забэкфиллена значениями, которые до этого были захардкожены в `ui-kit`/PDF-шаблонах — визуально ничего не меняется. Публичная `SECURITY DEFINER`-функция `public_org_brand()` — тот же приём, что у `public_verify_report`/`public_verify_document`, для чтения бренда экраном логина без сессии.
+- **`GET /api/org/brand`** (`@Public()`) и расширенный `GET /api/org` — имя, короткое имя, product name, цвета, лого, контакты поддержки.
+- **Фронтенд**: `apps/web/src/brand.ts#useBrand()` — хук поверх нового эндпоинта; `Layout.tsx`, `LoginPage.tsx`, `InstallPrompt.tsx`, ярлык образца (`SampleDetailPage.tsx`) больше не печатают `GSI`/`General Survey Inspection` как строку в коде. `ThemeStyle` (`ui-kit`) принимает `brand` и переопределяет `--gsi-color-primary`/`-accent`, если у организации свои цвета.
+- **PDF**: `ReportDataSnapshot.organization` — бренд замораживается в момент выпуска документа, тем же механизмом, что и данные офиса (иммутабельность PHASE 7 не тронута). Дисклеймер `tr-default.ts` больше не называет GSI по имени («düzenleyen kuruluşun» / «the issuing organization»).
+- **PWA белого лейбла**: `apps/web/index.html` — `%VITE_*%`-плейсхолдеры вместо захардкоженных `<title>`/theme-color; `scripts/apply-client-profile.mjs` (запускается как `predev`/`prebuild`, и как `ARG CLIENT_PROFILE` при сборке образа) генерирует `manifest.webmanifest` и `.env` из `config/clients/<profile>/`. Профиль по умолчанию — `gsi`, byte-идентичный прежнему.
+- **`config/clients/gsi/`** — бренд/manifest/env для существующего деплоя. `scripts/bootstrap-admin.mjs` умеет читать `brand.json` профиля (или `ORG_*`) и проставлять бренд в свежую базу.
+- `apps/api/test/white-label.spec.ts` (3 теста) — эндпоинт без сессии отдаёт бренд GSI, с сессией — тоже, и подмена организации в БД (симуляция второй компании) отражается в ответе без единой правки кода.
+
+### Не менялось
+Бизнес-логика, RLS-политики, существующие миграции (007 не переписана — аддитивность), нумерация документов, seed.ts (остаётся GSI-профилем, физически не переносился — см. «Remaining» в WHITE_LABEL.md).
+
+### Проверено
+`verify.sh`: 334 unit+integration (было 331 интеграционных без white-label.spec — теперь +3), lint/typecheck/build API и web — зелёные. `verify-full.sh` на пересобранном стенде: миграция 027 применилась к живой dev-базе без ошибок, `/api/health/ready` — ok, 90/90 smoke. Отдельно: временный профиль `config/clients/acme/` собран с `--build-arg CLIENT_PROFILE=acme` — `<title>`, theme-color и весь `manifest.webmanifest` сменились на «Acme ONE» без единой правки core-кода; профиль удалён после проверки.
+
 ## Точечная правка после PHASE 13 — два production-gap · 2026-09-26
 
 Не отдельная фаза: закрывает ровно то, что нашёл приёмочный прогон PHASE 13, ничего больше.

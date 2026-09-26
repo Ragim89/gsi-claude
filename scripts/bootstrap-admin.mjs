@@ -1,15 +1,22 @@
 #!/usr/bin/env node
 /**
- * One-time production bootstrap: the first country, office and administrator.
+ * One-time production bootstrap: the first country, office, administrator — and, since
+ * PHASE 13.5, the organization's own branding (docs/WHITE_LABEL.md).
  *
  * A fresh production database has exactly one row after migrations run: the `organizations`
- * row inserted by migration 007. SEED_ON_START is deliberately off in production
+ * row inserted by migration 007, with GSI's own name and (since migration 027) GSI's own
+ * branding backfilled onto it. SEED_ON_START is deliberately off in production
  * (docker-compose.prod.yml, docs/DEPLOYMENT.md) — seed.ts's demo data (branches, demo users,
  * sample clients) is a development/staging convenience, never something a real deployment's
  * first login should depend on. But opening an office has no REST endpoint of its own yet
  * (see the comment in apps/api/test/rbac.spec.ts) and creating a user needs an authenticated
  * admin to call `POST /api/users` — a chicken-and-egg problem this script exists to break,
  * once, by hand.
+ *
+ * A deployment for a different inspection company overrides that row's branding here, either
+ * from its own client profile (CLIENT_PROFILE=acme reads config/clients/acme/brand.json) or from
+ * ORG_* env vars directly, which always win over the profile. Every ORG_* field is optional —
+ * anything left unset keeps whatever the row already has (COALESCE, not overwrite-with-null).
  *
  * Everything it does after this script has run is available through the ordinary API:
  * `POST /api/org/countries` for further countries, `POST /api/users` plus
@@ -22,13 +29,41 @@
  *   BRANCH_CODE=TR BRANCH_CITY=Istanbul BRANCH_CURRENCY=TRY BRANCH_LOCALE=tr \
  *   BRANCH_TIMEZONE=Europe/Istanbul BRANCH_LEGAL_NAME="GSI Türkiye" \
  *   ADMIN_EMAIL=admin@example.com ADMIN_NAME="First Admin" ADMIN_PASSWORD='...' \
+ *   CLIENT_PROFILE=gsi \
  *   node bootstrap-admin.mjs
  *
  * Safe to run more than once: every insert is idempotent (ON CONFLICT DO NOTHING / UPDATE),
  * so re-running with the same codes touches nothing that already exists.
  */
+import { existsSync, readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
+
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+
+/** config/clients/<profile>/brand.json, or {} if there is no such profile / field. */
+function loadProfileBrand() {
+  const profile = process.env.CLIENT_PROFILE?.trim();
+  if (!profile) return {};
+  const path = join(root, 'config', 'clients', profile, 'brand.json');
+  if (!existsSync(path)) return {};
+  const { _comment: _c, ...brand } = JSON.parse(readFileSync(path, 'utf8'));
+  return brand;
+}
+
+const profileBrand = loadProfileBrand();
+const orgBrand = {
+  shortName: process.env.ORG_SHORT_NAME ?? profileBrand.shortName ?? null,
+  productName: process.env.ORG_PRODUCT_NAME ?? profileBrand.productName ?? null,
+  primaryColor: process.env.ORG_PRIMARY_COLOR ?? profileBrand.primaryColor ?? null,
+  secondaryColor: process.env.ORG_SECONDARY_COLOR ?? profileBrand.secondaryColor ?? null,
+  logoUrl: process.env.ORG_LOGO_URL ?? profileBrand.logoUrl ?? null,
+  logoLightUrl: process.env.ORG_LOGO_LIGHT_URL ?? profileBrand.logoLightUrl ?? null,
+  supportEmail: process.env.ORG_SUPPORT_EMAIL ?? profileBrand.supportEmail ?? null,
+  supportPhone: process.env.ORG_SUPPORT_PHONE ?? profileBrand.supportPhone ?? null,
+};
 
 function required(name) {
   const v = process.env[name];
@@ -70,6 +105,22 @@ async function main() {
       throw new Error('No organization row found — did migrations run? (MIGRATE_ON_START, migration 007)');
     }
     const orgId = org.rows[0].id;
+
+    await client.query(
+      `UPDATE organizations SET
+         short_name = COALESCE($2, short_name), product_name = COALESCE($3, product_name),
+         primary_color = COALESCE($4, primary_color), secondary_color = COALESCE($5, secondary_color),
+         logo_url = COALESCE($6, logo_url), logo_light_url = COALESCE($7, logo_light_url),
+         support_email = COALESCE($8, support_email), support_phone = COALESCE($9, support_phone)
+       WHERE id = $1`,
+      [
+        orgId, orgBrand.shortName, orgBrand.productName, orgBrand.primaryColor, orgBrand.secondaryColor,
+        orgBrand.logoUrl, orgBrand.logoLightUrl, orgBrand.supportEmail, orgBrand.supportPhone,
+      ],
+    );
+    if (Object.values(orgBrand).some((v) => v !== null)) {
+      console.log(`organization branding updated (${Object.entries(orgBrand).filter(([, v]) => v !== null).map(([k]) => k).join(', ')})`);
+    }
 
     const country = await client.query(
       `INSERT INTO countries (organization_id, code, name, locale, timezone)

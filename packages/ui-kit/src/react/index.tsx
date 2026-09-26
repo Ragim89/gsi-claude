@@ -1,5 +1,5 @@
 import React from 'react';
-import { toCssVariables } from '../tokens';
+import { tokens, toCssVariables } from '../tokens';
 import './ui-kit.css';
 
 /**
@@ -7,9 +7,26 @@ import './ui-kit.css';
  * All components below style themselves only through var(--gsi-…).
  * Layout uses CSS logical properties (margin-inline-start etc.) so RTL (ar) works
  * by setting dir="rtl" on <html> — see docs/02-localization.md.
+ *
+ * `brand` lets a deployment's organization colours (PHASE 13.5) override the two brand hues
+ * without this package knowing where they came from — only `--gsi-color-primary`/`-accent` and
+ * their hover/soft derivatives move; the rest of the palette (status colours, viz, neutrals) is
+ * deliberately untouched, since deriving a whole palette from two hex values is a bigger design
+ * problem than this override is meant to solve.
  */
-export function ThemeStyle() {
-  return <style data-gsi-tokens>{toCssVariables()}</style>;
+export function ThemeStyle({ brand }: { brand?: { primaryColor?: string | null; secondaryColor?: string | null } } = {}) {
+  const t = brand?.primaryColor || brand?.secondaryColor
+    ? {
+        ...tokens,
+        color: {
+          ...tokens.color,
+          primary: brand.primaryColor || tokens.color.primary,
+          info: brand.primaryColor || tokens.color.info,
+          accent: brand.secondaryColor || tokens.color.accent,
+        },
+      }
+    : tokens;
+  return <style data-gsi-tokens>{toCssVariables(t)}</style>;
 }
 
 type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'danger' | 'ghost';

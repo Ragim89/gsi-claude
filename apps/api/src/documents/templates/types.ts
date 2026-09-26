@@ -15,7 +15,15 @@ export interface ReportPhoto {
   gpsLng: number | null;
 }
 
+export interface TemplateOrganization {
+  name: string;
+  shortName: string | null;
+  productName: string | null;
+  logoUrl: string | null;
+}
+
 export interface ReportTemplateData {
+  organization: TemplateOrganization;
   branch: Branch;
   client: {
     name: string;
@@ -52,6 +60,7 @@ export interface ReportTemplate {
 }
 
 export interface InvoiceTemplateData {
+  organization: TemplateOrganization;
   branch: Branch;
   client: { name: string; address: string | null; taxId: string | null; gaftaFosfaRef: string | null };
   invoice: Invoice;

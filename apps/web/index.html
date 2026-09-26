@@ -3,15 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>GSI ERP</title>
+    <!-- Title and theme colour come from the active client profile (config/clients/<profile>),
+         applied by scripts/apply-client-profile.mjs before dev/build — see docs/WHITE_LABEL.md.
+         %VITE_*% is Vite's own index.html interpolation, resolved from apps/web/.env. -->
+    <title>%VITE_APP_TITLE%</title>
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#105098" />
+    <meta name="theme-color" content="%VITE_THEME_COLOR%" />
     <link rel="icon" type="image/png" href="/icons/favicon-48.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="GSI ERP" />
+    <meta name="apple-mobile-web-app-title" content="%VITE_APP_SHORT_NAME%" />
   </head>
   <body>
     <div id="root"></div>

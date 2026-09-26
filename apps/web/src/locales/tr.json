@@ -762,7 +762,7 @@
     "actionsRequireOnline": "Sonuç girişi çevrimdışı taslak olarak kaydedilir. Gönderme, inceleme, onaylama ve yayınlama bağlantı gerektirir — bağlantı gelince otomatik olarak gerçekleşmez."
   },
   "pwa": {
-    "installTitle": "GSI ERP'yi yükle", "installBody": "Tek dokunuşla erişim ve çevrimdışı saha çalışması için ana ekrana ekleyin.",
+    "installTitle": "{{name}} yükle", "installTitleFallback": "uygulamayı", "installBody": "Tek dokunuşla erişim ve çevrimdışı saha çalışması için ana ekrana ekleyin.",
     "install": "Yükle", "dismiss": "Şimdi değil", "installedHint": "Yüklendi — bir dahaki sefere ana ekrandan açın."
   }
 }

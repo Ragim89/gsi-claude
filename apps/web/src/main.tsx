@@ -7,9 +7,16 @@ import { ApiError } from './api';
 import { AuthProvider } from './auth';
 import { BranchProvider } from './branch';
 import { OfflineProvider } from './offline/OfflineProvider';
+import { useBrand } from './brand';
 import { App } from './App';
 import './i18n';
 import './styles.css';
+
+/** Default tokens paint first frame; the organization's own colours (if any) apply once fetched. */
+function BrandedTheme() {
+  const brand = useBrand();
+  return <ThemeStyle brand={brand ? { primaryColor: brand.primaryColor, secondaryColor: brand.secondaryColor } : undefined} />;
+}
 
 // The shell service worker only touches static assets — see public/sw.js for what it caches
 // and, just as importantly, what it refuses to (anything under /api/).
@@ -33,8 +40,8 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeStyle />
     <QueryClientProvider client={queryClient}>
+      <BrandedTheme />
       <BrowserRouter>
         <AuthProvider>
             <OfflineProvider>

@@ -21,6 +21,7 @@ import {
 } from '@gsi/shared-types';
 import { api, blanksToNull } from '../api';
 import { useAuth } from '../auth';
+import { useBrand } from '../brand';
 import { LabOnSample } from '../components/LabOn';
 import {
   CustodyTimeline,
@@ -648,6 +649,7 @@ function Attachments({ sample, rows, loading }: { sample: Sample; rows: Inspecti
  */
 function LabelButton({ sampleId }: { sampleId: string }) {
   const { t, i18n } = useTranslation();
+  const brand = useBrand();
   const [busy, setBusy] = useState(false);
 
   async function print() {
@@ -678,7 +680,7 @@ function LabelButton({ sampleId }: { sampleId: string }) {
   img { width: 26mm; height: 26mm; }
   @media print { body { padding: 0; } }
 </style></head><body><div class="label">
-  <div class="head"><span class="brand">GSI</span><span class="no">${label.sampleNumber}</span></div>
+  <div class="head"><span class="brand">${brand?.shortName ?? ''}</span><span class="no">${label.sampleNumber}</span></div>
   <div class="head">
     <table>${rows
       .filter(([, v]) => v)

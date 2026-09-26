@@ -40,6 +40,12 @@ export class InvoicePdfService {
       if (!invoice) throw new NotFoundException('Invoice not found');
 
       const branch = (await tx.one<Branch>(`SELECT ${BRANCH_COLUMNS} FROM branches WHERE id = $1`, [invoice.branchId]))!;
+      const organization = (await tx.one<InvoiceTemplateData['organization']>(
+        `SELECT o.name, o.short_name AS "shortName", o.product_name AS "productName", o.logo_url AS "logoUrl"
+         FROM branches b JOIN countries c ON c.id = b.country_id JOIN organizations o ON o.id = c.organization_id
+         WHERE b.id = $1`,
+        [invoice.branchId],
+      ))!;
       const client = (await tx.one<InvoiceTemplateData['client']>(
         `SELECT name, address, tax_id AS "taxId", gafta_fosfa_ref AS "gaftaFosfaRef" FROM clients WHERE id = $1`,
         [invoice.clientId],
@@ -50,7 +56,7 @@ export class InvoicePdfService {
          FROM invoice_lines WHERE invoice_id = $1 ORDER BY sort_order`,
         [id],
       );
-      return { branch, client, invoice, lines };
+      return { organization, branch, client, invoice, lines };
     });
 
     const pdf = await this.pdf.render(invoiceTemplate.html(data), { footerHtml: invoiceTemplate.footer(data) });

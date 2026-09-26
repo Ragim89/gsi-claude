@@ -94,6 +94,8 @@ docker compose -f docker-compose.prod.yml --env-file .env.production \
 
 с переменными окружения `COUNTRY_CODE`, `COUNTRY_NAME`, `BRANCH_CODE`, `BRANCH_CITY`, `BRANCH_CURRENCY`, `BRANCH_LOCALE`, `BRANCH_TIMEZONE`, `BRANCH_LEGAL_NAME`, `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` (передать через `-e` к тому же `run`; см. заголовок самого скрипта — там пример целиком). Скрипт идемпотентен: повторный запуск с теми же кодами ничего не портит. Проверено на реальной цепочке миграция → bootstrap → логин (PHASE 13, `docs/CHANGELOG.md`) — выданный JWT содержит полный набор прав администратора.
 
+Тот же запуск (миграция 007 + `bootstrap-admin.mjs`) — то, что превращает пустую организацию в брендированную (PHASE 13.5, `docs/WHITE_LABEL.md`): миграция 027 добавляет колонки бренда в `organizations`, а `bootstrap-admin.mjs` заполняет их — либо из `ORG_SHORT_NAME`/`ORG_PRODUCT_NAME`/`ORG_PRIMARY_COLOR`/`ORG_SECONDARY_COLOR`/`ORG_LOGO_URL`/`ORG_LOGO_LIGHT_URL`/`ORG_SUPPORT_EMAIL`/`ORG_SUPPORT_PHONE`, либо из `CLIENT_PROFILE=<name>` (читает `config/clients/<name>/brand.json`, уже собранный в образ `api`). Для профиля, которого ещё нет в репозитории на момент сборки образа, добавить `-v "$(pwd)/config/clients/<name>:/repo/config/clients/<name>:ro"` к той же команде.
+
 После первого входа: сменить пароль (профиль), дальше — всё через обычный API/интерфейс (`POST /api/org/countries`, `POST /api/users`, `PUT /api/admin/users/:id/roles`, экран «Роли и права»).
 
 ## 7. CI

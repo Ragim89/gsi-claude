@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, LogoLockup } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
+import { useBrand } from '../brand';
 import { BranchSwitcher } from '../branch';
 import { LANGUAGES } from '../i18n';
 import { GlobalSearchBox } from './GlobalSearchBox';
@@ -35,6 +36,7 @@ function loadOpenGroups(): Record<string, boolean> {
 
 export function Layout() {
   const { t, i18n } = useTranslation();
+  const brand = useBrand();
   const { user, logout, logoutAll, can } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -189,7 +191,7 @@ export function Layout() {
         >
           <span aria-hidden="true">☰</span>
         </button>
-        <LogoLockup />
+        <LogoLockup src={brand?.logoLightUrl} name={brand?.shortName ?? 'ERP'} />
         <OfflineBadge />
       </div>
 
@@ -197,7 +199,7 @@ export function Layout() {
 
       <aside className={`sidebar${mobileOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar__brand sidebar__brand--row">
-          <LogoLockup />
+          <LogoLockup src={brand?.logoLightUrl} name={brand?.shortName ?? 'ERP'} />
           <button
             type="button"
             className="sidebar__close"

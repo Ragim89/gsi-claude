@@ -150,7 +150,7 @@ ${watermark ? `<div class="watermark">${esc(watermark[0])} / ${esc(watermark[1])
 
 <header class="letterhead">
   <div class="brand">
-    <img src="${logoDataUri('logo-wordmark.png')}" alt="General Survey Inspection Co." />
+    <img src="${d.organization.logoUrl?.startsWith('data:') ? d.organization.logoUrl : logoDataUri('logo-wordmark.png')}" alt="${esc(d.organization.name)}" />
     <div class="brand-sub">${esc(d.branch.legalName)}</div>
   </div>
   <div class="contacts">

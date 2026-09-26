@@ -1,7 +1,7 @@
 import { Body, Controller, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { IsBoolean, IsIn, IsOptional, IsString, IsUUID, Length, MaxLength, MinLength } from 'class-validator';
-import { AuthUser, DEPARTMENT_KINDS, DepartmentKind } from '@gsi/shared-types';
-import { CurrentUser, RequirePermission } from '../common/decorators';
+import { AuthUser, DEPARTMENT_KINDS, DepartmentKind, OrganizationBrand } from '@gsi/shared-types';
+import { CurrentUser, Public, RequirePermission } from '../common/decorators';
 import { DbService } from '../db/db.service';
 import { AuditService } from '../common/audit.service';
 import { buildSet } from '../common/sql';
@@ -49,8 +49,31 @@ export class OrgController {
   organization(@CurrentUser() user: AuthUser) {
     return this.db.tx(user, (tx) =>
       tx.one(
-        `SELECT id, code, name, legal_name AS "legalName", base_currency AS "baseCurrency", website
+        `SELECT id, code, name, legal_name AS "legalName", base_currency AS "baseCurrency", website,
+                short_name AS "shortName", product_name AS "productName",
+                primary_color AS "primaryColor", secondary_color AS "secondaryColor",
+                logo_url AS "logoUrl", logo_light_url AS "logoLightUrl",
+                support_email AS "supportEmail", support_phone AS "supportPhone"
          FROM organizations ORDER BY code LIMIT 1`,
+      ),
+    );
+  }
+
+  /**
+   * Branding only, before anyone has signed in (login screen, PWA install banner). No session
+   * exists yet, so this reads through `public_org_brand()` (migration 027) rather than the
+   * `organizations` table directly — the same pattern as report/document verification.
+   */
+  @Public()
+  @Get('brand')
+  brand() {
+    return this.db.tx(null, (tx) =>
+      tx.one<OrganizationBrand>(
+        `SELECT name, short_name AS "shortName", product_name AS "productName",
+                primary_color AS "primaryColor", secondary_color AS "secondaryColor",
+                logo_url AS "logoUrl", logo_light_url AS "logoLightUrl",
+                support_email AS "supportEmail", support_phone AS "supportPhone"
+         FROM public_org_brand()`,
       ),
     );
   }

@@ -3,11 +3,13 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Field, Input, Logo } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
+import { useBrand } from '../brand';
 import { ErrorBox } from '../components/common';
 
 export function LoginPage() {
   const { t } = useTranslation();
   const { user, login } = useAuth();
+  const brand = useBrand();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +38,7 @@ export function LoginPage() {
     <div className="login">
       <div className="login__panel">
         <div className="login__brand">
-          <Logo variant="wordmark" height={54} />
+          <Logo variant="wordmark" height={54} src={brand?.logoUrl} alt={brand?.name ?? 'Company logo'} />
         </div>
         <Card title={t('login.title')}>
           <form className="stack" onSubmit={onSubmit}>

@@ -269,12 +269,20 @@ table.grid td.mono { font-family: var(--gsi-font-family-mono, monospace); white-
 
 type Ctx = RenderInput & { lang: Lang; tz: string };
 
+/**
+ * The org's own logo when its `logo_url` is a `data:` URI (Chromium renders the PDF with no
+ * network access, so anything else cannot be inlined here) — the bundled ui-kit asset otherwise.
+ */
+function brandLogoSrc(org: { logoUrl: string | null }): string {
+  return org.logoUrl?.startsWith('data:') ? org.logoUrl : logoDataUri('logo-wordmark.png');
+}
+
 function renderHeader(ctx: Ctx): string {
   const { snapshot: s, document: d, lang } = ctx;
   const title = d.title?.trim() || t(d.reportType, lang);
   return `
     <header class="letterhead">
-      <div class="brand"><img src="${logoDataUri('logo-wordmark.png')}" alt="General Survey Inspection"/></div>
+      <div class="brand"><img src="${brandLogoSrc(s.organization)}" alt="${esc(s.organization.name)}"/></div>
       <div class="contacts">
         <div><strong>${esc(s.branch.legalName ?? s.branch.code)}</strong></div>
         ${s.branch.address ? `<div>${esc(s.branch.address)}</div>` : ''}

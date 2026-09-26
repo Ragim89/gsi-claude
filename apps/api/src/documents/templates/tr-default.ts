@@ -49,8 +49,8 @@ const T = {
   ],
   disclaimerTitle: ['Beyan', 'Statement'],
   disclaimer: [
-    'Bu rapor yalnızca muayene tarihinde ve yerinde gözlemlenen koşulları yansıtır. Rapor, GSI’nin yazılı izni olmadan kısmen çoğaltılamaz.',
-    'This report reflects only the conditions observed at the time and place of inspection. It may not be reproduced except in full without the written approval of GSI.',
+    'Bu rapor yalnızca muayene tarihinde ve yerinde gözlemlenen koşulları yansıtır. Rapor, düzenleyen kuruluşun yazılı izni olmadan kısmen çoğaltılamaz.',
+    'This report reflects only the conditions observed at the time and place of inspection. It may not be reproduced except in full without the written approval of the issuing organization.',
   ],
   draft: ['TASLAK', 'DRAFT'],
   page: ['Sayfa', 'Page'],
@@ -224,7 +224,7 @@ ${d.draft ? `<div class="watermark">${esc(T.draft[0])} / ${esc(T.draft[1])}</div
 
 <header class="letterhead">
   <div class="brand">
-    <img src="${logoDataUri('logo-wordmark.png')}" alt="General Survey Inspection Co." />
+    <img src="${d.organization.logoUrl?.startsWith('data:') ? d.organization.logoUrl : logoDataUri('logo-wordmark.png')}" alt="${esc(d.organization.name)}" />
     <div class="brand-sub">${esc(b.legalName)}</div>
   </div>
   <div class="contacts">

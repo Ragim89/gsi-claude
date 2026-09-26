@@ -2,6 +2,11 @@
  * Idempotent dev/demo seed: the 7 GSI branches, demo users per role, a few clients and one job.
  * Runs as the schema owner. Do NOT run against production (SEED_DEMO must be explicitly 'true'
  * in production mode).
+ *
+ * This is GSI's own demo-data profile, not part of Core: a different company running this same
+ * codebase (docs/WHITE_LABEL.md) would write its own `seed-<company>.ts` with its own offices and
+ * demo accounts, following this file as the pattern, still gated by the same SEED_ON_START
+ * switch. Nothing here runs against a real deployment's database unless that switch is on.
  */
 import * as bcrypt from 'bcryptjs';
 import { Client } from 'pg';
