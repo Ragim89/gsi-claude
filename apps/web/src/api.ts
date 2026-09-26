@@ -2,8 +2,10 @@ import type { AuthTokens } from '@gsi/shared-types';
 
 const SESSION_KEY = 'gsi.session';
 
-// ASSUMPTION: tokens live in localStorage for MVP-1 simplicity. Moving the refresh token to an
-// httpOnly cookie is planned hardening before production.
+// The access token and user profile live in localStorage for convenience (they carry nothing
+// that reading localStorage from a different origin, or from a report bug, would leak beyond
+// what the API already hands back on every request). The refresh token itself is never here:
+// it travels only as an httpOnly cookie the browser sends to /api/auth/* on its own (PHASE 12).
 let session: AuthTokens | null = loadSession();
 const listeners = new Set<(s: AuthTokens | null) => void>();
 
@@ -46,14 +48,10 @@ let refreshing: Promise<boolean> | null = null;
 
 function refreshOnce(): Promise<boolean> {
   if (!refreshing) {
-    const token = session?.refreshToken;
     refreshing = (async () => {
-      if (!token) return false;
-      const res = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: token }),
-      });
+      if (!session) return false;
+      // No body: the refresh token is the httpOnly cookie the browser attaches on its own.
+      const res = await fetch('/api/auth/refresh', { method: 'POST' });
       if (!res.ok) return false;
       setSession((await res.json()) as AuthTokens);
       return true;
@@ -62,6 +60,18 @@ function refreshOnce(): Promise<boolean> {
     });
   }
   return refreshing;
+}
+
+/** Best-effort: tells the server to revoke the refresh cookie. Local session is cleared either way. */
+export function apiLogout(): Promise<void> {
+  return fetch('/api/auth/logout', { method: 'POST' }).then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
+export function apiLogoutAll(): Promise<{ revoked: number }> {
+  return api.post<{ revoked: number }>('/auth/logout-all');
 }
 
 async function request(path: string, init: RequestInit = {}, retry = true): Promise<Response> {

@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { AuthTokens, AuthUser, Permission, Role } from '@gsi/shared-types';
-import { api, getSession, onSessionChange, setSession } from './api';
+import { api, apiLogout, apiLogoutAll, getSession, onSessionChange, setSession } from './api';
 import { applyUserLocale } from './i18n';
 
 interface AuthContextValue {
   user: AuthUser | null;
   login(email: string, password: string): Promise<void>;
   logout(): void;
+  /** Revokes every refresh token the user holds — signs out this device and every other one. */
+  logoutAll(): Promise<void>;
   /**
    * What the signed-in person may do. The API enforces the same rules — this only decides
    * what is worth showing, so nobody is offered a button that will answer 403.
@@ -44,6 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     logout() {
       setSession(null);
+      void apiLogout();
+    },
+    async logoutAll() {
+      try {
+        await apiLogoutAll();
+      } finally {
+        setSession(null);
+      }
     },
     can: (...required) => required.some((p) => permissions.includes(p)),
     hasRole: (...roles) => !!user && roles.includes(user.role),

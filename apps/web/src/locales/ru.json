@@ -8,7 +8,7 @@
     "samples": "Пробы", "mySamples": "Мои пробы", "laboratories": "Лаборатории",
     "labQueue": "Лаборатория", "myAnalyses": "Мои анализы", "labCatalogue": "Каталог анализов",
     "labSpecifications": "Нормы", "labInstruments": "Приборы",
-    "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "language": "Язык",
+    "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "logout": "Выйти", "logoutAll": "Выйти везде", "language": "Язык",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль.",
     "openMenu": "Открыть меню", "closeMenu": "Закрыть меню", "more": "Ещё",
     "groups": {

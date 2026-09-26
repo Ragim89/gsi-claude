@@ -35,7 +35,7 @@ function loadOpenGroups(): Record<string, boolean> {
 
 export function Layout() {
   const { t, i18n } = useTranslation();
-  const { user, logout, can } = useAuth();
+  const { user, logout, logoutAll, can } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(loadOpenGroups);
@@ -260,9 +260,14 @@ export function Layout() {
               </option>
             ))}
           </select>
-          <Button variant="ghost" size="sm" onClick={logout}>
-            {t('nav.logout')}
-          </Button>
+          <div className="sidebar__footer-actions">
+            <Button variant="ghost" size="sm" onClick={logout}>
+              {t('nav.logout')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => void logoutAll()}>
+              {t('nav.logoutAll')}
+            </Button>
+          </div>
         </div>
       </aside>
       <main className="main">

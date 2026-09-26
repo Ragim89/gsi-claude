@@ -73,9 +73,10 @@ export interface AuthUser {
   permissions?: Permission[];
 }
 
+/** What the API returns from the body of /auth/login and /auth/refresh. The refresh token
+ *  itself never appears here — it travels only as an httpOnly cookie (PHASE 12). */
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
   user: AuthUser;
 }
 

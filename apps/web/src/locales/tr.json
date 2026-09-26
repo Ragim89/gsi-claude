@@ -8,7 +8,7 @@
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
     "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
-    "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "language": "Dil",
+    "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "logoutAll": "Tüm cihazlardan çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin.",
     "openMenu": "Menüyü aç", "closeMenu": "Menüyü kapat", "more": "Diğer",
     "groups": {

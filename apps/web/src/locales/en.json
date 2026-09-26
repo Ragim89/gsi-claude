@@ -8,7 +8,7 @@
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
-    "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "language": "Language",
+    "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "logoutAll": "Sign out everywhere", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role.",
     "openMenu": "Open menu", "closeMenu": "Close menu", "more": "More",
     "groups": {
