@@ -599,6 +599,20 @@
     "inspectorLoad": "Заявок на инспектора", "activeInspectors": "активных инспекторов: {{count}}",
     "payable": "Кредиторка", "unallocatedCash": "Неразнесённые платежи", "quotePipeline": "Воронка предложений"
   },
+  "dashboardHome": {
+    "greetingMorning": "Доброе утро, {{name}}", "greetingAfternoon": "Добрый день, {{name}}", "greetingEvening": "Добрый вечер, {{name}}",
+    "summaryJobs": "{{count}} заявок за период", "summaryInspections": "{{count}} инспекций в работе", "summaryReports": "{{count}} отчётов выпущено",
+    "kpiJobs": "Заявки", "kpiInspections": "Инспекции", "kpiSamples": "Образцы / Лаборатория", "kpiReports": "Отчёты", "kpiRevenue": "Выручка",
+    "recentActivity": "Последние события", "recentActivityEmpty": "Пока нет событий.",
+    "upcomingTasks": "Ближайшие задачи", "upcomingTasksEmpty": "Срочных задач нет.",
+    "inspectionDue": "Инспекция {{number}} запланирована", "reportReview": "Отчёт {{number}} ожидает проверки",
+    "recentJobs": "Последние заявки", "viewAll": "Все →",
+    "quickActions": "Быстрые действия", "quickActionsEmpty": "Для вашей роли нет доступных действий.",
+    "actions": {
+      "newJob": "Новая заявка", "newClient": "Новый клиент", "uploadDocument": "Загрузить документ", "reports": "Отчёты",
+      "myJobs": "Мои заявки", "myInspections": "Мои инспекции", "addSample": "Добавить образец", "labQueue": "Очередь работ"
+    }
+  },
   "analytics": {
     "title": "Аналитика", "myTitle": "Моя эффективность",
     "jobsTotal": "Заявки", "jobsByMonth": "Заявки по месяцам",

@@ -3,18 +3,25 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Card, Select, Table } from '@gsi/ui-kit/react';
-import { FinanceDashboard, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shared-types';
+import { FinanceDashboard, Inspection, Page, Sample, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shared-types';
 import { api, subscribeFinance } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, FlowColumns, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ErrorBox, Loading, PageHead } from '../components/common';
+import { DashboardHero } from '../components/DashboardHero';
+import { KpiCard } from '../components/KpiCard';
+import { RecentActivityCard } from '../components/RecentActivityCard';
+import { UpcomingTasksCard } from '../components/UpcomingTasksCard';
+import { QuickActionsCard } from '../components/QuickActionsCard';
+import { RecentJobsCard } from '../components/RecentJobsCard';
+import { IconBanknote, IconBriefcase, IconClipboardCheck, IconDocument, IconFlask } from '../components/icons';
 
 /** Real-time group finance dashboard (docs/03-finance-dashboard.md). */
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
-  const { isHq } = useAuth();
+  const { isHq, can } = useAuth();
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [live, setLive] = useState<{ at: string; count: number } | null>(null);
@@ -25,6 +32,22 @@ export function DashboardPage() {
   const q = useQuery({
     queryKey: ['dashboard', query],
     queryFn: () => api.get<FinanceDashboard>(`/finance/dashboard?${query}`),
+  });
+
+  // Two lightweight counts the finance payload does not carry, read from the same list
+  // endpoints the Inspections/Samples screens already use (limit=1, we only need `.total`) —
+  // not a second analytics mechanism, just the existing REST list APIs with the same date range.
+  const canInspections = can('inspection.read');
+  const canSamples = can('sample.read');
+  const inspectionsCountQ = useQuery({
+    queryKey: ['dashboard', 'inspections-count', query],
+    queryFn: () => api.get<Page<Inspection>>(`/inspections?${query}&active=true&limit=1`),
+    enabled: canInspections,
+  });
+  const samplesCountQ = useQuery({
+    queryKey: ['dashboard', 'samples-count', query],
+    queryFn: () => api.get<Page<Sample>>(`/samples?${query}&limit=1`),
+    enabled: canSamples,
   });
 
   // Event-driven refresh: the API pushes a message whenever a posting lands (no polling).
@@ -47,8 +70,71 @@ export function DashboardPage() {
   const serviceLabel = (key: string) =>
     key === 'unassigned' ? t('dashboard.unassigned') : localize(SERVICE_TYPE_LABELS[key as ServiceType], i18n.language);
 
+  const canFinance = can('finance.read');
+  // Every figure below is real, already-available data — the same numbers the ops-KPI card and
+  // the Inspections/Samples/Reports screens show. No fabricated deltas or comparison periods.
+  const summaryParts = [
+    t('dashboardHome.summaryJobs', { count: d.kpis.jobsInPeriod }),
+    canInspections && inspectionsCountQ.data ? t('dashboardHome.summaryInspections', { count: inspectionsCountQ.data.total }) : null,
+    t('dashboardHome.summaryReports', { count: d.kpis.reportsInPeriod }),
+  ].filter(Boolean);
+  const revenueTrend = d.monthly.map((m) => m.revenueBase);
+
   return (
     <div className="stack">
+      <DashboardHero
+        summary={summaryParts.join(' · ')}
+        period={t('dashboard.period', { from: d.period.from, to: d.period.to })}
+      />
+
+      <div className="kpi-row kpi-row--home">
+        <KpiCard
+          accent="blue"
+          icon={<IconBriefcase />}
+          label={t('dashboardHome.kpiJobs')}
+          value={String(d.kpis.jobsInPeriod)}
+        />
+        {canInspections && (
+          <KpiCard
+            accent="cyan"
+            icon={<IconClipboardCheck />}
+            label={t('dashboardHome.kpiInspections')}
+            value={inspectionsCountQ.isLoading ? '…' : String(inspectionsCountQ.data?.total ?? 0)}
+          />
+        )}
+        {canSamples && (
+          <KpiCard
+            accent="green"
+            icon={<IconFlask />}
+            label={t('dashboardHome.kpiSamples')}
+            value={samplesCountQ.isLoading ? '…' : String(samplesCountQ.data?.total ?? 0)}
+          />
+        )}
+        <KpiCard
+          accent="purple"
+          icon={<IconDocument />}
+          label={t('dashboardHome.kpiReports')}
+          value={String(d.kpis.reportsInPeriod)}
+        />
+        {canFinance && (
+          <KpiCard
+            accent="amber"
+            icon={<IconBanknote />}
+            label={t('dashboardHome.kpiRevenue')}
+            value={money(d.totals.revenueBase)}
+            trend={revenueTrend}
+          />
+        )}
+      </div>
+
+      <div className="dash-grid">
+        <RecentActivityCard />
+        <UpcomingTasksCard />
+        <QuickActionsCard />
+      </div>
+
+      <RecentJobsCard />
+
       <PageHead
         title={
           branchId && current

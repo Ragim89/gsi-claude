@@ -595,6 +595,20 @@
     "inspectorLoad": "Eksper başına iş", "activeInspectors": "{{count}} aktif eksper",
     "payable": "Borçlar", "unallocatedCash": "Eşleşmemiş tahsilat", "quotePipeline": "Teklif hattı"
   },
+  "dashboardHome": {
+    "greetingMorning": "Günaydın, {{name}}", "greetingAfternoon": "İyi günler, {{name}}", "greetingEvening": "İyi akşamlar, {{name}}",
+    "summaryJobs": "bu dönemde {{count}} iş", "summaryInspections": "{{count}} aktif muayene", "summaryReports": "{{count}} rapor düzenlendi",
+    "kpiJobs": "İşler", "kpiInspections": "Muayeneler", "kpiSamples": "Numune / Laboratuvar", "kpiReports": "Raporlar", "kpiRevenue": "Ciro",
+    "recentActivity": "Son etkinlikler", "recentActivityEmpty": "Henüz etkinlik yok.",
+    "upcomingTasks": "Yaklaşan görevler", "upcomingTasksEmpty": "Şu anda bekleyen görev yok.",
+    "inspectionDue": "{{number}} muayenesi planlandı", "reportReview": "{{number}} raporu incelemede",
+    "recentJobs": "Son işler", "viewAll": "Tümü →",
+    "quickActions": "Hızlı işlemler", "quickActionsEmpty": "Rolünüz için kısayol yok.",
+    "actions": {
+      "newJob": "Yeni iş", "newClient": "Yeni müşteri", "uploadDocument": "Belge yükle", "reports": "Raporlar",
+      "myJobs": "İşlerim", "myInspections": "Muayenelerim", "addSample": "Numune ekle", "labQueue": "İş kuyruğu"
+    }
+  },
   "analytics": {
     "title": "Analitik", "myTitle": "Performansım",
     "jobsTotal": "İşler", "jobsByMonth": "Aya göre işler",

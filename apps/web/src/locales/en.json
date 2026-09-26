@@ -593,6 +593,20 @@
     "inspectorLoad": "Jobs per inspector", "activeInspectors": "{{count}} active inspectors",
     "payable": "Payable", "unallocatedCash": "Unallocated cash", "quotePipeline": "Quote pipeline"
   },
+  "dashboardHome": {
+    "greetingMorning": "Good morning, {{name}}", "greetingAfternoon": "Good afternoon, {{name}}", "greetingEvening": "Good evening, {{name}}",
+    "summaryJobs": "{{count}} jobs this period", "summaryInspections": "{{count}} inspections active", "summaryReports": "{{count}} reports issued",
+    "kpiJobs": "Jobs", "kpiInspections": "Inspections", "kpiSamples": "Samples / Laboratory", "kpiReports": "Reports", "kpiRevenue": "Revenue",
+    "recentActivity": "Recent activity", "recentActivityEmpty": "No recent activity.",
+    "upcomingTasks": "Upcoming tasks", "upcomingTasksEmpty": "Nothing due right now.",
+    "inspectionDue": "Inspection {{number}} scheduled", "reportReview": "Report {{number}} awaiting review",
+    "recentJobs": "Recent jobs", "viewAll": "View all →",
+    "quickActions": "Quick actions", "quickActionsEmpty": "No shortcuts available for your role.",
+    "actions": {
+      "newJob": "New job", "newClient": "New client", "uploadDocument": "Upload document", "reports": "Reports",
+      "myJobs": "My jobs", "myInspections": "My inspections", "addSample": "Add sample", "labQueue": "Work queue"
+    }
+  },
   "analytics": {
     "title": "Analytics", "myTitle": "My performance",
     "jobsTotal": "Jobs", "jobsByMonth": "Jobs by month",

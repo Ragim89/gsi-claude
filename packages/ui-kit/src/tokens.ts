@@ -72,6 +72,24 @@ export const tokens = {
     grid: '#E3E7EC',
     axis: '#8A93A1',
   },
+  /**
+   * KPI card accents — Dashboard Visual Upgrade 2.0. A calm, distinct hue per card family
+   * (Jobs/Inspections/Samples/Reports/Revenue), used only for a small icon badge and a hairline
+   * accent, never for body text or large fills. Kept separate from `viz` (the validated chart
+   * palette) so this purely decorative set can evolve without re-running the dataviz validator.
+   */
+  kpi: {
+    blue: '#105098',
+    blueBg: '#E4EDF9',
+    cyan: '#0E7A88',
+    cyanBg: '#DEF2F4',
+    green: '#1E7A4C',
+    greenBg: '#E3F3EA',
+    purple: '#6B3FA0',
+    purpleBg: '#EEE6F6',
+    amber: '#9A6A00',
+    amberBg: '#FBF1D9',
+  },
   font: {
     // ASSUMPTION: the wordmark is set in a bold italic grotesque; the exact typeface is not
     // supplied, so the UI uses a neutral grotesque stack and only the logo carries the lettering.
