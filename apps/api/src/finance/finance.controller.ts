@@ -34,6 +34,8 @@ import {
 import { map, Observable } from 'rxjs';
 import {
   AuthUser,
+  ESF_STATUSES,
+  EsfStatus,
   EXPENSE_CATEGORIES,
   ExpenseCategory,
   INVOICE_STATUSES,
@@ -50,6 +52,7 @@ import { InvoicePdfService } from './invoice-pdf.service';
 import { JobFinanceService } from './job-finance.service';
 import { ClientStatementService } from './client-statement.service';
 import { RemindersService } from './reminders.service';
+import { EsfService } from './esf.service';
 
 class InvoiceLineDto {
   @IsString() @MinLength(2) @MaxLength(300) description: string;
@@ -67,6 +70,14 @@ class CreateInvoiceDto {
   @IsOptional() @IsDateString() dueDate?: string | null;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
   @IsOptional() @IsString() @MinLength(3) @MaxLength(3) currency?: string;
+  /** Opt-in multi-country fiscal path (migration 028) — see InvoicesService.CreateInvoiceInput. */
+  @IsOptional() @IsUUID() legalEntityId?: string | null;
+  @IsOptional() @IsString() @MaxLength(20) taxCode?: string;
+}
+
+class EsfStatusDto {
+  @IsIn(ESF_STATUSES) status: EsfStatus;
+  @IsOptional() @IsString() @MaxLength(100) registrationNumber?: string | null;
 }
 
 class PayDto {
@@ -131,6 +142,7 @@ export class FinanceController {
     private readonly jobFinance: JobFinanceService,
     private readonly clientStatement: ClientStatementService,
     private readonly reminders: RemindersService,
+    private readonly esf: EsfService,
   ) {}
 
   // ---- dashboard ---------------------------------------------------------------
@@ -210,6 +222,24 @@ export class FinanceController {
   @HttpCode(204)
   async deleteInvoice(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     await this.invoices.remove(user, id);
+  }
+
+  /**
+   * Mapping/export boundary for the future Kazakhstan ИС ЭСФ integration (docs/FISCAL_COMPLIANCE.md
+   * §ESF readiness). Returns the structured data an operator submits by hand today; this never
+   * calls a government system and never marks an invoice "submitted"/"registered" on its own.
+   */
+  @Get('invoices/:id/esf-export')
+  esfExport(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.esf.exportPayload(user, id);
+  }
+
+  /** Records what actually happened in the real government system — never simulated here. */
+  @Post('invoices/:id/esf-status')
+  @RequirePermission('invoice.issue')
+  @HttpCode(200)
+  setEsfStatus(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: EsfStatusDto) {
+    return this.esf.setStatus(user, id, dto.status, dto.registrationNumber ?? null);
   }
 
   // ---- expenses ----------------------------------------------------------------

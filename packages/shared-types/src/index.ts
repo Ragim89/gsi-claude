@@ -18,3 +18,4 @@ export * from './analytics';
 export * from './documents';
 export * from './notifications';
 export * from './search';
+export * from './fiscal';

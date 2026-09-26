@@ -1,6 +1,7 @@
 import type { ServiceType } from './enums';
 import type { Timestamp } from './entities';
 import type { ExpensePaymentStatus } from './payments';
+import type { EsfStatus, FiscalSnapshot } from './fiscal';
 
 export const INVOICE_STATUSES = ['draft', 'issued', 'partially_paid', 'paid', 'cancelled'] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
@@ -61,6 +62,24 @@ export interface Invoice {
   daysOverdue?: number;
   lines?: InvoiceLine[];
   createdAt: Timestamp;
+
+  // ---- Multi-country fiscal compliance (migration 028), all optional: absent/legacy for
+  // every invoice created without a legal entity — see docs/FISCAL_COMPLIANCE.md. ----
+  legalEntityId?: string | null;
+  legalEntityName?: string | null;
+  jurisdictionCountryCode?: string | null;
+  jurisdictionProfileVersion?: number | null;
+  taxCode?: string | null;
+  /** true for every invoice that was not built from a verified jurisdiction profile — this
+   *  includes all invoices issued before migration 028 and any invoice for a country with no
+   *  verified profile. Never reconstructed after the fact. */
+  isLegacyFiscal: boolean;
+  /** Immutable snapshot taken at issue time; null until issued, always null for legacy invoices. */
+  fiscalSnapshot?: FiscalSnapshot | null;
+  esfStatus?: EsfStatus;
+  esfRegistrationNumber?: string | null;
+  esfSubmittedAt?: Timestamp | null;
+  esfRegisteredAt?: Timestamp | null;
 }
 
 export interface Expense {

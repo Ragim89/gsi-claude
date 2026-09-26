@@ -52,6 +52,8 @@ export const PERMISSIONS = [
   // Administration
   'branch.read', 'branch.manage', 'org.manage', 'user.read', 'user.manage', 'role.manage',
   'audit.read',
+  // Finance compliance: legal entities and jurisdiction/tax profiles (migration 028)
+  'legal_entity.read', 'legal_entity.manage', 'fiscal_profile.read', 'fiscal_profile.manage',
   // Data movement
   'export.run', 'import.run',
   // Analytics

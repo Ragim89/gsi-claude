@@ -3,6 +3,7 @@ import { AuthUser, Branch, Invoice, InvoiceLine } from '@gsi/shared-types';
 import { DbService } from '../db/db.service';
 import { PdfService } from '../documents/pdf.service';
 import { invoiceTemplate } from '../documents/templates/invoice-default';
+import { invoiceKzTemplate } from '../documents/templates/invoice-kz';
 import type { InvoiceTemplateData } from '../documents/templates/types';
 
 const BRANCH_COLUMNS = `
@@ -32,7 +33,10 @@ export class InvoicePdfService {
                 i.amount_paid::float8 AS "amountPaid",
                 to_char(i.issue_date, 'YYYY-MM-DD') AS "issueDate",
                 to_char(i.due_date, 'YYYY-MM-DD') AS "dueDate",
-                i.paid_at AS "paidAt", i.notes, i.created_at AS "createdAt"
+                i.paid_at AS "paidAt", i.notes, i.created_at AS "createdAt",
+                i.jurisdiction_country_code AS "jurisdictionCountryCode",
+                i.fiscal_snapshot AS "fiscalSnapshot", i.is_legacy_fiscal AS "isLegacyFiscal",
+                i.esf_status AS "esfStatus"
          FROM invoices i LEFT JOIN inspection_jobs j ON j.id = i.job_id
          WHERE i.id = $1`,
         [id],
@@ -56,10 +60,17 @@ export class InvoicePdfService {
          FROM invoice_lines WHERE invoice_id = $1 ORDER BY sort_order`,
         [id],
       );
-      return { organization, branch, client, invoice, lines };
+      return { organization, branch, client, invoice, lines, fiscalSnapshot: invoice.fiscalSnapshot };
     });
 
-    const pdf = await this.pdf.render(invoiceTemplate.html(data), { footerHtml: invoiceTemplate.footer(data) });
+    // Kazakhstan gets its own template once the invoice has an actual fiscal snapshot to show
+    // (jurisdictionCountryCode alone is not enough — a legacy KZ invoice with no snapshot keeps
+    // rendering through invoice-default, exactly as it always did). Every other country is
+    // unaffected: invoice-default.ts is still the only template they ever reach.
+    const template = data.invoice.jurisdictionCountryCode === 'KZ' && data.fiscalSnapshot
+      ? invoiceKzTemplate
+      : invoiceTemplate;
+    const pdf = await this.pdf.render(template.html(data), { footerHtml: template.footer(data) });
     return { pdf, filename: `${data.invoice.invoiceNumber}.pdf` };
   }
 }

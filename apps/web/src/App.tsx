@@ -33,6 +33,7 @@ import { ImportPage } from './pages/ImportPage';
 import { RolesPage } from './pages/RolesPage';
 import { AuditPage } from './pages/AuditPage';
 import { LaboratoriesPage } from './pages/LaboratoriesPage';
+import { FiscalConfigPage } from './pages/FiscalConfigPage';
 import { ContractsPage } from './pages/ContractsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
@@ -130,6 +131,7 @@ export function App() {
         <Route path="/admin/roles" element={<RequireAuth need={['role.manage']}><RolesPage /></RequireAuth>} />
         <Route path="/admin/audit" element={<RequireAuth need={['audit.read']}><AuditPage /></RequireAuth>} />
         <Route path="/admin/laboratories" element={<RequireAuth need={['org.manage']}><LaboratoriesPage /></RequireAuth>} />
+        <Route path="/admin/fiscal" element={<RequireAuth need={['legal_entity.manage']}><FiscalConfigPage /></RequireAuth>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

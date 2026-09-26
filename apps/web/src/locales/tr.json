@@ -8,7 +8,8 @@
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
     "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
-    "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "logout": "Çıkış", "logoutAll": "Tüm cihazlardan çıkış", "language": "Dil",
+    "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "fiscal": "Mali yapılandırma",
+    "logout": "Çıkış", "logoutAll": "Tüm cihazlardan çıkış", "language": "Dil",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin.",
     "openMenu": "Menüyü aç", "closeMenu": "Menüyü kapat", "more": "Diğer",
     "groups": {
@@ -50,7 +51,8 @@
     "save": "Kaydet", "cancel": "Vazgeç", "edit": "Düzenle", "delete": "Sil", "create": "Oluştur", "back": "Geri",
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
     "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube",
-    "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif", "name": "Ad"
+    "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif", "name": "Ad",
+    "yes": "Evet", "no": "Hayır"
   },
   "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
@@ -123,6 +125,34 @@
     "contact": "İletişim", "found": "{{count}} laboratuvar", "empty": "Henüz laboratuvar yok",
     "active": "Açık", "closed": "Kapalı", "close": "Kapat", "reopen": "Yeniden aç",
     "closeHint": "Kapatılan laboratuvar gönderim listesinden kalkar. Oraya gönderilmiş numunelerin kaydı korunur."
+  },
+  "fiscal": {
+    "title": "Mali yapılandırma",
+    "sub": "Faturaların dayandığı tüzel kişilikler ve ülke vergi kuralları — bkz. docs/FISCAL_COMPLIANCE.md.",
+    "entities": {
+      "title": "Tüzel kişilikler",
+      "hint": "Bir ofisin adına fatura kestiği mali kimlik: unvan, vergi kaydı, banka bilgileri, varsayılan para birimi. Bir tüzel kişilik birden fazla ofise hizmet verebilir.",
+      "new": "Yeni tüzel kişilik", "edit": "Tüzel kişiliği düzenle",
+      "country": "Ülke", "code": "Kod", "codeHint": "Kısa ve kalıcı, örn. GSI-KZ-1",
+      "legalName": "Unvan", "legalAddress": "Yasal adres",
+      "fiscalIdType": "Vergi kimlik türü", "fiscalIdTypeHint": "örn. BIN, IIN, VAT, TAX_ID",
+      "fiscalId": "Vergi kimlik no", "vatRegistered": "KDV mükellefi",
+      "vatRegNumber": "KDV kayıt no",
+      "defaultTaxCode": "Varsayılan vergi kodu", "defaultTaxCodeHint": "Ülkenin yetki profilinden bir kod, örn. STANDARD",
+      "defaultCurrency": "Varsayılan para birimi", "defaultCurrencyHint": "Boş bırakılırsa ülkenin yetki profilinden alınır (örn. Kazakistan için KZT)",
+      "bankName": "Banka", "bankAccount": "Hesap / IBAN",
+      "bankSwift": "SWIFT/BIC", "numberingPrefix": "Fatura numarası öneki",
+      "empty": "Henüz tüzel kişilik yok."
+    },
+    "profiles": {
+      "title": "Yetki bölgesi / vergi uyum profilleri",
+      "hint": "Ülkeye göre sürümlenmiş, yürürlük tarihli vergi kuralları. Buradaki bir satır asla düzenlenmez — bir kanun değişikliği her zaman daha sonraki bir yürürlük tarihiyle yeni bir sürüm olarak eklenir, böylece kesilmiş bir fatura asla değişmez.",
+      "status": "Durum", "version": "Son sürüm", "verified": "Doğrulandı", "configRequired": "Yapılandırma gerekli",
+      "newVersion": "Yeni sürüm ekle", "newVersionHint": "Bir ülke için BİR SONRAKİ sürümü ekler; mevcut olanı asla değiştirmez.",
+      "countryCodeHint": "ISO 3166-1 alpha-2, örn. KZ", "effectiveFrom": "Yürürlük tarihi", "sourceNotes": "Kaynak notları / referanslar",
+      "configJson": "Kurallar (JSON)", "configJsonHint": "Şekil için bkz. packages/shared-types/src/fiscal.ts JurisdictionProfileConfig.",
+      "invalidJson": "Bu geçerli bir JSON değil."
+    }
   },
   "sampleStatus": {
     "draft": "Taslak", "collected": "Alındı", "registered": "Kaydedildi", "sealed": "Mühürlendi",

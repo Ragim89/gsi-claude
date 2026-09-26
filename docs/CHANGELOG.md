@@ -2,6 +2,26 @@
 
 Формат: обратный хронологический порядок, по фазам из [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
+## Мультистрановой финансовый комплаенс (миграция 028) · 2026-09-26
+
+Один общий Finance/accounting core, но каждая страна — свой версионированный fiscal/compliance-профиль. Ни одна страна не получает правил другой страны по умолчанию, налоговые требования не придумывались. Подробности, источники и границы — [`FISCAL_COMPLIANCE.md`](FISCAL_COMPLIANCE.md).
+
+### Добавлено
+- **Миграция 028**: `legal_entities` (фискальная личность офиса — юр. название, БИН/ИИН/VAT, статус плательщика НДС, банк, валюта по умолчанию) и версионированные `jurisdiction_profiles` (только на добавление — как `audit_logs`, грантов `UPDATE`/`DELETE` нет вовсе). Необязательные колонки на `invoices`: `legal_entity_id`, `jurisdiction_country_code/profile_id/profile_version`, `tax_code`, `is_legacy_fiscal` (default `true`), `fiscal_snapshot` (jsonb), `esf_status`/`esf_registration_number`/`esf_submitted_at`/`esf_registered_at`. Все — nullable/с безопасным дефолтом; существующий (`legacy`) путь создания счёта не тронут ни строкой.
+- **Казахстан — первый подтверждённый профиль**: НДС 16% с 01.01.2026 (Кодекс РК №214-VIII, adilet.zan.kz/K2500000214; независимо подтверждено EY/PwC/Sovos/vatcalc), 0% на экспорт, «без НДС» для незарегистрированных плательщиков. Сниженная ставка 5%/10% (фарма) сознательно не смоделирована — вне профиля услуг GSI Kazakhstan.
+- `InvoicesService`: необязательные `legalEntityId`/`taxCode` при создании счёта — налог считается по версии `jurisdiction_profiles`, действующей на дату счёта (`fiscal-calc.ts`, чистые функции); незарегистрированный плательщик НДС не может получить налогооблагаемый код, даже если он запрошен явно. Неизменяемый `fiscal_snapshot` строится в момент `issue()`, не `create()`.
+- **PDF**: `invoice-kz.ts` — отдельный шаблон (₸/KZT, БИН/ИИН продавца и покупателя, дата поставки, фактически применённый код налога, реальные банковские реквизиты юр. лица, статус ЭСФ); выбирается только когда у счёта есть `fiscalSnapshot` для KZ — остальные страны продолжают печататься через `invoice-default.ts` без единой правки.
+- **ESF-граница** (`esf.service.ts`): `GET /finance/invoices/:id/esf-export` (данные для ручного ввода в ИС ЭСФ) и `POST /finance/invoices/:id/esf-status` (фиксирует статус по факту). Ничего не обращается к esf.gov.kz и не имитирует отправку.
+- **Права**: `legal_entity.read`/`fiscal_profile.read` (все, у кого есть `finance.read`) и `legal_entity.manage`/`fiscal_profile.manage` (только `admin`) — RLS дублирует ту же границу на уровне БД.
+- **Admin UI**: `/admin/fiscal` (`FiscalConfigPage.tsx`) — CRUD юридических лиц и просмотр/добавление версий налоговых профилей; en/ru/tr.
+- Тесты: `apps/api/src/finance/fiscal-calc.spec.ts` (9, unit) и `apps/api/test/fiscal-compliance.spec.ts` (15, integration) — KZ VAT/non-VAT/zero-rate, расчёт по строкам и итогам, неизменяемость снимка при оплате и при появлении новой версии профиля, две разные по статусу НДС организации в KZ одновременно, явный отказ для страны без профиля, отказ в правах для не-admin, аудит-события, рендер PDF.
+
+### Не менялось
+Существующая схема `invoices`/`invoice_lines`/`ledger_entries`, движок двойной записи, нумерация документов, `invoice-default.ts`, обычный (`legacy`) путь создания счёта для всех остальных стран.
+
+### Проверено
+`verify.sh`: было 437 (103 unit + 334 integration), стало **461** (112 unit + 349 integration, +9/+15 — ровно два новых файла) — зелёные, включая все 17 прежних integration-файлов без единого регресса. lint/typecheck/build API и web — зелёные. `verify-full.sh`: стенд поднят, `/api/health/ready` — ok, **90/90 smoke**. Отдельно — идемпотентность миграций (как migration-check в CI): свежая пустая БД, все 28 миграций применились без ошибок (64 таблицы), повторный прогон — no-op (`migrations up to date`, ни одного `applying`). Визуально: через реальный dev-стенд в браузере создано юр. лицо `GSI-KZ-1` (валюта подставилась в KZT автоматически), выставлен и проведён счёт `KZ-I-2026-00087` (16% НДС, 719 200 KZT), PDF отдаётся 200 OK через настоящую кнопку в интерфейсе счёта.
+
 ## PHASE 13.5 — Productization / White-label Core · 2026-09-26
 
 Архитектура: один core repo + client profiles (`config/clients/<name>/`) + отдельный deployment/база/storage на компанию. Подробности и порядок действий — [`WHITE_LABEL.md`](WHITE_LABEL.md).

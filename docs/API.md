@@ -430,6 +430,21 @@ GET /api/public/verify/{token}
 
 Бегущее сальдо: выставленный счёт — дебет, применённый платёж — кредит, каждая сумма по курсу своей даты.
 
+### Мультистрановой финансовый комплаенс (028)
+
+`POST /finance/invoices` принимает необязательные `legalEntityId` / `taxCode`: без них — прежнее
+поведение (`taxRate` от вызывающего, `isLegacyFiscal: true`); с ними — налог считается по
+версии `jurisdiction_profiles`, действующей на дату счёта (см. `docs/FISCAL_COMPLIANCE.md`).
+
+| Метод | Путь | Право | Описание |
+|---|---|---|---|
+| GET | `/admin/fiscal/legal-entities`, `/legal-entities/:id` | `finance.read` | список / карточка юр. лица |
+| POST/PATCH | `/admin/fiscal/legal-entities`, `/legal-entities/:id` | `legal_entity.manage` | только HQ/Admin |
+| GET | `/admin/fiscal/jurisdiction-profiles`, `/jurisdiction-countries` | `finance.read` | версии по стране / статус по каждой известной стране |
+| POST | `/admin/fiscal/jurisdiction-profiles` | `fiscal_profile.manage` | добавляет СЛЕДУЮЩУЮ версию; существующая не редактируется и не удаляется |
+| GET | `/finance/invoices/:id/esf-export` | `finance.read` | данные для ручного ввода в ИС ЭСФ — ничего не отправляет |
+| POST | `/finance/invoices/:id/esf-status` | `invoice.issue` | фиксирует статус ЭСФ по факту из реальной системы, не имитирует его |
+
 ## Аналитика (PHASE 9)
 
 | Метод | Путь | Право | Описание |

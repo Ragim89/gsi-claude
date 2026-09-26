@@ -29,6 +29,8 @@ PostgreSQL 16. Схема развивается только миграциям
 | `users` | сотрудники; `branch_id` — офис, `department_id` — отдел |
 | `permissions`, `roles`, `role_permissions`, `user_roles` | RBAC: 125 прав, 15 ролей с областями видимости |
 | `audit_logs` | журнал действий, только на добавление |
+| `legal_entities` | с 028: налоговый профиль, от имени которого офис выставляет счета (юр. название, БИН/ИИН/VAT, статус плательщика НДС, банк, валюта по умолчанию); необязательная ссылка с `branches.legal_entity_id` |
+| `jurisdiction_profiles` | с 028: версионированные, действующие с определённой даты налоговые правила по стране (ставки, обязательные поля счёта, требования к ЭСФ); строка только на добавление — см. `docs/FISCAL_COMPLIANCE.md` |
 
 ### Операции
 
@@ -390,6 +392,7 @@ reports_job_idx           (job_id)                     WHERE deleted_at IS NULL 
 | 022 | права `analytics.read` / `analytics.workload` (без новых таблиц — аналитика читает существующие); `reports_job_idx` — у `reports` не было индекса по `job_id`, хотя есть по всем остальным внешним ключам |
 | 023 | общий реестр документов `documents` (клиент/заявка/инспекция/проба/отчёт/счёт), архивирование грантами, S3-хранилище через существующий `StorageService` |
 | 024 | уведомления `notifications` (только свои строки читает и правит каждый пользователь), функции `create_notification`/`users_with_permission`/`notification_exists`/`inspections_due_soon`/`inspection_assignees`/`invoices_newly_overdue` — все `SECURITY DEFINER`, как `app_can_see_branch` в 008 |
+| 028 | мультистрановой финансовый комплаенс: `legal_entities`, версионированные `jurisdiction_profiles` (только на добавление, как `audit_logs`), необязательный фискальный снимок счёта (`invoices.fiscal_snapshot`, `is_legacy_fiscal`, `esf_status`/…); первый и пока единственный подтверждённый профиль — Казахстан (НДС 16% с 2026 года) — см. `docs/FISCAL_COMPLIANCE.md` |
 
 Откат миграций не предусмотрен: вперёд и только вперёд, как в любой системе, где данные важнее схемы.
 

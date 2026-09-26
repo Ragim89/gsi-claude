@@ -2,16 +2,20 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import {
   ArAgingBucket,
   AuthUser,
+  FiscalSnapshot,
   Invoice,
   InvoiceLine,
   InvoicePayment,
   InvoiceStatus,
   InvoiceSummary,
+  LegalEntity,
 } from '@gsi/shared-types';
 import { DbService, Tx } from '../db/db.service';
 import { LedgerService } from './ledger.service';
 import { AuditService } from '../common/audit.service';
 import { PaymentsService } from './payments.service';
+import { JurisdictionProfileService } from './jurisdiction-profile.service';
+import { computeFiscalTotals, resolveTaxCode } from './fiscal-calc';
 import { config } from '../config';
 
 const INVOICE_COLUMNS = `
@@ -23,13 +27,20 @@ const INVOICE_COLUMNS = `
   to_char(i.issue_date, 'YYYY-MM-DD') AS "issueDate", to_char(i.due_date, 'YYYY-MM-DD') AS "dueDate",
   i.paid_at AS "paidAt", i.notes, i.created_at AS "createdAt",
   CASE WHEN i.status IN ('issued', 'partially_paid') AND i.due_date IS NOT NULL
-       THEN (current_date - i.due_date) END AS "daysOverdue"`;
+       THEN (current_date - i.due_date) END AS "daysOverdue",
+  i.legal_entity_id AS "legalEntityId", le.legal_name AS "legalEntityName",
+  i.jurisdiction_country_code AS "jurisdictionCountryCode",
+  i.jurisdiction_profile_version AS "jurisdictionProfileVersion", i.tax_code AS "taxCode",
+  i.is_legacy_fiscal AS "isLegacyFiscal", i.fiscal_snapshot AS "fiscalSnapshot",
+  i.esf_status AS "esfStatus", i.esf_registration_number AS "esfRegistrationNumber",
+  i.esf_submitted_at AS "esfSubmittedAt", i.esf_registered_at AS "esfRegisteredAt"`;
 
 const INVOICE_FROM = `
   invoices i
   JOIN branches b ON b.id = i.branch_id
   JOIN clients c ON c.id = i.client_id
-  LEFT JOIN inspection_jobs j ON j.id = i.job_id`;
+  LEFT JOIN inspection_jobs j ON j.id = i.job_id
+  LEFT JOIN legal_entities le ON le.id = i.legal_entity_id`;
 
 export interface InvoiceLineInput {
   description: string;
@@ -46,6 +57,16 @@ export interface CreateInvoiceInput {
   dueDate?: string | null;
   notes?: string | null;
   currency?: string;
+  /**
+   * Opt-in fiscal path (migration 028): when set, tax is computed from the legal entity's
+   * jurisdiction profile instead of the caller-supplied `taxRate`, and the invoice carries an
+   * immutable fiscal snapshot once issued. Omitted, this is the exact legacy behavior — same
+   * math, same columns, `isLegacyFiscal: true`.
+   */
+  legalEntityId?: string | null;
+  /** A code from the resolved jurisdiction profile's taxCodes, e.g. 'STANDARD' | 'ZERO'. Ignored
+   *  (forced to the profile's non-taxable code) when the legal entity is not VAT-registered. */
+  taxCode?: string;
 }
 
 /**
@@ -59,6 +80,7 @@ export class InvoicesService {
     private readonly ledger: LedgerService,
     private readonly audit: AuditService,
     private readonly paymentsService: PaymentsService,
+    private readonly jurisdictionProfiles: JurisdictionProfileService,
   ) {}
 
   list(user: AuthUser, f: { status?: InvoiceStatus; clientId?: string; overdue?: boolean; branchId?: string; jobId?: string }) {
@@ -301,19 +323,35 @@ export class InvoicesService {
         [input.clientId],
       );
       if (!client) throw new NotFoundException('Client not found');
-
-      const net = input.lines.reduce((s, l) => s + round2(l.quantity * l.unitPrice), 0);
-      const taxRate = input.taxRate ?? 0;
-      const tax = round2((net * taxRate) / 100);
       const issueDate = input.issueDate ?? today();
+
+      const fiscal = input.legalEntityId
+        ? await this.resolveFiscal(tx, input.legalEntityId, issueDate, input.taxCode, input.lines)
+        : null;
+
+      const net = fiscal ? fiscal.totals.subtotalNet : input.lines.reduce((s, l) => s + round2(l.quantity * l.unitPrice), 0);
+      const taxRate = fiscal ? fiscal.taxCode.rate : (input.taxRate ?? 0);
+      const tax = fiscal ? fiscal.totals.taxAmount : round2((net * taxRate) / 100);
+      const total = fiscal ? fiscal.totals.grandTotal : round2(net + tax);
+      const currency = input.currency ?? (fiscal ? fiscal.legalEntity.defaultCurrency : client.currency);
+      const esfStatus: string = fiscal && fiscal.legalEntity.vatRegistered && fiscal.profile.config.eInvoice.required
+        ? 'draft'
+        : 'not_required';
 
       const row = await tx.one<{ id: string }>(
         `INSERT INTO invoices (branch_id, client_id, job_id, invoice_number, currency, amount_net, tax_rate,
-                               tax_amount, amount_total, issue_date, due_date, notes, created_by)
-         VALUES ($1, $2, $3, next_doc_number($1, 'I'), $4, $5, $6, $7, $8, $9::date, $10::date, $11, $12)
+                               tax_amount, amount_total, issue_date, due_date, notes, created_by,
+                               legal_entity_id, jurisdiction_country_code, jurisdiction_profile_id,
+                               jurisdiction_profile_version, tax_code, is_legacy_fiscal, esf_status)
+         VALUES ($1, $2, $3, next_doc_number($1, 'I'), $4, $5, $6, $7, $8, $9::date, $10::date, $11, $12,
+                 $13, $14, $15, $16, $17, $18, $19::esf_status)
          RETURNING id`,
-        [client.branch_id, input.clientId, input.jobId ?? null, input.currency ?? client.currency, net, taxRate,
-         tax, round2(net + tax), issueDate, input.dueDate ?? null, input.notes ?? null, user.id],
+        [
+          client.branch_id, input.clientId, input.jobId ?? null, currency, net, taxRate, tax, total,
+          issueDate, input.dueDate ?? null, input.notes ?? null, user.id,
+          fiscal?.legalEntity.id ?? null, fiscal?.profile.countryCode ?? null, fiscal?.profile.id ?? null,
+          fiscal?.profile.profileVersion ?? null, fiscal?.taxCode.code ?? null, !fiscal, esfStatus,
+        ],
       );
       await tx.exec(
         `INSERT INTO invoice_lines (invoice_id, description, quantity, unit_price, sort_order)
@@ -336,18 +374,65 @@ export class InvoicesService {
           amountTotal: invoice.amountTotal,
           clientId: invoice.clientId,
           jobId: invoice.jobId,
+          ...(fiscal ? { legalEntityId: fiscal.legalEntity.id, taxCode: fiscal.taxCode.code } : {}),
         },
       });
       return invoice;
     });
   }
 
-  /** Draft → issued: revenue and receivable hit the ledger. */
+  /** Loads the legal entity and resolves the jurisdiction profile in force on `issueDate` — the
+   *  opt-in fiscal path. Throws rather than silently falling back when the country has no
+   *  verified profile (compliance_config_required) or the tax code doesn't apply. */
+  private async resolveFiscal(
+    tx: Tx,
+    legalEntityId: string,
+    issueDate: string,
+    requestedTaxCode: string | undefined,
+    lines: InvoiceLineInput[],
+  ) {
+    const row = await tx.one<{
+      id: string; country_code: string; legal_name: string; default_currency: string;
+      default_tax_code: string | null; vat_registered: boolean; is_active: boolean;
+    }>(
+      `SELECT le.id, c.code AS country_code, le.legal_name, le.default_currency, le.default_tax_code,
+              le.vat_registered, le.is_active
+       FROM legal_entities le JOIN countries c ON c.id = le.country_id
+       WHERE le.id = $1`,
+      [legalEntityId],
+    );
+    if (!row) throw new NotFoundException('Legal entity not found');
+    if (!row.is_active) throw new BadRequestException('This legal entity is not active');
+
+    const profile = await this.jurisdictionProfiles.resolve(tx, row.country_code, issueDate);
+    if (!profile) {
+      throw new BadRequestException(
+        `No verified fiscal/compliance profile for ${row.country_code} on ${issueDate} ` +
+          `(compliance_config_required) — cannot build a fiscal invoice for this legal entity yet.`,
+      );
+    }
+    const legalEntity: Pick<LegalEntity, 'id' | 'defaultCurrency' | 'vatRegistered' | 'defaultTaxCode'> = {
+      id: row.id,
+      defaultCurrency: row.default_currency,
+      vatRegistered: row.vat_registered,
+      defaultTaxCode: row.default_tax_code,
+    };
+    const taxCode = resolveTaxCode(profile.config, legalEntity, requestedTaxCode);
+    const totals = computeFiscalTotals(lines, taxCode.rate);
+    return { legalEntity, profile, taxCode, totals };
+  }
+
+  /** Draft → issued: revenue and receivable hit the ledger, and — for a fiscal invoice — the
+   *  immutable snapshot is taken (see buildFiscalSnapshot). */
   issue(user: AuthUser, id: string) {
     return this.db.tx(user, async (tx) => {
       const inv = await this.lock(tx, id);
       if (inv.status !== 'draft') throw new ConflictException(`Invoice is already ${inv.status}`);
-      await tx.exec(`UPDATE invoices SET status = 'issued' WHERE id = $1`, [id]);
+      const snapshot = await this.buildFiscalSnapshot(tx, id, inv);
+      await tx.exec(
+        `UPDATE invoices SET status = 'issued', fiscal_snapshot = $2::jsonb WHERE id = $1`,
+        [id, snapshot ? JSON.stringify(snapshot) : null],
+      );
       await this.ledger.post(tx, user, {
         branchId: inv.branch_id,
         currency: inv.currency,
@@ -452,16 +537,99 @@ export class InvoicesService {
 
   private async lock(tx: Tx, id: string) {
     const inv = await tx.one<{
-      branch_id: string; currency: string; status: InvoiceStatus; invoice_number: string;
-      amount_total: string; amount_paid: string; amount_net: string; tax_amount: string; issue_date: string;
+      branch_id: string; client_id: string; currency: string; status: InvoiceStatus; invoice_number: string;
+      amount_total: string; amount_paid: string; amount_net: string; tax_amount: string; tax_rate: string;
+      issue_date: string; legal_entity_id: string | null; jurisdiction_profile_id: string | null;
+      jurisdiction_profile_version: number | null; jurisdiction_country_code: string | null; tax_code: string | null;
     }>(
-      `SELECT branch_id, currency, status, invoice_number, amount_total, amount_paid, amount_net, tax_amount,
-              to_char(issue_date, 'YYYY-MM-DD') AS issue_date
+      `SELECT branch_id, client_id, currency, status, invoice_number, amount_total, amount_paid, amount_net,
+              tax_amount, tax_rate, to_char(issue_date, 'YYYY-MM-DD') AS issue_date,
+              legal_entity_id, jurisdiction_profile_id, jurisdiction_profile_version, jurisdiction_country_code, tax_code
        FROM invoices WHERE id = $1 FOR UPDATE`,
       [id],
     );
     if (!inv) throw new NotFoundException('Invoice not found');
     return inv;
+  }
+
+  /**
+   * Immutable snapshot taken at ISSUE time (not at creation): legal entity, jurisdiction profile
+   * version, seller/buyer fiscal data, per-line net/tax/gross and totals, numbering context, bank
+   * and e-invoice details — everything section 7 of the compliance spec asks an invoice to carry
+   * forward on its own, so a later edit to the legal entity or a new jurisdiction profile version
+   * can never change what an already-issued invoice says it charged.
+   */
+  private async buildFiscalSnapshot(
+    tx: Tx,
+    id: string,
+    inv: { legal_entity_id: string | null; jurisdiction_profile_id: string | null; jurisdiction_country_code: string | null;
+           jurisdiction_profile_version: number | null; tax_code: string | null; tax_rate: string; currency: string;
+           issue_date: string; invoice_number: string; client_id: string },
+  ): Promise<FiscalSnapshot | null> {
+    if (!inv.legal_entity_id || !inv.jurisdiction_profile_id) return null;
+    const legalEntity = (await tx.one<{
+      legal_name: string; legal_address: string | null; fiscal_identifier_type: string | null;
+      fiscal_identifier: string | null; vat_registered: boolean; vat_registration_number: string | null;
+      bank_name: string | null; bank_account: string | null; bank_swift: string | null;
+    }>(
+      `SELECT legal_name, legal_address, fiscal_identifier_type, fiscal_identifier, vat_registered,
+              vat_registration_number, bank_name, bank_account, bank_swift
+       FROM legal_entities WHERE id = $1`,
+      [inv.legal_entity_id],
+    ))!;
+    const profile = (await tx.one<{ config: import('@gsi/shared-types').JurisdictionProfileConfig; source_notes: string | null }>(
+      `SELECT config, source_notes FROM jurisdiction_profiles WHERE id = $1`,
+      [inv.jurisdiction_profile_id],
+    ))!;
+    const buyer = (await tx.one<{ name: string; address: string | null; tax_id: string | null }>(
+      `SELECT name, address, tax_id FROM clients WHERE id = $1`,
+      [inv.client_id],
+    ))!;
+    const lineRows = await tx.many<{ description: string; quantity: number; unit_price: number }>(
+      `SELECT description, quantity::float8 AS quantity, unit_price::float8 AS unit_price
+       FROM invoice_lines WHERE invoice_id = $1 ORDER BY sort_order`,
+      [id],
+    );
+    const taxRate = Number(inv.tax_rate);
+    const totals = computeFiscalTotals(
+      lineRows.map((l) => ({ description: l.description, quantity: l.quantity, unitPrice: l.unit_price })),
+      taxRate,
+    );
+    const taxCodeDef = profile.config.taxCodes.find((c) => c.code === inv.tax_code);
+
+    return {
+      legalEntity: {
+        id: inv.legal_entity_id,
+        legalName: legalEntity.legal_name,
+        legalAddress: legalEntity.legal_address,
+        fiscalIdentifierType: legalEntity.fiscal_identifier_type,
+        fiscalIdentifier: legalEntity.fiscal_identifier,
+        vatRegistered: legalEntity.vat_registered,
+        vatRegistrationNumber: legalEntity.vat_registration_number,
+        bankName: legalEntity.bank_name,
+        bankAccount: legalEntity.bank_account,
+        bankSwift: legalEntity.bank_swift,
+      },
+      buyer: { name: buyer.name, address: buyer.address, fiscalIdentifier: buyer.tax_id },
+      jurisdiction: {
+        countryCode: inv.jurisdiction_country_code!,
+        profileId: inv.jurisdiction_profile_id,
+        profileVersion: inv.jurisdiction_profile_version!,
+        sourceNotes: profile.source_notes,
+      },
+      taxCode: inv.tax_code!,
+      taxCodeLabel: taxCodeDef?.label ?? inv.tax_code!,
+      taxRate,
+      supplyDate: inv.issue_date,
+      documentCurrency: inv.currency,
+      lines: totals.lines,
+      subtotalNet: totals.subtotalNet,
+      taxAmount: totals.taxAmount,
+      grandTotal: totals.grandTotal,
+      numberingContext: { invoiceNumber: inv.invoice_number },
+      eInvoice: { required: profile.config.eInvoice.required, system: profile.config.eInvoice.system },
+      snapshotTakenAt: new Date().toISOString(),
+    };
   }
 }
 

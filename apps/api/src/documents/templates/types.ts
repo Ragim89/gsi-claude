@@ -2,6 +2,7 @@ import type {
   Branch,
   ChecklistInputKind,
   ChecklistResult,
+  FiscalSnapshot,
   InspectionJob,
   Invoice,
   InvoiceLine,
@@ -65,4 +66,7 @@ export interface InvoiceTemplateData {
   client: { name: string; address: string | null; taxId: string | null; gaftaFosfaRef: string | null };
   invoice: Invoice;
   lines: InvoiceLine[];
+  /** Present only for a fiscal invoice (migration 028) — drives which template renders it,
+   *  and is the KZ template's only source of seller/buyer fiscal data (see invoice-kz.ts). */
+  fiscalSnapshot?: FiscalSnapshot | null;
 }

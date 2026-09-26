@@ -18,6 +18,9 @@ import { ServicesPricingService } from './services-pricing.service';
 import { JobFinanceService } from './job-finance.service';
 import { ClientStatementService } from './client-statement.service';
 import { RemindersService } from './reminders.service';
+import { LegalEntityService } from './legal-entity.service';
+import { JurisdictionProfileService } from './jurisdiction-profile.service';
+import { EsfService } from './esf.service';
 
 /** Finance domain: billing, costs, multi-currency consolidation, live dashboard. */
 @Module({
@@ -26,8 +29,8 @@ import { RemindersService } from './reminders.service';
   providers: [
     InvoicesService, ExpensesService, DashboardService, LedgerService, FinanceEventsService, InvoicePdfService,
     PaymentsService, QuotesService, QuoteWorkflowService, ServicesPricingService, JobFinanceService,
-    ClientStatementService, RemindersService,
+    ClientStatementService, RemindersService, LegalEntityService, JurisdictionProfileService, EsfService,
   ],
-  exports: [InvoicesService, LedgerService, PaymentsService],
+  exports: [InvoicesService, LedgerService, PaymentsService, LegalEntityService, JurisdictionProfileService],
 })
 export class FinanceModule {}

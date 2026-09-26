@@ -8,7 +8,8 @@
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
-    "users": "Users", "roles": "Roles", "audit": "Audit log", "logout": "Sign out", "logoutAll": "Sign out everywhere", "language": "Language",
+    "users": "Users", "roles": "Roles", "audit": "Audit log", "fiscal": "Fiscal configuration",
+    "logout": "Sign out", "logoutAll": "Sign out everywhere", "language": "Language",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role.",
     "openMenu": "Open menu", "closeMenu": "Close menu", "more": "More",
     "groups": {
@@ -50,7 +51,8 @@
     "save": "Save", "cancel": "Cancel", "edit": "Edit", "delete": "Delete", "create": "Create", "back": "Back",
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
     "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch",
-    "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive", "name": "Name"
+    "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive", "name": "Name",
+    "yes": "Yes", "no": "No"
   },
   "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
@@ -123,6 +125,34 @@
     "contact": "Contact", "found": "{{count}} laboratories", "empty": "No laboratories yet",
     "active": "Open", "closed": "Closed", "close": "Close", "reopen": "Reopen",
     "closeHint": "A closed laboratory disappears from the dispatch list. Samples already sent there keep their record."
+  },
+  "fiscal": {
+    "title": "Fiscal configuration",
+    "sub": "Legal entities and the country tax rules invoices are built from — see docs/FISCAL_COMPLIANCE.md.",
+    "entities": {
+      "title": "Legal entities",
+      "hint": "The fiscal identity an office trades under: legal name, tax registration, bank details, default currency. One legal entity can cover several offices.",
+      "new": "New legal entity", "edit": "Edit legal entity",
+      "country": "Country", "code": "Code", "codeHint": "Short and permanent, e.g. GSI-KZ-1",
+      "legalName": "Legal name", "legalAddress": "Legal address",
+      "fiscalIdType": "Fiscal ID type", "fiscalIdTypeHint": "e.g. BIN, IIN, VAT, TAX_ID",
+      "fiscalId": "Fiscal identifier", "vatRegistered": "VAT registered",
+      "vatRegNumber": "VAT registration no.",
+      "defaultTaxCode": "Default tax code", "defaultTaxCodeHint": "A code from the country's jurisdiction profile, e.g. STANDARD",
+      "defaultCurrency": "Default currency", "defaultCurrencyHint": "Leave empty to default from the country's jurisdiction profile (e.g. KZT for Kazakhstan)",
+      "bankName": "Bank name", "bankAccount": "Bank account / IBAN",
+      "bankSwift": "SWIFT/BIC", "numberingPrefix": "Invoice number prefix",
+      "empty": "No legal entities yet."
+    },
+    "profiles": {
+      "title": "Jurisdiction / tax compliance profiles",
+      "hint": "Versioned, effective-dated tax rules per country. A row here is never edited — a law change is always a new version with a later effective date, so an already-issued invoice never changes.",
+      "status": "Status", "version": "Latest version", "verified": "Verified", "configRequired": "Compliance config required",
+      "newVersion": "Add a new version", "newVersionHint": "Adds the NEXT version for a country; it never replaces an existing one.",
+      "countryCodeHint": "ISO 3166-1 alpha-2, e.g. KZ", "effectiveFrom": "Effective from", "sourceNotes": "Source notes / citations",
+      "configJson": "Rules (JSON)", "configJsonHint": "See packages/shared-types/src/fiscal.ts JurisdictionProfileConfig for the shape.",
+      "invalidJson": "This is not valid JSON."
+    }
   },
   "sampleStatus": {
     "draft": "Draft", "collected": "Collected", "registered": "Registered", "sealed": "Sealed",

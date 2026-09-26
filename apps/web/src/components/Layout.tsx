@@ -173,6 +173,9 @@ export function Layout() {
         ...(can('org.manage')
           ? [{ to: '/admin/laboratories', label: t('nav.laboratories'), icon: <IconBuilding /> }]
           : []),
+        ...(can('legal_entity.manage')
+          ? [{ to: '/admin/fiscal', label: t('nav.fiscal'), icon: <IconBanknote /> }]
+          : []),
         ...(can('audit.read') ? [{ to: '/admin/audit', label: t('nav.audit'), icon: <IconClipboardCheck /> }] : []),
       ],
     },
