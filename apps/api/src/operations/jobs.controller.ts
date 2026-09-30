@@ -85,6 +85,9 @@ class JobLineDto {
   @IsUUID() serviceId: string;
   @IsOptional() @IsString() @MaxLength(300) description?: string | null;
   @Type(() => Number) @IsNumber() @IsPositive() quantity: number;
+  /** A manual price override — requires `pricing.override`; see JobsService.createLines(). */
+  @IsOptional() @Type(() => Number) @IsNumber() @IsPositive() unitPrice?: number;
+  @IsOptional() @IsString() @MinLength(3) @MaxLength(3) currency?: string;
 }
 
 class CreateJobDto extends JobFieldsDto {

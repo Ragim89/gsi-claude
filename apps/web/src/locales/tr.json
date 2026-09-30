@@ -426,6 +426,10 @@
     "sectionServices": "Fiyatlı hizmetler (opsiyonel)", "addServiceLine": "Hizmet ekle",
     "servicesHint": "Bu talebi yukarıdaki tek hizmet türü yerine birden fazla hizmet için faturalamak üzere bir veya daha fazla fiyatlı hizmet ekleyin.",
     "selectService": "Hizmet seçin", "noPriceConfigured": "Fiyat tanımlı değil",
+    "lineTotal": "Satır toplamı", "overridePrice": "Fiyatı manuel geçersiz kıl",
+    "calculateTotal": "Toplam maliyeti hesapla", "subtotal": "Ara toplam", "finalTotal": "Nihai toplam",
+    "summaryUnpriced": "Bir veya daha fazla satırın henüz fiyatı yok ve toplamdan hariç tutuldu.",
+    "mixedCurrencyNotice": "Bu hizmetler farklı para birimlerinde fiyatlandırılmıştır ve ayrı gösterilir — birleştirmek için mevcut kur mekanizmasını kullanın.",
     "newHint": "Ayrıntılar gelirken taslak olarak kaydedin; onaylarken sistem eksikleri kontrol eder",
     "saveDraft": "Taslak olarak kaydet", "createConfirmed": "Oluştur ve onayla",
     "heldFrom": "beklemede, «{{status}}» durumuna dönecek",
@@ -727,7 +731,8 @@
     "newService": "Yeni hizmet", "newPrice": "Yeni fiyat", "code": "Kod", "name": "Ad",
     "currencyHint": "Varsayılan olarak şubenin kendi para birimi; yalnızca açık bir yabancı para birimli fiyat için değiştirin",
     "unit": "Birim", "contract": "Sözleşme", "effectiveFrom": "Geçerlilik başlangıcı", "default": "Şube varsayılanı",
-    "selectService": "Fiyatları görmek için bir hizmet seçin", "noServices": "Henüz hizmet yok", "noPrices": "Henüz fiyat yok"
+    "selectService": "Fiyatları görmek için bir hizmet seçin", "noServices": "Henüz hizmet yok", "noPrices": "Henüz fiyat yok",
+    "priceHint": "Fiyatlandırma motoru üzerinden, sürümlenmiş ve geçerlilik tarihli bir şube varsayılan fiyatı olarak kaydedilir"
   },
   "jobFinance": {
     "title": "Gelir, maliyet ve marj", "revenue": "Gelir", "costs": "Maliyet", "margin": "Marj",

@@ -19,6 +19,7 @@ describe('finance: services, pricing, quotes, payments, accounts payable, job ma
   let inspectorTr: Session;
   let clientId: string;
   let serviceId: string;
+  let defaultPriceId: string;
 
   beforeAll(async () => {
     app = await createTestApp();
@@ -34,9 +35,13 @@ describe('finance: services, pricing, quotes, payments, accounts payable, job ma
 
     const service = await as(app, financeTr)
       .post('/api/finance/services')
-      .send({ code: `SVC-${Date.now()}`, name: { en: 'Draft survey', ru: 'Драфт-сюрвей', tr: 'Draft survey' }, unit: 'call' })
+      .send({
+        code: `SVC-${Date.now()}`, name: { en: 'Draft survey', ru: 'Драфт-сюрвей', tr: 'Draft survey' }, unit: 'call',
+        currency: 'EUR', unitPrice: 500,
+      })
       .expect(201);
     serviceId = service.body.id;
+    defaultPriceId = service.body.defaultPriceId;
   });
 
   afterAll(async () => {
@@ -45,15 +50,12 @@ describe('finance: services, pricing, quotes, payments, accounts payable, job ma
 
   // ---------------------------------------------------------------------------------------
   describe('services and pricing', () => {
-    let defaultPriceId: string;
-
-    it('prices a service for the branch by default', async () => {
-      const price = await as(app, financeTr)
-        .post('/api/finance/prices')
-        .send({ serviceId, branchId: financeTr.user.branchId, currency: 'EUR', unitPrice: 500 })
-        .expect(201);
-      defaultPriceId = price.body.id;
-      expect(price.body.unitPrice).toBe(500);
+    it('requires a mandatory unit price to create a service, stored via the pricing engine', async () => {
+      expect(defaultPriceId).toBeTruthy();
+      await as(app, financeTr)
+        .post('/api/finance/services')
+        .send({ code: `SVC-NOPRICE-${Date.now()}`, name: { en: 'No price', ru: 'Без цены', tr: 'Fiyatsız' }, unit: 'call' })
+        .expect(400);
     });
 
     it('resolves the branch default when nothing more specific applies', async () => {

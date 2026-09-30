@@ -1,8 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Field, Input, Select, TextArea } from '@gsi/ui-kit/react';
+import { Button, Card, Field, Input, Select, Table, TextArea } from '@gsi/ui-kit/react';
 import {
   Client,
   ClientContact,
@@ -27,9 +27,34 @@ import { useAuth } from '../auth';
 import { ErrorBox, fromLocalInput, Loading, PageHead, toLocalInput, useServiceLabel } from '../components/common';
 
 interface JobLineDraft {
+  id: string;
   serviceId: string;
   description: string;
   quantity: string;
+  /** A manual price override — gated by `pricing.override` (migration 033). */
+  overrideEnabled: boolean;
+  overrideUnitPrice: string;
+  overrideCurrency: string;
+}
+
+function newLineDraft(): JobLineDraft {
+  return {
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `line-${Date.now()}-${Math.random()}`,
+    serviceId: '',
+    description: '',
+    quantity: '1',
+    overrideEnabled: false,
+    overrideUnitPrice: '',
+    overrideCurrency: '',
+  };
+}
+
+function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function formatMoney(amount: number, currency: string, locale: string): string {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 2 }).format(amount);
 }
 
 interface FormState {
@@ -106,8 +131,14 @@ export function JobFormPage() {
   /** The version the form was loaded with, so a concurrent save is caught, not overwritten. */
   const [version, setVersion] = useState<number | undefined>();
   /** Multi-service line items (migration 029) — only offered when creating a job; each
-   *  price is resolved and snapshotted server-side, never trusted from here. */
+   *  price is resolved and snapshotted server-side, never trusted from here, unless the
+   *  caller overrides it (below) and holds `pricing.override`. */
   const [lines, setLines] = useState<JobLineDraft[]>([]);
+  /** The live-resolved price for each line, keyed by its draft id — fed by JobLineRow so the
+   *  total-cost summary can be computed up here without re-querying. */
+  const [resolvedPrices, setResolvedPrices] = useState<Record<string, Price | null>>({});
+  /** "Рассчитать итоговую стоимость" reveals the summary; once shown it stays live. */
+  const [showSummary, setShowSummary] = useState(false);
 
   const existing = useQuery({
     queryKey: ['job', id],
@@ -136,6 +167,7 @@ export function JobFormPage() {
   const commodities = useQuery({ queryKey: ['commodities'], queryFn: () => api.get<Commodity[]>('/reference/commodities'), staleTime: 300_000 });
   const ports = useQuery({ queryKey: ['ports'], queryFn: () => api.get<Port[]>('/reference/ports'), staleTime: 300_000 });
   const canPriceLines = !isEdit && can('pricing.read');
+  const canOverridePrice = canPriceLines && can('pricing.override');
   const services = useQuery({
     queryKey: ['services', 'active'],
     queryFn: () => api.get<Service[]>('/finance/services'),
@@ -224,6 +256,9 @@ export function JobFormPage() {
                 serviceId: l.serviceId,
                 description: l.description.trim() || undefined,
                 quantity: Number(l.quantity),
+                ...(l.overrideEnabled && Number(l.overrideUnitPrice) > 0 && l.overrideCurrency.trim().length === 3
+                  ? { unitPrice: Number(l.overrideUnitPrice), currency: l.overrideCurrency.trim().toUpperCase() }
+                  : {}),
               })),
             }
           : {}),
@@ -244,6 +279,44 @@ export function JobFormPage() {
   );
   const chosenContract = contracts.data?.find((c) => c.id === form.contractId);
   const contractExpired = chosenContract?.daysToExpiry != null && chosenContract.daysToExpiry < 0;
+
+  /** Recomputed on every render (service/qty/price change all flow through this), so
+   *  "Рассчитать итоговую стоимость" only decides when the panel is first shown, not what it
+   *  says — see showSummary below. Currencies are never mixed: unpriced lines and lines of a
+   *  currency other than the majority are called out instead of summed. */
+  const summary = useMemo(() => {
+    const rows = lines
+      .filter((l) => l.serviceId && Number(l.quantity) > 0)
+      .map((l) => {
+        const service = services.data?.find((s) => s.id === l.serviceId);
+        const resolved = resolvedPrices[l.id];
+        const unitPrice = l.overrideEnabled ? Number(l.overrideUnitPrice) : resolved?.unitPrice;
+        const currency = l.overrideEnabled ? l.overrideCurrency.trim().toUpperCase() : resolved?.currency;
+        const qty = Number(l.quantity);
+        const priced = unitPrice != null && !Number.isNaN(unitPrice) && unitPrice > 0 && currency?.length === 3;
+        return {
+          id: l.id,
+          label: service ? localize(service.name, i18n.language) : l.serviceId,
+          unit: service?.unit ?? '',
+          qty,
+          unitPrice: priced ? unitPrice! : null,
+          currency: priced ? currency! : null,
+          total: priced ? round2(qty * unitPrice!) : null,
+        };
+      });
+    const byCurrency = new Map<string, number>();
+    for (const r of rows) {
+      if (r.total == null || !r.currency) continue;
+      byCurrency.set(r.currency, round2((byCurrency.get(r.currency) ?? 0) + r.total));
+    }
+    const currencies = [...byCurrency.entries()];
+    return {
+      rows,
+      currencies,
+      hasUnpriced: rows.some((r) => r.total == null),
+      finalTotal: currencies.length === 1 ? currencies[0] : null,
+    };
+  }, [lines, resolvedPrices, services.data, i18n.language]);
 
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -373,12 +446,7 @@ export function JobFormPage() {
           <Card
             title={t('job.sectionServices')}
             actions={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setLines((ls) => [...ls, { serviceId: '', description: '', quantity: '1' }])}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={() => setLines((ls) => [...ls, newLineDraft()])}>
                 + {t('job.addServiceLine')}
               </Button>
             }
@@ -387,38 +455,79 @@ export function JobFormPage() {
               <p className="muted">{t('job.servicesHint')}</p>
             ) : (
               <div className="stack">
-                {lines.map((l, i) => (
-                  <div key={i} className="invoice-line">
-                    <Field label={t('invoices.lineDescription')}>
-                      <Select value={l.serviceId} onChange={(e) => setLines((ls) => ls.map((x, idx) => (idx === i ? { ...x, serviceId: e.target.value } : x)))}>
-                        <option value="">{t('job.selectService')}</option>
-                        {services.data?.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {localize(s.name, i18n.language)} ({s.code})
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    <Field label={t('invoices.qty')}>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        value={l.quantity}
-                        onChange={(e) => setLines((ls) => ls.map((x, idx) => (idx === i ? { ...x, quantity: e.target.value } : x)))}
-                      />
-                    </Field>
-                    <JobLinePricePreview
-                      serviceId={l.serviceId}
-                      branchId={selectedClient?.branchId}
-                      clientId={form.clientId}
-                      contractId={form.contractId}
-                    />
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>
-                      ✕
-                    </Button>
-                  </div>
+                {lines.map((l) => (
+                  <JobLineRow
+                    key={l.id}
+                    line={l}
+                    services={services.data ?? []}
+                    branchId={selectedClient?.branchId}
+                    clientId={form.clientId}
+                    contractId={form.contractId}
+                    canOverride={canOverridePrice}
+                    onChange={(patch) => setLines((ls) => ls.map((x) => (x.id === l.id ? { ...x, ...patch } : x)))}
+                    onRemove={() => {
+                      setLines((ls) => ls.filter((x) => x.id !== l.id));
+                      setResolvedPrices((rp) => {
+                        const { [l.id]: _removed, ...rest } = rp;
+                        return rest;
+                      });
+                    }}
+                    onResolved={(price) => setResolvedPrices((rp) => (rp[l.id] === price ? rp : { ...rp, [l.id]: price }))}
+                  />
                 ))}
+              </div>
+            )}
+
+            {lines.length > 0 && (
+              <div className="row-actions" style={{ marginBlockStart: 'var(--gsi-space-4)' }}>
+                <Button type="button" className="calc-total-btn" onClick={() => setShowSummary(true)}>
+                  {t('job.calculateTotal')}
+                </Button>
+              </div>
+            )}
+
+            {showSummary && summary.rows.length > 0 && (
+              <div className="job-summary">
+                <Table>
+                  <thead>
+                    <tr>
+                      <th>{t('invoices.lineDescription')}</th>
+                      <th>{t('pricing.unit')}</th>
+                      <th>{t('invoices.qty')}</th>
+                      <th>{t('invoices.unitPrice')}</th>
+                      <th>{t('job.lineTotal')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.rows.map((r) => (
+                      <tr key={r.id}>
+                        <td>{r.label}</td>
+                        <td>{r.unit}</td>
+                        <td>{r.qty}</td>
+                        <td>{r.unitPrice != null && r.currency ? formatMoney(r.unitPrice, r.currency, i18n.language) : t('job.noPriceConfigured')}</td>
+                        <td>{r.total != null && r.currency ? formatMoney(r.total, r.currency, i18n.language) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+
+                {summary.hasUnpriced && <p className="muted">{t('job.summaryUnpriced')}</p>}
+
+                <div className="job-summary__totals">
+                  {summary.currencies.map(([currency, amount]) => (
+                    <div key={currency} className="job-summary__total-row">
+                      <span>{t('job.subtotal')} ({currency})</span>
+                      <strong>{formatMoney(amount, currency, i18n.language)}</strong>
+                    </div>
+                  ))}
+                  {summary.currencies.length > 1 && <p className="muted">{t('job.mixedCurrencyNotice')}</p>}
+                  {summary.finalTotal && (
+                    <div className="job-summary__total-row job-summary__total-row--final">
+                      <span>{t('job.finalTotal')}</span>
+                      <strong>{formatMoney(summary.finalTotal[1], summary.finalTotal[0], i18n.language)}</strong>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </Card>
@@ -542,42 +651,132 @@ export function JobFormPage() {
   );
 }
 
-/** Live preview of the price a line would resolve to (contract → client → branch default) —
- *  informational only; the server re-resolves it at save time, this never sends a price. */
-function JobLinePricePreview({
-  serviceId,
+/**
+ * One priced service line: service, unit, quantity, unit price + currency, line total. The
+ * price is resolved live (contract → client → branch default) — informational only, the
+ * server re-resolves it at save time — unless `canOverride` is set and the row's own override
+ * toggle is on, in which case these values are sent and used as-is (subject to the server-side
+ * `pricing.override` permission check).
+ */
+function JobLineRow({
+  line,
+  services,
   branchId,
   clientId,
   contractId,
+  canOverride,
+  onChange,
+  onRemove,
+  onResolved,
 }: {
-  serviceId: string;
+  line: JobLineDraft;
+  services: Service[];
   branchId?: string;
   clientId?: string;
   contractId?: string;
+  canOverride: boolean;
+  onChange(patch: Partial<JobLineDraft>): void;
+  onRemove(): void;
+  onResolved(price: Price | null): void;
 }) {
   const { t, i18n } = useTranslation();
-  const enabled = Boolean(serviceId && branchId && clientId);
+  const enabled = Boolean(line.serviceId && branchId && clientId);
   const price = useQuery({
-    queryKey: ['price-resolve', serviceId, branchId, clientId, contractId],
+    queryKey: ['price-resolve', line.serviceId, branchId, clientId, contractId],
     queryFn: () =>
       api.get<Price | null>(
-        `/finance/prices/resolve?serviceId=${serviceId}&branchId=${branchId}&clientId=${clientId}${contractId ? `&contractId=${contractId}` : ''}`,
+        `/finance/prices/resolve?serviceId=${line.serviceId}&branchId=${branchId}&clientId=${clientId}${contractId ? `&contractId=${contractId}` : ''}`,
       ),
     enabled,
   });
-  if (!enabled) return <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>—</div>;
-  if (price.isLoading) return <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>…</div>;
-  if (!price.data) {
-    return (
-      <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8, color: 'var(--gsi-color-danger)' }}>
-        {t('job.noPriceConfigured')}
-      </div>
-    );
-  }
+
+  useEffect(() => {
+    onResolved(enabled ? (price.data ?? null) : null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, price.data]);
+
+  const service = services.find((s) => s.id === line.serviceId);
+  const qty = Number(line.quantity);
+  const effectiveUnitPrice = line.overrideEnabled ? Number(line.overrideUnitPrice) : price.data?.unitPrice;
+  const effectiveCurrency = line.overrideEnabled ? line.overrideCurrency.trim().toUpperCase() : price.data?.currency;
+  const lineTotal =
+    effectiveUnitPrice != null && !Number.isNaN(effectiveUnitPrice) && effectiveUnitPrice > 0 && qty > 0
+      ? round2(qty * effectiveUnitPrice)
+      : null;
+
   return (
-    <div style={{ alignSelf: 'end', paddingBottom: 8 }}>
-      {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: price.data.currency, maximumFractionDigits: 2 }).format(
-        price.data.unitPrice,
+    <div className="job-line-row">
+      <div className="job-line">
+        <Field label={t('invoices.lineDescription')}>
+          <Select value={line.serviceId} onChange={(e) => onChange({ serviceId: e.target.value })}>
+            <option value="">{t('job.selectService')}</option>
+            {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {localize(s.name, i18n.language)} ({s.code})
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label={t('pricing.unit')}>
+          <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>{service?.unit ?? '—'}</div>
+        </Field>
+        <Field label={t('invoices.qty')}>
+          <Input type="number" min="0" step="0.001" value={line.quantity} onChange={(e) => onChange({ quantity: e.target.value })} />
+        </Field>
+        <Field label={t('invoices.unitPrice')}>
+          {line.overrideEnabled ? (
+            <Input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={line.overrideUnitPrice}
+              onChange={(e) => onChange({ overrideUnitPrice: e.target.value })}
+            />
+          ) : !enabled ? (
+            <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>—</div>
+          ) : price.isLoading ? (
+            <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>…</div>
+          ) : !price.data ? (
+            <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8, color: 'var(--gsi-color-danger)' }}>
+              {t('job.noPriceConfigured')}
+            </div>
+          ) : (
+            <div style={{ alignSelf: 'end', paddingBottom: 8 }}>{formatMoney(price.data.unitPrice, price.data.currency, i18n.language)}</div>
+          )}
+        </Field>
+        <Field label={t('job.lineTotal')}>
+          <div style={{ alignSelf: 'end', paddingBottom: 8, fontWeight: 'var(--gsi-font-weight-medium)' }}>
+            {lineTotal != null && effectiveCurrency ? formatMoney(lineTotal, effectiveCurrency, i18n.language) : '—'}
+          </div>
+        </Field>
+        <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
+          ✕
+        </Button>
+      </div>
+      {canOverride && (
+        <label className="job-line-override">
+          <input
+            type="checkbox"
+            checked={line.overrideEnabled}
+            onChange={(e) =>
+              onChange({
+                overrideEnabled: e.target.checked,
+                overrideUnitPrice: e.target.checked ? String(price.data?.unitPrice ?? '') : '',
+                overrideCurrency: e.target.checked ? (price.data?.currency ?? '') : '',
+              })
+            }
+          />
+          {t('job.overridePrice')}
+          {line.overrideEnabled && (
+            <Input
+              className="job-line-override__currency"
+              value={line.overrideCurrency}
+              onChange={(e) => onChange({ overrideCurrency: e.target.value.toUpperCase() })}
+              maxLength={3}
+              placeholder={t('invoices.currency')}
+            />
+          )}
+        </label>
       )}
     </div>
   );

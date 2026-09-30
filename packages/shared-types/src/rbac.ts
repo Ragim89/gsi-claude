@@ -38,7 +38,7 @@ export const PERMISSIONS = [
   'invoice.cancel', 'invoice.delete', 'invoice.remind', 'expense.create', 'expense.delete',
   'expense.pay', 'fx.manage', 'capitalization.read',
   // Services, pricing, quotes
-  'service.read', 'service.manage', 'pricing.read', 'pricing.manage',
+  'service.read', 'service.manage', 'pricing.read', 'pricing.manage', 'pricing.override',
   'quote.read', 'quote.create', 'quote.update', 'quote.send', 'quote.decide', 'quote.cancel',
   'quote.archive', 'quote.restore',
   // Payments

@@ -60,14 +60,20 @@ export interface JobLineInput {
   serviceId: string;
   description?: string | null;
   quantity: number;
+  /** A manual unit price for this line instead of the server-resolved one — requires
+   *  `pricing.override` (migration 033); both fields must be given together. */
+  unitPrice?: number | null;
+  currency?: string | null;
 }
 
 export interface CreateJobInput {
   clientId: string;
   type: ServiceType;
   /** Multi-service line items (migration 029). Omitted/empty = the legacy single-`type`
-   *  job, created exactly as before. Each line's price is always resolved server-side
-   *  (contract → client → branch default) — a caller can never dictate its own price. */
+   *  job, created exactly as before. Each line's price is resolved server-side
+   *  (contract → client → branch default) unless the caller holds `pricing.override`
+   *  and supplies its own unitPrice/currency (migration 033) — a caller without that
+   *  permission can never dictate its own price. */
   lines?: JobLineInput[];
   location?: string;
   status?: 'draft' | 'confirmed';
@@ -334,6 +340,11 @@ export class JobsService {
    * 019_finance_services_pricing.sql) — never taken from the request — and the resolved
    * price row's id is kept as the snapshot source; unit_price/currency are copied onto the
    * line itself so it never changes if that price is later deactivated or superseded.
+   *
+   * The one exception: a caller holding `pricing.override` (migration 033) may supply its own
+   * unitPrice/currency for a line instead. The resolved price, if any, is still looked up and
+   * kept as `price_id` (so the line still points at a real price row when one exists) but the
+   * override values win over it; a caller without the permission who tries this is refused.
    */
   private async createLines(
     tx: Tx,
@@ -345,34 +356,65 @@ export class JobsService {
     onDate: string | null,
     lines: JobLineInput[],
   ): Promise<void> {
+    let overrideCount = 0;
     for (const [i, line] of lines.entries()) {
       if (!line.quantity || line.quantity <= 0) throw new BadRequestException('Line quantity must be positive');
       const service = await tx.one<{ id: string; name: Record<string, string> }>(
         'SELECT id, name FROM services WHERE id = $1 AND is_active', [line.serviceId],
       );
       if (!service) throw new BadRequestException('Unknown or inactive service');
+      const label = line.description?.trim() || service.name.en || service.name.ru || service.id;
 
       const resolved = await tx.one<{ id: string }>(
         `SELECT app_resolve_price($1, $2, $3, $4, COALESCE($5::date, current_date)) AS id`,
         [line.serviceId, branchId, clientId, contractId, onDate],
       );
-      if (!resolved?.id) {
-        throw new BadRequestException(
-          `No price is configured for "${service.name.en ?? service.name.ru ?? service.id}" at this office`,
-        );
+      const resolvedPrice = resolved?.id
+        ? await tx.one<{ unit_price: string; currency: string }>(
+            'SELECT unit_price, currency FROM prices WHERE id = $1', [resolved.id],
+          )
+        : null;
+
+      const wantsOverride = line.unitPrice != null || line.currency != null;
+      let unitPrice: number;
+      let currency: string;
+      if (wantsOverride) {
+        if (!user.permissions?.includes('pricing.override')) {
+          throw new ForbiddenException('You are not permitted to override a resolved price');
+        }
+        if (!(line.unitPrice! > 0)) throw new BadRequestException('A manual price override needs a positive unit price');
+        if (!line.currency || line.currency.trim().length !== 3) {
+          throw new BadRequestException('A manual price override needs a 3-letter currency code');
+        }
+        unitPrice = line.unitPrice!;
+        currency = line.currency.trim().toUpperCase();
+        overrideCount++;
+      } else {
+        if (!resolvedPrice) {
+          throw new BadRequestException(`No price is configured for "${label}" at this office`);
+        }
+        unitPrice = Number(resolvedPrice.unit_price);
+        currency = resolvedPrice.currency;
       }
-      const price = await tx.one<{ unit_price: string; currency: string }>(
-        'SELECT unit_price, currency FROM prices WHERE id = $1', [resolved.id],
-      );
 
       await tx.exec(
         `INSERT INTO job_lines (job_id, service_id, price_id, description, quantity, unit_price, currency,
                                 sort_order, created_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [jobId, line.serviceId, resolved.id,
-         line.description?.trim() || service.name.en || service.name.ru || service.id,
-         line.quantity, price!.unit_price, price!.currency, (i + 1) * 10, user.id],
+        [jobId, line.serviceId, resolved?.id ?? null, label, line.quantity, unitPrice, currency, (i + 1) * 10, user.id],
       );
+
+      if (wantsOverride) {
+        await this.audit.record(tx, user, {
+          action: 'job.line.price_override',
+          entityType: 'job',
+          entityId: jobId,
+          entityLabel: label,
+          branchId,
+          before: resolvedPrice ? { unitPrice: Number(resolvedPrice.unit_price), currency: resolvedPrice.currency } : null,
+          after: { unitPrice, currency },
+        });
+      }
     }
     await this.audit.record(tx, user, {
       action: 'job.lines.created',
@@ -380,7 +422,7 @@ export class JobsService {
       entityId: jobId,
       entityLabel: '',
       branchId,
-      after: { lineCount: lines.length },
+      after: { lineCount: lines.length, overrideCount },
     });
   }
 

@@ -8,6 +8,13 @@ export interface CreateServiceInput {
   serviceType?: string | null;
   unit?: string;
   sortOrder?: number;
+  /** The service's branch-default price, required at creation (versioned/effective-dated,
+   *  same `prices` row shape as any other price — see CreatePriceInput). Defaults to the
+   *  caller's own branch when omitted. */
+  branchId?: string;
+  currency: string;
+  unitPrice: number;
+  effectiveFrom?: string;
 }
 
 export interface CreatePriceInput {
@@ -37,15 +44,28 @@ export class ServicesPricingService {
     );
   }
 
+  /**
+   * A service is never created price-less: the unit price is mandatory, and is stored as an
+   * ordinary branch-default `prices` row (client_id/contract_id NULL) through the same
+   * versioned/effective-dated pricing engine `createPrice`/`app_resolve_price` use — not a
+   * shortcut or a second price representation.
+   */
   createService(user: AuthUser, input: CreateServiceInput) {
-    return this.db.tx(user, (tx) =>
-      tx.one<Service>(
+    return this.db.tx(user, async (tx) => {
+      const service = await tx.one<Service>(
         `INSERT INTO services (code, name, service_type, unit, sort_order)
          VALUES ($1, $2::jsonb, $3::service_type, $4, $5)
          RETURNING id, code, name, service_type AS "serviceType", unit, is_active AS "isActive", sort_order AS "sortOrder"`,
         [input.code, JSON.stringify(input.name), input.serviceType ?? null, input.unit ?? 'unit', input.sortOrder ?? 100],
-      ),
-    );
+      );
+      const price = await tx.one<{ id: string }>(
+        `INSERT INTO prices (branch_id, service_id, currency, unit_price, effective_from, created_by)
+         VALUES ($1, $2, $3, $4, COALESCE($5::date, current_date), $6)
+         RETURNING id`,
+        [input.branchId ?? user.branchId, service!.id, input.currency, input.unitPrice, input.effectiveFrom ?? null, user.id],
+      );
+      return { ...service!, defaultPriceId: price!.id };
+    });
   }
 
   updateService(user: AuthUser, id: string, input: Partial<CreateServiceInput> & { isActive?: boolean }) {

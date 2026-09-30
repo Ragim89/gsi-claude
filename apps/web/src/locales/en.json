@@ -424,6 +424,10 @@
     "sectionServices": "Priced services (optional)", "addServiceLine": "Add service",
     "servicesHint": "Add one or more priced services to bill this request for several services at once, instead of the single service type above.",
     "selectService": "Select a service", "noPriceConfigured": "No price configured",
+    "lineTotal": "Line total", "overridePrice": "Override price",
+    "calculateTotal": "Calculate total cost", "subtotal": "Subtotal", "finalTotal": "Final total",
+    "summaryUnpriced": "One or more lines have no price yet and are left out of the total.",
+    "mixedCurrencyNotice": "These services are priced in different currencies and are shown separately — use the existing FX mechanism to combine them.",
     "newHint": "Save as a draft while details are still coming in; confirming checks it is complete",
     "saveDraft": "Save as draft", "createConfirmed": "Create and confirm",
     "heldFrom": "on hold, will return to {{status}}",
@@ -725,7 +729,8 @@
     "newService": "New service", "newPrice": "New price", "code": "Code", "name": "Name",
     "currencyHint": "Defaults to the branch's own currency; change it only for an explicit foreign-currency price",
     "unit": "Unit", "contract": "Contract", "effectiveFrom": "Effective from", "default": "Branch default",
-    "selectService": "Select a service to see its prices", "noServices": "No services yet", "noPrices": "No prices yet"
+    "selectService": "Select a service to see its prices", "noServices": "No services yet", "noPrices": "No prices yet",
+    "priceHint": "Saved as a branch-default price, versioned and effective-dated, through the pricing engine"
   },
   "jobFinance": {
     "title": "Revenue, costs & margin", "revenue": "Revenue", "costs": "Costs", "margin": "Margin",

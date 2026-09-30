@@ -14,6 +14,12 @@ class CreateServiceDto {
   @IsOptional() @IsIn(SERVICE_TYPES) serviceType?: ServiceType | null;
   @IsOptional() @IsString() @MaxLength(40) unit?: string;
   @IsOptional() @IsInt() sortOrder?: number;
+  /** The mandatory branch-default price, created alongside the service (see CreateServiceDto
+   *  doc on ServicesPricingService.createService). */
+  @IsOptional() @IsUUID() branchId?: string;
+  @IsString() @MinLength(3) @MaxLength(3) currency: string;
+  @Type(() => Number) @IsNumber() @Min(0.01) unitPrice: number;
+  @IsOptional() @IsDateString() effectiveFrom?: string;
 }
 
 class UpdateServiceDto {

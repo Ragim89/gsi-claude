@@ -124,25 +124,46 @@ export function ServicesPricingPage() {
 function ServiceForm({ onDone }: { onDone(): void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { user } = useAuth();
   const serviceLabel = useServiceLabel();
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [serviceType, setServiceType] = useState<ServiceType | ''>('');
   const [unit, setUnit] = useState('unit');
+  // The service's branch-default price — mandatory, versioned/effective-dated, saved through
+  // the same pricing engine as any other price (ServicesPricingService.createService).
+  const [currency, setCurrency] = useState('');
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+  const [unitPrice, setUnitPrice] = useState('');
+  const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10));
+
+  const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches') });
+
+  useEffect(() => {
+    if (currencyTouched) return;
+    const branch = branches.data?.find((b) => b.id === user?.branchId);
+    if (branch) setCurrency(branch.currency);
+  }, [branches.data, user?.branchId, currencyTouched]);
 
   const create = useMutation({
     mutationFn: () =>
-      api.post<Service>('/finance/services', {
+      api.post<Service & { defaultPriceId: string }>('/finance/services', {
         code: code.trim(),
         name: { en: name.trim(), ru: name.trim(), tr: name.trim() },
         serviceType: serviceType || null,
         unit,
+        currency,
+        unitPrice: Number(unitPrice),
+        effectiveFrom,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['services'] });
+      qc.invalidateQueries({ queryKey: ['prices'] });
       onDone();
     },
   });
+
+  const priceValid = Number(unitPrice) > 0 && currency.trim().length === 3 && Boolean(effectiveFrom);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -173,12 +194,29 @@ function ServiceForm({ onDone }: { onDone(): void }) {
           <Field label={t('pricing.unit')}>
             <Input value={unit} onChange={(e) => setUnit(e.target.value)} />
           </Field>
+          <Field label={`${t('invoices.unitPrice')} *`} hint={t('pricing.priceHint')}>
+            <Input type="number" required min="0.01" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
+          </Field>
+          <Field label={`${t('invoices.currency')} *`} hint={t('pricing.currencyHint')}>
+            <Input
+              required
+              value={currency}
+              onChange={(e) => {
+                setCurrencyTouched(true);
+                setCurrency(e.target.value.toUpperCase());
+              }}
+              maxLength={3}
+            />
+          </Field>
+          <Field label={`${t('common.effectiveFrom')} *`}>
+            <Input type="date" required value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
+          </Field>
         </div>
         <div className="form-actions">
           <Button type="button" variant="secondary" onClick={onDone}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" loading={create.isPending} disabled={!code.trim() || !name.trim()}>
+          <Button type="submit" loading={create.isPending} disabled={!code.trim() || !name.trim() || !priceValid}>
             {t('common.create')}
           </Button>
         </div>
