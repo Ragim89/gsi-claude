@@ -723,6 +723,7 @@
   "pricing": {
     "title": "Services & pricing", "services": "Service catalogue", "prices": "Prices",
     "newService": "New service", "newPrice": "New price", "code": "Code", "name": "Name",
+    "currencyHint": "Defaults to the branch's own currency; change it only for an explicit foreign-currency price",
     "unit": "Unit", "contract": "Contract", "effectiveFrom": "Effective from", "default": "Branch default",
     "selectService": "Select a service to see its prices", "noServices": "No services yet", "noPrices": "No prices yet"
   },

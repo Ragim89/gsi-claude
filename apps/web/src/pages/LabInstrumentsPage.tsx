@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
-import { INSTRUMENT_STATUSES, InstrumentStatus, LabInstrument, Laboratory } from '@gsi/shared-types';
+import { Branch, INSTRUMENT_STATUSES, InstrumentStatus, LabInstrument, Laboratory } from '@gsi/shared-types';
 import { api, blanksToNull } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
@@ -45,6 +45,14 @@ export function LabInstrumentsPage() {
     queryKey: ['laboratories'],
     queryFn: () => api.get<Laboratory[]>('/samples/laboratories'),
     staleTime: 300_000,
+  });
+  // So the purchase-data form can default currency to the instrument's own branch, not a
+  // hardcoded one — see InstrumentFinanceForm's defaultCurrency prop.
+  const branches = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => api.get<Branch[]>('/branches'),
+    staleTime: 300_000,
+    enabled: canSetFinance,
   });
   const list = useQuery({
     queryKey: ['lab-instruments', laboratoryId],
@@ -233,6 +241,10 @@ export function LabInstrumentsPage() {
                       <td colSpan={canSeeFinance ? 7 : 6}>
                         <InstrumentFinanceForm
                           instrumentId={x.id}
+                          defaultCurrency={
+                            branches.data?.find((b) => b.id === labs.data?.find((l) => l.id === x.laboratoryId)?.branchId)
+                              ?.currency
+                          }
                           onDone={() => {
                             setFinanceFor(null);
                             qc.invalidateQueries({ queryKey: ['lab-instruments'] });
@@ -251,10 +263,20 @@ export function LabInstrumentsPage() {
   );
 }
 
-function InstrumentFinanceForm({ instrumentId, onDone }: { instrumentId: string; onDone(): void }) {
+function InstrumentFinanceForm({
+  instrumentId,
+  defaultCurrency,
+  onDone,
+}: {
+  instrumentId: string;
+  /** The instrument's own branch currency — a hardcoded default would repeat the exact bug
+   *  this whole pass fixed for invoice pricing (a TR/RU instrument ending up costed in EUR). */
+  defaultCurrency?: string;
+  onDone(): void;
+}) {
   const { t } = useTranslation();
   const [purchaseCost, setPurchaseCost] = useState('');
-  const [currency, setCurrency] = useState('EUR');
+  const [currency, setCurrency] = useState(defaultCurrency ?? '');
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10));
   const [usefulLifeMonths, setUsefulLifeMonths] = useState('60');
   const [salvageValue, setSalvageValue] = useState('0');
@@ -278,7 +300,7 @@ function InstrumentFinanceForm({ instrumentId, onDone }: { instrumentId: string;
         <Field label={`${t('invoices.unitPrice')} *`}>
           <Input type="number" min="0" step="0.01" value={purchaseCost} onChange={(e) => setPurchaseCost(e.target.value)} />
         </Field>
-        <Field label={`${t('common.currency')} *`}>
+        <Field label={`${t('common.currency')} *`} hint={t('pricing.currencyHint')}>
           <Input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
         </Field>
         <Field label={`${t('lab.purchaseDate')} *`}>

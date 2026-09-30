@@ -32,9 +32,17 @@ export class DashboardService {
   /**
    * `branchId` narrows an HQ view to a single legal entity ("каждую точку отдельно").
    * For branch users it changes nothing — RLS already limits them to their own branch.
+   *
+   * Currency: with no branch filter this is the group view, expressed in the consolidation
+   * currency exactly as before (every leg converted at its own posting date's rate — the
+   * existing, real FX mechanism, never a blanket live re-conversion). With a single branch
+   * selected there is nothing to consolidate, so every figure is expressed in that branch's
+   * own currency instead — its `amount_local` where the source is the pre-aggregated
+   * `finance_daily_agg` (exact, no conversion at all, since a branch posts in its own
+   * currency), or a fresh `fx_rate_on(..., branchCurrency, ...)` where the source is read live
+   * (invoices/expenses/assets, which may carry an explicit foreign-currency override).
    */
   async build(user: AuthUser, from?: string, to?: string, branchId?: string): Promise<FinanceDashboard> {
-    const base = config.consolidationCurrency;
     const period = {
       from: from ?? defaultFrom(),
       to: to ?? new Date().toISOString().slice(0, 10),
@@ -42,24 +50,30 @@ export class DashboardService {
     };
 
     return this.db.tx(user, async (tx) => {
+      const base = await this.resolveDisplayCurrency(tx, period.branchId);
+      const single = period.branchId !== null;
+
       const [branches, monthly, cashFlow, revenueByService, revenueByClient, expensesByCategory, aging, kpis, overdue,
              payable, unallocated, quotePipeline] =
         await Promise.all([
           this.branches(tx, period, base),
-          this.monthly(tx, period),
-          this.cashFlow(tx, period),
+          this.monthly(tx, period, base),
+          this.cashFlow(tx, period, base),
           this.revenueByService(tx, period, base),
           this.revenueByClient(tx, period, base),
           this.expensesByCategory(tx, period, base),
           this.arAging(tx, base, period.branchId),
           this.kpis(tx, period),
           this.overdueTotal(tx, base, period.branchId),
-          this.payableTotal(tx, base, period.branchId),
+          this.payableTotal(tx, base, period.branchId, single),
           this.unallocatedCash(tx, base, period.branchId),
           this.quotePipeline(tx, base, period.branchId),
         ]);
 
       // Net book value of the fixed assets, so "capitalisation" is not just liquid assets.
+      // Live fx_rate_on against the resolved display currency — the real mechanism, not a
+      // symbol swap; returns null (excluded from the sum) rather than a fabricated rate when
+      // no pair is on file, exactly like every other live conversion in this file.
       const assets = await tx.one<{ nbv: number }>(
         `SELECT COALESCE(SUM((acquisition_cost - accumulated) * fx_rate_on(currency, $1, current_date)), 0)::float8 AS nbv
          FROM assets WHERE status NOT IN ('disposed', 'written_off')
@@ -68,10 +82,10 @@ export class DashboardService {
       );
       const assetsBase = round2(n(assets?.nbv));
 
-      const revenueBase = sum(branches, 'revenueBase');
-      const expenseBase = sum(branches, 'expenseBase');
-      const cashBase = sum(branches, 'cashBase');
-      const receivableBase = sum(branches, 'receivableBase');
+      const revenueBase = sum(branches, single ? 'revenueLocal' : 'revenueBase');
+      const expenseBase = sum(branches, single ? 'expenseLocal' : 'expenseBase');
+      const cashBase = sum(branches, single ? 'cashLocal' : 'cashBase');
+      const receivableBase = sum(branches, single ? 'receivableLocal' : 'receivableBase');
       const profitBase = round2(revenueBase - expenseBase);
 
       return {
@@ -107,6 +121,15 @@ export class DashboardService {
     });
   }
 
+  /** The consolidation currency for a group view, or the selected branch's own currency when
+   *  there is exactly one branch in view — there is nothing to consolidate for a single branch,
+   *  so its own books are the honest answer, not a currency it doesn't trade in. */
+  private async resolveDisplayCurrency(tx: Tx, branchId: string | null): Promise<string> {
+    if (!branchId) return config.consolidationCurrency;
+    const row = await tx.one<{ currency: string }>('SELECT currency FROM branches WHERE id = $1', [branchId]);
+    return row?.currency ?? config.consolidationCurrency;
+  }
+
   private async branches(tx: Tx, p: Period, _base: string): Promise<BranchFinanceRow[]> {
     const rows = await tx.many<Record<string, unknown>>(
       `SELECT b.id AS "branchId", b.code AS "branchCode", b.country, b.city, b.currency,
@@ -116,8 +139,12 @@ export class DashboardService {
                        AND a.entry_date BETWEEN $1::date AND $2::date), 0)::float8 AS "expenseBase",
               COALESCE(-SUM(a.amount_local) FILTER (WHERE a.account_group = 'revenue'
                        AND a.entry_date BETWEEN $1::date AND $2::date), 0)::float8 AS "revenueLocal",
+              COALESCE(SUM(a.amount_local) FILTER (WHERE a.account_group = 'expense'
+                       AND a.entry_date BETWEEN $1::date AND $2::date), 0)::float8 AS "expenseLocal",
               COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'cash'), 0)::float8 AS "cashBase",
               COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'receivable'), 0)::float8 AS "receivableBase",
+              COALESCE(SUM(a.amount_local) FILTER (WHERE a.account_group = 'cash'), 0)::float8 AS "cashLocal",
+              COALESCE(SUM(a.amount_local) FILTER (WHERE a.account_group = 'receivable'), 0)::float8 AS "receivableLocal",
               (SELECT count(*) FROM inspection_jobs j
                 WHERE j.branch_id = b.id AND j.created_at::date BETWEEN $1::date AND $2::date)::int AS "jobCount"
        FROM branches b
@@ -138,13 +165,19 @@ export class DashboardService {
       profitBase: round2(n(r.revenueBase) - n(r.expenseBase)),
       cashBase: round2(n(r.cashBase)),
       receivableBase: round2(n(r.receivableBase)),
+      expenseLocal: round2(n(r.expenseLocal)),
+      cashLocal: round2(n(r.cashLocal)),
+      receivableLocal: round2(n(r.receivableLocal)),
       netAssetsBase: round2(n(r.cashBase) + n(r.receivableBase)),
       revenueLocal: round2(n(r.revenueLocal)),
       jobCount: n(r.jobCount),
     }));
   }
 
-  private async monthly(tx: Tx, p: Period): Promise<MonthlyPoint[]> {
+  /** Local columns are only ever selected when `p.branchId` narrows to one branch — a branch
+   *  posts in its own currency, so `amount_local` there needs no conversion at all. */
+  private async monthly(tx: Tx, p: Period, _base: string): Promise<MonthlyPoint[]> {
+    const single = p.branchId !== null;
     const rows = await tx.many<Record<string, unknown>>(
       `WITH months AS (
          SELECT date_trunc('month', m)::date AS m_start
@@ -152,7 +185,9 @@ export class DashboardService {
        )
        SELECT to_char(months.m_start, 'YYYY-MM') AS month,
               COALESCE(-SUM(a.amount_base) FILTER (WHERE a.account_group = 'revenue'), 0)::float8 AS "revenueBase",
-              COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'expense'), 0)::float8 AS "expenseBase"
+              COALESCE(SUM(a.amount_base) FILTER (WHERE a.account_group = 'expense'), 0)::float8 AS "expenseBase",
+              COALESCE(-SUM(a.amount_local) FILTER (WHERE a.account_group = 'revenue'), 0)::float8 AS "revenueLocal",
+              COALESCE(SUM(a.amount_local) FILTER (WHERE a.account_group = 'expense'), 0)::float8 AS "expenseLocal"
        FROM months
        LEFT JOIN finance_daily_agg a ON date_trunc('month', a.entry_date)::date = months.m_start
                                     AND ($3::uuid IS NULL OR a.branch_id = $3::uuid)
@@ -162,29 +197,54 @@ export class DashboardService {
     );
     return rows.map((r) => ({
       month: String(r.month),
-      revenueBase: round2(n(r.revenueBase)),
-      expenseBase: round2(n(r.expenseBase)),
-      profitBase: round2(n(r.revenueBase) - n(r.expenseBase)),
+      revenueBase: round2(n(single ? r.revenueLocal : r.revenueBase)),
+      expenseBase: round2(n(single ? r.expenseLocal : r.expenseBase)),
+      profitBase: round2(n(single ? r.revenueLocal : r.revenueBase) - n(single ? r.expenseLocal : r.expenseBase)),
     }));
   }
 
-  private async cashFlow(tx: Tx, p: Period): Promise<CashFlowPoint[]> {
-    const rows = await tx.many<Record<string, unknown>>(
-      `WITH months AS (
-         SELECT date_trunc('month', m)::date AS m_start
-         FROM generate_series(date_trunc('month', $1::date), date_trunc('month', $2::date), interval '1 month') m
-       )
-       SELECT to_char(months.m_start, 'YYYY-MM') AS month,
-              COALESCE(SUM(l.amount_base) FILTER (WHERE l.amount_base > 0), 0)::float8 AS "inflowBase",
-              COALESCE(-SUM(l.amount_base) FILTER (WHERE l.amount_base < 0), 0)::float8 AS "outflowBase"
-       FROM months
-       LEFT JOIN ledger_entries l
-              ON date_trunc('month', l.entry_date)::date = months.m_start AND l.account_group = 'cash'
-             AND ($3::uuid IS NULL OR l.branch_id = $3::uuid)
-       GROUP BY months.m_start
-       ORDER BY months.m_start`,
-      [p.from, p.to, p.branchId],
-    );
+  /** Group view (unchanged): sums the pre-baked `amount_base` column exactly as before — same
+   *  query, same behavior, zero regression risk for the case nobody reported as broken. Single
+   *  branch: `ledger_entries` keeps each posting's own currency, so it is re-converted live to
+   *  that branch's own currency instead of reading a column frozen to the consolidation one.
+   *  Two separate queries, each with its own matching params — a shared array sized for the
+   *  larger one previously mismatched the smaller query's placeholder count (pg: "bind message
+   *  supplies N parameters, but prepared statement requires M"). */
+  private async cashFlow(tx: Tx, p: Period, base: string): Promise<CashFlowPoint[]> {
+    const rows = p.branchId
+      ? await tx.many<Record<string, unknown>>(
+          `WITH months AS (
+             SELECT date_trunc('month', m)::date AS m_start
+             FROM generate_series(date_trunc('month', $1::date), date_trunc('month', $2::date), interval '1 month') m
+           )
+           SELECT to_char(months.m_start, 'YYYY-MM') AS month,
+                  COALESCE(SUM((l.debit - l.credit) * fx_rate_on(l.currency, $4, l.entry_date))
+                           FILTER (WHERE l.debit > l.credit), 0)::float8 AS "inflowBase",
+                  COALESCE(-SUM((l.debit - l.credit) * fx_rate_on(l.currency, $4, l.entry_date))
+                           FILTER (WHERE l.debit < l.credit), 0)::float8 AS "outflowBase"
+           FROM months
+           LEFT JOIN ledger_entries l
+                  ON date_trunc('month', l.entry_date)::date = months.m_start AND l.account_group = 'cash'
+                 AND l.branch_id = $3::uuid
+           GROUP BY months.m_start
+           ORDER BY months.m_start`,
+          [p.from, p.to, p.branchId, base],
+        )
+      : await tx.many<Record<string, unknown>>(
+          `WITH months AS (
+             SELECT date_trunc('month', m)::date AS m_start
+             FROM generate_series(date_trunc('month', $1::date), date_trunc('month', $2::date), interval '1 month') m
+           )
+           SELECT to_char(months.m_start, 'YYYY-MM') AS month,
+                  COALESCE(SUM(l.amount_base) FILTER (WHERE l.amount_base > 0), 0)::float8 AS "inflowBase",
+                  COALESCE(-SUM(l.amount_base) FILTER (WHERE l.amount_base < 0), 0)::float8 AS "outflowBase"
+           FROM months
+           LEFT JOIN ledger_entries l
+                  ON date_trunc('month', l.entry_date)::date = months.m_start AND l.account_group = 'cash'
+           GROUP BY months.m_start
+           ORDER BY months.m_start`,
+          [p.from, p.to],
+        );
     return rows.map((r) => ({
       month: String(r.month),
       inflowBase: round2(n(r.inflowBase)),
@@ -274,10 +334,12 @@ export class DashboardService {
     return round2(n(row?.amount));
   }
 
-  /** Money still owed to suppliers on on-account expenses (PHASE 8). */
-  private async payableTotal(tx: Tx, base: string, branchId: string | null): Promise<number> {
+  /** Money still owed to suppliers on on-account expenses (PHASE 8). `base` was accepted but
+   *  never used — always returned the consolidation-currency figure even for a single branch;
+   *  now sums `amount_local` (that branch's own currency, exact, no conversion) instead. */
+  private async payableTotal(tx: Tx, _base: string, branchId: string | null, single = false): Promise<number> {
     const row = await tx.one<{ amount: number }>(
-      `SELECT COALESCE(-SUM(a.amount_base), 0)::float8 AS amount
+      `SELECT COALESCE(-SUM(${single ? 'a.amount_local' : 'a.amount_base'}), 0)::float8 AS amount
        FROM finance_daily_agg a
        WHERE a.account_group = 'payable' AND ($1::uuid IS NULL OR a.branch_id = $1::uuid)`,
       [branchId],

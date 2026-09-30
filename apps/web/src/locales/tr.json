@@ -725,6 +725,7 @@
   "pricing": {
     "title": "Hizmetler ve fiyatlandırma", "services": "Hizmet kataloğu", "prices": "Fiyatlar",
     "newService": "Yeni hizmet", "newPrice": "Yeni fiyat", "code": "Kod", "name": "Ad",
+    "currencyHint": "Varsayılan olarak şubenin kendi para birimi; yalnızca açık bir yabancı para birimli fiyat için değiştirin",
     "unit": "Birim", "contract": "Sözleşme", "effectiveFrom": "Geçerlilik başlangıcı", "default": "Şube varsayılanı",
     "selectService": "Fiyatları görmek için bir hizmet seçin", "noServices": "Henüz hizmet yok", "noPrices": "Henüz fiyat yok"
   },

@@ -111,17 +111,27 @@ export class InvoicesService {
 
   /**
    * Analytics for the invoices page: what was invoiced, what came in, what is still owed and
-   * who to chase. Consolidated at the fx rate of each document's date; RLS and the branch
-   * filter scope it exactly like the list.
+   * who to chase. RLS and the branch filter scope it exactly like the list.
+   *
+   * Currency: group view (no branch filter) is consolidated exactly as before — every document
+   * converted at its own date's fx rate, into the consolidation currency. A single selected
+   * branch has nothing to consolidate, so every figure is expressed in that branch's own
+   * currency instead (still via the same live `fx_rate_on`, just re-targeted — the real
+   * mechanism, not a symbol swap; a row with no rate on file for its pair/date is excluded from
+   * the sum rather than faked, exactly as this already behaved for the group view).
    */
-  summary(user: AuthUser, f: { from?: string; to?: string; branchId?: string }): Promise<InvoiceSummary> {
-    const base = config.consolidationCurrency;
+  async summary(user: AuthUser, f: { from?: string; to?: string; branchId?: string }): Promise<InvoiceSummary> {
     const from = f.from ?? defaultFrom();
     const to = f.to ?? today();
     const branchId = f.branchId ?? null;
-    const p = [from, to, base, branchId];
 
     return this.db.tx(user, async (tx) => {
+      const base = branchId
+        ? (await tx.one<{ currency: string }>('SELECT currency FROM branches WHERE id = $1', [branchId]))?.currency ??
+          config.consolidationCurrency
+        : config.consolidationCurrency;
+      const p = [from, to, base, branchId];
+
       const [totals, collected, outstanding, monthly, byStatus, byClient, aging, topOverdue] = await Promise.all([
         tx.one<{ issued: number; cnt: number; drafts: number; avg_days: number | null }>(
           `SELECT COALESCE(SUM(i.amount_total * fx_rate_on(i.currency, $3, i.issue_date))
@@ -134,14 +144,26 @@ export class InvoicesService {
              AND i.deleted_at IS NULL`,
           p,
         ),
-        // Cash actually received in the period, from the payment postings.
-        tx.one<{ amount: number }>(
-          `SELECT COALESCE(SUM(l.amount_base), 0)::float8 AS amount
-           FROM ledger_entries l
-           WHERE l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
-             AND l.entry_date BETWEEN $1::date AND $2::date AND ($3::uuid IS NULL OR l.branch_id = $3::uuid)`,
-          [from, to, branchId],
-        ),
+        // Cash actually received in the period, from the payment postings. `amount_base` is
+        // frozen to the consolidation currency at posting time, so a single branch re-derives
+        // it live from the entry's own (debit − credit) and currency instead of reading that
+        // column — group view keeps reading it unchanged. Two separate queries, each with its
+        // own matching params — see the identical note on DashboardService.cashFlow().
+        branchId
+          ? tx.one<{ amount: number }>(
+              `SELECT COALESCE(SUM((l.debit - l.credit) * fx_rate_on(l.currency, $4, l.entry_date)), 0)::float8 AS amount
+               FROM ledger_entries l
+               WHERE l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
+                 AND l.entry_date BETWEEN $1::date AND $2::date AND l.branch_id = $3::uuid`,
+              [from, to, branchId, base],
+            )
+          : tx.one<{ amount: number }>(
+              `SELECT COALESCE(SUM(l.amount_base), 0)::float8 AS amount
+               FROM ledger_entries l
+               WHERE l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
+                 AND l.entry_date BETWEEN $1::date AND $2::date`,
+              [from, to],
+            ),
         tx.one<{ outstanding: number; overdue: number }>(
           `SELECT COALESCE(SUM((i.amount_total - i.amount_paid) * fx_rate_on(i.currency, $1, i.issue_date)), 0)::float8 AS outstanding,
                   COALESCE(SUM((i.amount_total - i.amount_paid) * fx_rate_on(i.currency, $1, i.issue_date))
@@ -161,7 +183,8 @@ export class InvoicesService {
                             WHERE date_trunc('month', i.issue_date)::date = months.m_start
                               AND i.status <> 'draft' AND i.status <> 'cancelled'
                               AND ($4::uuid IS NULL OR i.branch_id = $4::uuid)), 0)::float8 AS issued,
-                  COALESCE((SELECT SUM(l.amount_base) FROM ledger_entries l
+                  COALESCE((SELECT SUM(${branchId ? '(l.debit - l.credit) * fx_rate_on(l.currency, $3, l.entry_date)' : 'l.amount_base'})
+                            FROM ledger_entries l
                             WHERE date_trunc('month', l.entry_date)::date = months.m_start
                               AND l.source_type = 'payment' AND l.account_group = 'cash' AND l.debit > 0
                               AND ($4::uuid IS NULL OR l.branch_id = $4::uuid)), 0)::float8 AS collected

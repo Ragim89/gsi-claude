@@ -1,11 +1,11 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
-import { Client, Page, Price, SERVICE_TYPES, Service, ServiceType } from '@gsi/shared-types';
+import { Branch, Client, Page, Price, SERVICE_TYPES, Service, ServiceType } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import { useBranch } from '../branch';
+import { flag, useBranch } from '../branch';
 import { ErrorBox, Loading, PageHead, useFormatDate, useServiceLabel } from '../components/common';
 
 /** The service catalogue and its price list — what GSI sells, and what it costs where. */
@@ -193,11 +193,21 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
   const { user } = useAuth();
   const [branchId, setBranchId] = useState(user?.branchId ?? '');
   const [clientId, setClientId] = useState('');
-  const [currency, setCurrency] = useState('EUR');
+  // Domestic default: the selected branch's own currency (KZ→KZT, RU→RUB, TR→TRY, …), never a
+  // hardcoded one — a foreign currency stays possible, but only as an explicit override below.
+  const [currency, setCurrency] = useState('');
+  const [currencyTouched, setCurrencyTouched] = useState(false);
   const [unitPrice, setUnitPrice] = useState('');
   const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10));
 
   const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Page<Client>>('/clients?limit=200').then((p) => p.rows) });
+  const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches') });
+
+  useEffect(() => {
+    if (currencyTouched) return;
+    const branch = branches.data?.find((b) => b.id === branchId);
+    if (branch) setCurrency(branch.currency);
+  }, [branchId, branches.data, currencyTouched]);
 
   const create = useMutation({
     mutationFn: () =>
@@ -225,7 +235,14 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
       <ErrorBox error={create.error} />
       <div className="form-grid" style={{ marginTop: 8 }}>
         <Field label={`${t('common.branch')} *`}>
-          <Input required value={branchId} onChange={(e) => setBranchId(e.target.value)} />
+          <Select required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+            <option value="">{t('common.branch')}</option>
+            {branches.data?.map((b) => (
+              <option key={b.id} value={b.id}>
+                {flag(b.country)} {b.code} — {b.city} ({b.currency})
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label={t('jobs.client')}>
           <Select value={clientId} onChange={(e) => setClientId(e.target.value)}>
@@ -237,8 +254,16 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
             ))}
           </Select>
         </Field>
-        <Field label={`${t('invoices.currency')} *`}>
-          <Input required value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
+        <Field label={`${t('invoices.currency')} *`} hint={t('pricing.currencyHint')}>
+          <Input
+            required
+            value={currency}
+            onChange={(e) => {
+              setCurrencyTouched(true);
+              setCurrency(e.target.value.toUpperCase());
+            }}
+            maxLength={3}
+          />
         </Field>
         <Field label={`${t('invoices.unitPrice')} *`}>
           <Input type="number" required min="0" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />

@@ -198,6 +198,9 @@ export interface BranchFinanceRow {
   /** Cash + receivables. */
   netAssetsBase: number;
   revenueLocal: number;
+  expenseLocal: number;
+  cashLocal: number;
+  receivableLocal: number;
   jobCount: number;
 }
 

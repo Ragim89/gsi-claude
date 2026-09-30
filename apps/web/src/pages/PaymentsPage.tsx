@@ -1,11 +1,11 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
-import { Client, PAYMENT_DIRECTIONS, PAYMENT_METHODS, Page, Payment, PaymentDirection } from '@gsi/shared-types';
+import { Branch, Client, PAYMENT_DIRECTIONS, PAYMENT_METHODS, Page, Payment, PaymentDirection } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
-import { useBranch } from '../branch';
+import { flag, useBranch } from '../branch';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 /** Payments as their own record: what came in, what went out, and what is still unapplied. */
@@ -105,12 +105,22 @@ function PaymentForm({ onDone }: { onDone(): void }) {
   const [supplier, setSupplier] = useState('');
   const [method, setMethod] = useState('bank_transfer');
   const [reference, setReference] = useState('');
-  const [currency, setCurrency] = useState('EUR');
+  // Domestic default: the selected branch's own currency, never a hardcoded one — a foreign
+  // currency stays possible, but only as an explicit override below.
+  const [currency, setCurrency] = useState('');
+  const [currencyTouched, setCurrencyTouched] = useState(false);
   const [amount, setAmount] = useState('');
   const [invoiceId, setInvoiceId] = useState('');
   const [expenseId, setExpenseId] = useState('');
 
   const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Page<Client>>('/clients?limit=200').then((p) => p.rows) });
+  const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches') });
+
+  useEffect(() => {
+    if (currencyTouched) return;
+    const branch = branches.data?.find((b) => b.id === branchId);
+    if (branch) setCurrency(branch.currency);
+  }, [branchId, branches.data, currencyTouched]);
 
   const create = useMutation({
     mutationFn: () =>
@@ -163,7 +173,14 @@ function PaymentForm({ onDone }: { onDone(): void }) {
             </Select>
           </Field>
           <Field label={`${t('common.branch')} *`}>
-            <Input required value={branchId} onChange={(e) => setBranchId(e.target.value)} />
+            <Select required value={branchId} onChange={(e) => setBranchId(e.target.value)}>
+              <option value="">{t('common.branch')}</option>
+              {branches.data?.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {flag(b.country)} {b.code} — {b.city} ({b.currency})
+                </option>
+              ))}
+            </Select>
           </Field>
           {direction === 'inbound' ? (
             <Field label={t('jobs.client')}>
@@ -193,8 +210,16 @@ function PaymentForm({ onDone }: { onDone(): void }) {
           <Field label={t('payments.reference')}>
             <Input value={reference} onChange={(e) => setReference(e.target.value)} />
           </Field>
-          <Field label={`${t('invoices.currency')} *`}>
-            <Input required value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
+          <Field label={`${t('invoices.currency')} *`} hint={t('pricing.currencyHint')}>
+            <Input
+              required
+              value={currency}
+              onChange={(e) => {
+                setCurrencyTouched(true);
+                setCurrency(e.target.value.toUpperCase());
+              }}
+              maxLength={3}
+            />
           </Field>
           <Field label={`${t('expenses.amount')} *`}>
             <Input type="number" required min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />

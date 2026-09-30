@@ -80,7 +80,13 @@ function fmtDate(d: string | null, tz: string): string {
   return new Intl.DateTimeFormat('ru-RU', { timeZone: tz, dateStyle: 'medium' }).format(new Date(d));
 }
 
+/** Presentation only — never touches the stored accounting currency/amounts. Node's ICU data
+ *  has no narrow KZT symbol for ru-KZ, so Intl's currency style prints the "KZT" code; the
+ *  tenge sign is appended by hand instead, in the same trailing position ₽/€ already use. */
 function money(v: number, currency: string): string {
+  if (currency === 'KZT') {
+    return `${new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 2 }).format(v)} ₸`;
+  }
   return new Intl.NumberFormat('ru-KZ', { style: 'currency', currency, maximumFractionDigits: 2 }).format(v);
 }
 

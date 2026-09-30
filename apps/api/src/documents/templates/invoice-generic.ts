@@ -86,7 +86,13 @@ function fmtDate(d: string | null, tz: string, langTag: string): string {
   return new Intl.DateTimeFormat(langTag, { timeZone: tz, dateStyle: 'medium' }).format(new Date(d));
 }
 
+/** Presentation only — never touches the stored accounting currency/amounts. Node's ICU data
+ *  has no narrow KZT symbol for most locales, so Intl's currency style prints the "KZT" code;
+ *  the tenge sign is appended by hand instead, in the same trailing position ₽/€ already use. */
 function money(v: number, currency: string, langTag: string): string {
+  if (currency === 'KZT') {
+    return `${new Intl.NumberFormat(langTag, { maximumFractionDigits: 2 }).format(v)} ₸`;
+  }
   return new Intl.NumberFormat(langTag, { style: 'currency', currency, maximumFractionDigits: 2 }).format(v);
 }
 
