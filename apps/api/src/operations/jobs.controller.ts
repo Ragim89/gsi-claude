@@ -15,18 +15,22 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
   IsNumber,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
   Max,
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import {
   ASSIGNMENT_ROLES,
@@ -77,12 +81,21 @@ class JobFieldsDto {
   @IsOptional() @IsString() @MaxLength(4000) internalNotes?: string | null;
 }
 
+class JobLineDto {
+  @IsUUID() serviceId: string;
+  @IsOptional() @IsString() @MaxLength(300) description?: string | null;
+  @Type(() => Number) @IsNumber() @IsPositive() quantity: number;
+}
+
 class CreateJobDto extends JobFieldsDto {
   @IsUUID() clientId: string;
   @IsIn(SERVICE_TYPES) type: ServiceType;
   /** A job may be opened as a draft with very little known, or straight as confirmed. */
   @IsOptional() @IsIn(['draft', 'confirmed']) status?: 'draft' | 'confirmed';
   @IsOptional() @IsUUID() assignedInspectorId?: string | null;
+  /** Multi-service line items (migration 029) — see JobsService.createLines(). */
+  @IsOptional() @IsArray() @ArrayMaxSize(50) @ValidateNested({ each: true }) @Type(() => JobLineDto)
+  lines?: JobLineDto[];
 }
 
 class UpdateJobDto extends JobFieldsDto {

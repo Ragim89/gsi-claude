@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OperationsModule } from '../operations/operations.module';
+import { AssetsModule } from '../assets/assets.module';
 import { LaboratoryController } from './laboratory.controller';
 import { LabCatalogueService } from './lab-catalogue.service';
 import { LabRequestsService } from './lab-requests.service';
@@ -13,9 +14,12 @@ import { LabMediaService } from './lab-media.service';
  * It depends on Operations only for the event bus. Samples are read by id rather than through
  * SamplesModule: the laboratory needs to know that a sample was accepted, not how it got there,
  * and keeping the dependency one-way leaves PHASE 5 free of any knowledge of PHASE 6.
+ *
+ * AssetsModule is imported so an instrument's purchase/depreciation data (migration 031) can
+ * reuse AssetsService.create() end to end instead of a second depreciation engine.
  */
 @Module({
-  imports: [OperationsModule],
+  imports: [OperationsModule, AssetsModule],
   controllers: [LaboratoryController],
   providers: [LabCatalogueService, LabRequestsService, LabResultsService, LabWorkflowService, LabMediaService],
   exports: [LabResultsService, LabRequestsService],

@@ -177,6 +177,27 @@ export interface InspectionJob {
   createdByName?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  /** Multi-service line items (migration 029). Absent/empty means the legacy single-`type`
+   *  job — nothing here changes what `type` means or how such a job behaves. */
+  lines?: JobLine[];
+}
+
+/** One priced service on a multi-service inspection request (migration 029). `priceId` and
+ *  `unitPrice`/`currency` together are the price snapshot: the line keeps the number it was
+ *  created with even if the underlying `prices` row is later deactivated or superseded. */
+export interface JobLine {
+  id: string;
+  jobId: string;
+  serviceId: string | null;
+  serviceCode?: string | null;
+  serviceName?: LocalizedText | null;
+  priceId: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  currency: string;
+  amount: number;
+  sortOrder: number;
 }
 
 export interface MediaAttachment {

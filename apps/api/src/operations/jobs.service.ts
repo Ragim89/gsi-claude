@@ -56,9 +56,19 @@ export interface JobFilters {
   offset?: number;
 }
 
+export interface JobLineInput {
+  serviceId: string;
+  description?: string | null;
+  quantity: number;
+}
+
 export interface CreateJobInput {
   clientId: string;
   type: ServiceType;
+  /** Multi-service line items (migration 029). Omitted/empty = the legacy single-`type`
+   *  job, created exactly as before. Each line's price is always resolved server-side
+   *  (contract → client → branch default) — a caller can never dictate its own price. */
+  lines?: JobLineInput[];
   location?: string;
   status?: 'draft' | 'confirmed';
   priority?: JobPriority;
@@ -308,7 +318,69 @@ export class JobsService {
         branchId: job.branchId,
         after: { clientId: input.clientId, type: input.type, status: job.status, priority: job.priority },
       });
-      return job;
+
+      if (input.lines?.length) {
+        await this.createLines(tx, user, job.id, client.branch_id, input.clientId, input.contractId ?? null,
+          input.requestedDate ?? null, input.lines);
+      }
+
+      return input.lines?.length ? this.load(tx, job.id) : job;
+    });
+  }
+
+  /**
+   * Multi-service line items for a job (migration 029). Each line's price is resolved from
+   * the same contract → client → branch chain the rest of Pricing uses (`app_resolve_price`,
+   * 019_finance_services_pricing.sql) — never taken from the request — and the resolved
+   * price row's id is kept as the snapshot source; unit_price/currency are copied onto the
+   * line itself so it never changes if that price is later deactivated or superseded.
+   */
+  private async createLines(
+    tx: Tx,
+    user: AuthUser,
+    jobId: string,
+    branchId: string,
+    clientId: string,
+    contractId: string | null,
+    onDate: string | null,
+    lines: JobLineInput[],
+  ): Promise<void> {
+    for (const [i, line] of lines.entries()) {
+      if (!line.quantity || line.quantity <= 0) throw new BadRequestException('Line quantity must be positive');
+      const service = await tx.one<{ id: string; name: Record<string, string> }>(
+        'SELECT id, name FROM services WHERE id = $1 AND is_active', [line.serviceId],
+      );
+      if (!service) throw new BadRequestException('Unknown or inactive service');
+
+      const resolved = await tx.one<{ id: string }>(
+        `SELECT app_resolve_price($1, $2, $3, $4, COALESCE($5::date, current_date)) AS id`,
+        [line.serviceId, branchId, clientId, contractId, onDate],
+      );
+      if (!resolved?.id) {
+        throw new BadRequestException(
+          `No price is configured for "${service.name.en ?? service.name.ru ?? service.id}" at this office`,
+        );
+      }
+      const price = await tx.one<{ unit_price: string; currency: string }>(
+        'SELECT unit_price, currency FROM prices WHERE id = $1', [resolved.id],
+      );
+
+      await tx.exec(
+        `INSERT INTO job_lines (job_id, service_id, price_id, description, quantity, unit_price, currency,
+                                sort_order, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [jobId, line.serviceId, resolved.id,
+         line.description?.trim() || service.name.en || service.name.ru || service.id,
+         line.quantity, price!.unit_price, price!.currency, (i + 1) * 10, user.id],
+      );
+    }
+    await this.audit.record(tx, user, {
+      action: 'job.lines.created',
+      entityType: 'job',
+      entityId: jobId,
+      entityLabel: '',
+      branchId,
+      after: { lineCount: lines.length },
     });
   }
 

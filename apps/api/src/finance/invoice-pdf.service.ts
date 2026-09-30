@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { AuthUser, Branch, Invoice, InvoiceLine } from '@gsi/shared-types';
 import { DbService } from '../db/db.service';
 import { PdfService } from '../documents/pdf.service';
-import { invoiceTemplate } from '../documents/templates/invoice-default';
+import { invoiceTemplate } from '../documents/templates/invoice-generic';
 import { invoiceKzTemplate } from '../documents/templates/invoice-kz';
 import type { InvoiceTemplateData } from '../documents/templates/types';
 
@@ -63,10 +63,12 @@ export class InvoicePdfService {
       return { organization, branch, client, invoice, lines, fiscalSnapshot: invoice.fiscalSnapshot };
     });
 
-    // Kazakhstan gets its own template once the invoice has an actual fiscal snapshot to show
-    // (jurisdictionCountryCode alone is not enough — a legacy KZ invoice with no snapshot keeps
-    // rendering through invoice-default, exactly as it always did). Every other country is
-    // unaffected: invoice-default.ts is still the only template they ever reach.
+    // Kazakhstan gets its own fiscal template once the invoice has an actual fiscal snapshot
+    // to show (jurisdictionCountryCode alone is not enough — a legacy KZ invoice with no
+    // snapshot keeps rendering through the generic template, exactly as it always did).
+    // Every other invoice renders through invoice-generic.ts, which reads its language and
+    // number/date formatting from the issuing branch's own locale/currency (branches.locale,
+    // seeded per office: KZ/RU → ru, TR → tr, others their own) — never another country's.
     const template = data.invoice.jurisdictionCountryCode === 'KZ' && data.fiscalSnapshot
       ? invoiceKzTemplate
       : invoiceTemplate;

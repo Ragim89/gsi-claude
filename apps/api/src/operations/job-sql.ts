@@ -25,6 +25,15 @@ export const JOB_COLUMNS = `
                                               'role', a.role) ORDER BY a.role, u.full_name)
             FROM job_assignments a JOIN users u ON u.id = a.user_id
             WHERE a.job_id = j.id AND a.removed_at IS NULL), '[]'::json) AS "assignees",
+  COALESCE((SELECT json_agg(json_build_object(
+              'id', jl.id, 'jobId', jl.job_id, 'serviceId', jl.service_id,
+              'serviceCode', s.code, 'serviceName', s.name, 'priceId', jl.price_id,
+              'description', jl.description, 'quantity', jl.quantity::float8,
+              'unitPrice', jl.unit_price::float8, 'currency', jl.currency,
+              'amount', jl.amount::float8, 'sortOrder', jl.sort_order
+            ) ORDER BY jl.sort_order)
+            FROM job_lines jl LEFT JOIN services s ON s.id = jl.service_id
+            WHERE jl.job_id = j.id), '[]'::json) AS "lines",
   j.created_by AS "createdBy", cb.full_name AS "createdByName",
   j.created_at AS "createdAt", j.updated_at AS "updatedAt"`;
 

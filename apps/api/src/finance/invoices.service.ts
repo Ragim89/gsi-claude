@@ -46,6 +46,11 @@ export interface InvoiceLineInput {
   description: string;
   quantity: number;
   unitPrice: number;
+  /** Set when this line was billed from a priced service (migration 030/029) — carried
+   *  through from a job line, never supplied directly by an ordinary ad hoc invoice. */
+  serviceId?: string | null;
+  jobLineId?: string | null;
+  priceSnapshot?: Record<string, unknown> | null;
 }
 
 export interface CreateInvoiceInput {
@@ -308,7 +313,8 @@ export class InvoicesService {
     if (!inv) throw new NotFoundException('Invoice not found');
     inv.lines = await tx.many<InvoiceLine>(
       `SELECT id, invoice_id AS "invoiceId", description, quantity::float8 AS quantity,
-              unit_price::float8 AS "unitPrice", amount::float8 AS amount, sort_order AS "sortOrder"
+              unit_price::float8 AS "unitPrice", amount::float8 AS amount, sort_order AS "sortOrder",
+              service_id AS "serviceId", job_line_id AS "jobLineId", price_snapshot AS "priceSnapshot"
        FROM invoice_lines WHERE invoice_id = $1 ORDER BY sort_order`,
       [id],
     );
@@ -316,8 +322,56 @@ export class InvoicesService {
   }
 
   create(user: AuthUser, input: CreateInvoiceInput) {
-    if (!input.lines?.length) throw new BadRequestException('At least one invoice line is required');
+    return this.db.tx(user, (tx) => this.createTx(tx, user, input));
+  }
+
+  /**
+   * Builds an invoice straight from a job's priced service lines (migration 029/030) — the
+   * "Create Invoice" action on a multi-service inspection request. Reuses the exact same
+   * invoice-numbering, tax and ledger-posting path as an ordinary invoice (createTx); the
+   * only difference is where the lines come from. Job lines are read-only here — creating
+   * an invoice never changes the job's price snapshot.
+   */
+  createFromJob(user: AuthUser, jobId: string) {
     return this.db.tx(user, async (tx) => {
+      const job = await tx.one<{ client_id: string; branch_id: string }>(
+        'SELECT client_id, branch_id FROM inspection_jobs WHERE id = $1', [jobId],
+      );
+      if (!job) throw new NotFoundException('Job not found');
+
+      const jobLines = await tx.many<{
+        id: string; service_id: string | null; price_id: string | null;
+        description: string; quantity: string; unit_price: string; currency: string;
+      }>(
+        `SELECT id, service_id, price_id, description, quantity, unit_price, currency
+         FROM job_lines WHERE job_id = $1 ORDER BY sort_order`,
+        [jobId],
+      );
+      if (!jobLines.length) {
+        throw new BadRequestException(
+          'This job has no service lines to invoice — use the ordinary invoice form instead.',
+        );
+      }
+      const currencies = new Set(jobLines.map((l) => l.currency));
+      if (currencies.size > 1) {
+        throw new BadRequestException('This job\'s service lines are priced in different currencies; invoice them separately.');
+      }
+
+      const lines: InvoiceLineInput[] = jobLines.map((l) => ({
+        description: l.description,
+        quantity: Number(l.quantity),
+        unitPrice: Number(l.unit_price),
+        serviceId: l.service_id,
+        jobLineId: l.id,
+        priceSnapshot: { priceId: l.price_id, unitPrice: Number(l.unit_price), currency: l.currency },
+      }));
+
+      return this.createTx(tx, user, { clientId: job.client_id, jobId, lines, currency: jobLines[0].currency });
+    });
+  }
+
+  private async createTx(tx: Tx, user: AuthUser, input: CreateInvoiceInput): Promise<Invoice> {
+    if (!input.lines?.length) throw new BadRequestException('At least one invoice line is required');
       const client = await tx.one<{ branch_id: string; currency: string }>(
         `SELECT c.branch_id, b.currency FROM clients c JOIN branches b ON b.id = c.branch_id WHERE c.id = $1`,
         [input.clientId],
@@ -354,11 +408,15 @@ export class InvoicesService {
         ],
       );
       await tx.exec(
-        `INSERT INTO invoice_lines (invoice_id, description, quantity, unit_price, sort_order)
-         SELECT $1, l.description, l.quantity, l.unit_price, l.ord
-         FROM jsonb_to_recordset($2::jsonb) AS l(description text, quantity numeric, unit_price numeric, ord int)`,
+        `INSERT INTO invoice_lines (invoice_id, description, quantity, unit_price, sort_order,
+                                    service_id, job_line_id, price_snapshot)
+         SELECT $1, l.description, l.quantity, l.unit_price, l.ord, l.service_id, l.job_line_id, l.price_snapshot
+         FROM jsonb_to_recordset($2::jsonb) AS l(description text, quantity numeric, unit_price numeric, ord int,
+                                                  service_id uuid, job_line_id uuid, price_snapshot jsonb)`,
         [row!.id, JSON.stringify(input.lines.map((l, i) => ({
           description: l.description, quantity: l.quantity, unit_price: l.unitPrice, ord: (i + 1) * 10,
+          service_id: l.serviceId ?? null, job_line_id: l.jobLineId ?? null,
+          price_snapshot: l.priceSnapshot ?? null,
         })))],
       );
       const invoice = await this.load(tx, row!.id);
@@ -378,7 +436,6 @@ export class InvoicesService {
         },
       });
       return invoice;
-    });
   }
 
   /** Loads the legal entity and resolves the jurisdiction profile in force on `issueDate` — the

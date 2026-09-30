@@ -21,6 +21,7 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
+  IsPositive,
   IsString,
   IsUUID,
   Max,
@@ -131,6 +132,14 @@ class InstrumentDto {
   @IsOptional() @IsString() @MaxLength(120) serialNumber?: string | null;
   @IsOptional() @IsDateString() calibrationDueAt?: string | null;
   @IsOptional() @IsString() @MaxLength(2000) notes?: string | null;
+}
+
+class InstrumentFinanceDto {
+  @Type(() => Number) @IsNumber() @IsPositive() purchaseCost: number;
+  @IsString() @MinLength(3) @MaxLength(3) currency: string;
+  @IsDateString() purchaseDate: string;
+  @Type(() => Number) @IsInt() @Min(1) usefulLifeMonths: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) salvageValue?: number;
 }
 
 class UpdateInstrumentDto {
@@ -341,6 +350,22 @@ export class LaboratoryController {
     @Body() dto: UpdateInstrumentDto,
   ) {
     return this.catalogue.updateInstrument(user, id, dto);
+  }
+
+  /**
+   * Sets an instrument's purchase price/depreciation by linking it to a new `assets` row
+   * (migration 031). Gated on `asset.create`, not `lab.instrument.manage` — a lab manager or
+   * analyst can manage the instrument's identity/calibration record but not its purchase
+   * price, matching the same finance-only RLS that protects every other asset.
+   */
+  @Post('instruments/:id/finance')
+  @RequirePermission('asset.create')
+  linkInstrumentFinance(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: InstrumentFinanceDto,
+  ) {
+    return this.catalogue.linkInstrumentAsset(user, id, dto);
   }
 
   /** The commodity's standard panel, resolved to catalogue entries and methods. */

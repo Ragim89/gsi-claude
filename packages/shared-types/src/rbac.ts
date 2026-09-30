@@ -36,7 +36,7 @@ export const PERMISSIONS = [
   // Finance
   'finance.read', 'dashboard.read', 'invoice.create', 'invoice.issue', 'invoice.pay',
   'invoice.cancel', 'invoice.delete', 'invoice.remind', 'expense.create', 'expense.delete',
-  'expense.pay', 'fx.manage',
+  'expense.pay', 'fx.manage', 'capitalization.read',
   // Services, pricing, quotes
   'service.read', 'service.manage', 'pricing.read', 'pricing.manage',
   'quote.read', 'quote.create', 'quote.update', 'quote.send', 'quote.decide', 'quote.cancel',

@@ -13,6 +13,7 @@ import {
 import { DbService, Tx } from '../db/db.service';
 import { buildSet } from '../common/sql';
 import { AuditService } from '../common/audit.service';
+import { AssetsService } from '../assets/assets.service';
 
 const TEST_COLUMNS = `
   t.id, t.code, t.name, t.category, t.description, t.default_unit AS "defaultUnit",
@@ -49,11 +50,21 @@ const SPEC_FROM = `
   LEFT JOIN clients c ON c.id = s.client_id
   LEFT JOIN contracts ct ON ct.id = s.contract_id`;
 
+// Financial columns come from a LEFT JOIN to `assets` (migration 031), never from
+// `lab_instruments` itself. `assets` has its own app_sees_finance()-gated RLS, so for a
+// caller without finance permission this join simply returns no row and every field below
+// is NULL — the instrument's identity/calibration data (everything above the financial
+// columns) stays visible to every lab role exactly as before.
 const INSTRUMENT_COLUMNS = `
   i.id, i.laboratory_id AS "laboratoryId", l.name AS "laboratoryName", i.code, i.name,
   i.manufacturer, i.model, i.serial_number AS "serialNumber", i.status,
   i.calibration_due_at AS "calibrationDueAt", i.notes,
-  (i.calibration_due_at IS NOT NULL AND i.calibration_due_at < current_date) AS "calibrationOverdue"`;
+  (i.calibration_due_at IS NOT NULL AND i.calibration_due_at < current_date) AS "calibrationOverdue",
+  i.asset_id AS "assetId", a.currency,
+  a.acquisition_cost::float8 AS "purchaseCost", to_char(a.acquisition_date, 'YYYY-MM-DD') AS "purchaseDate",
+  a.useful_life_months AS "usefulLifeMonths", a.salvage_value::float8 AS "salvageValue",
+  a.accumulated::float8 AS "accumulatedDepreciation",
+  (a.acquisition_cost - a.accumulated)::float8 AS "netBookValue"`;
 
 /**
  * The laboratory's reference data: what it can measure, how, to what limits and with what.
@@ -65,7 +76,11 @@ const INSTRUMENT_COLUMNS = `
  */
 @Injectable()
 export class LabCatalogueService {
-  constructor(private readonly db: DbService, private readonly audit: AuditService) {}
+  constructor(
+    private readonly db: DbService,
+    private readonly audit: AuditService,
+    private readonly assets: AssetsService,
+  ) {}
 
   units(user: AuthUser): Promise<LabUnit[]> {
     return this.db.tx(user, (tx) =>
@@ -293,6 +308,7 @@ export class LabCatalogueService {
     return this.db.tx(user, (tx) =>
       tx.many<LabInstrument>(
         `SELECT ${INSTRUMENT_COLUMNS} FROM lab_instruments i JOIN laboratories l ON l.id = i.laboratory_id
+         LEFT JOIN assets a ON a.id = i.asset_id
          WHERE ($1::uuid IS NULL OR i.laboratory_id = $1::uuid)
          ORDER BY l.name, i.code`,
         [laboratoryId ?? null],
@@ -409,9 +425,58 @@ export class LabCatalogueService {
   private instrumentIn(tx: Tx, id: string) {
     return tx.one<LabInstrument>(
       `SELECT ${INSTRUMENT_COLUMNS} FROM lab_instruments i JOIN laboratories l ON l.id = i.laboratory_id
+       LEFT JOIN assets a ON a.id = i.asset_id
        WHERE i.id = $1`,
       [id],
     );
+  }
+
+  /**
+   * Sets purchase/depreciation data for an instrument (migration 031) by creating (or
+   * reusing) its linked `assets` row, category `lab_equipment`, and reusing
+   * AssetsService.create() end to end — same depreciation engine, same ledger posting, same
+   * finance-only RLS as every other asset. An instrument keeps at most one linked asset;
+   * calling this again on an already-linked instrument is refused rather than silently
+   * creating a second one — deactivate/dispose the asset from the Assets screen first.
+   */
+  async linkInstrumentAsset(user: AuthUser, instrumentId: string, input: InstrumentFinanceInput) {
+    return this.db.tx(user, async (tx) => {
+      const instrument = await tx.one<{ asset_id: string | null; branch_id: string | null; code: string; name: string }>(
+        `SELECT i.asset_id, l.branch_id, i.code, i.name
+         FROM lab_instruments i JOIN laboratories l ON l.id = i.laboratory_id
+         WHERE i.id = $1`,
+        [instrumentId],
+      );
+      if (!instrument) throw new NotFoundException('Instrument not found');
+      if (instrument.asset_id) throw new BadRequestException('This instrument already has purchase data set');
+      if (!instrument.branch_id) {
+        throw new BadRequestException('An external laboratory\'s instruments are not our assets and cannot be depreciated here');
+      }
+
+      const asset = await this.assets.create(user, {
+        inventoryNo: `LAB-${instrument.code}`,
+        name: instrument.name,
+        category: 'lab_equipment',
+        acquisitionDate: input.purchaseDate,
+        acquisitionCost: input.purchaseCost,
+        currency: input.currency,
+        usefulLifeMonths: input.usefulLifeMonths,
+        salvageValue: input.salvageValue ?? 0,
+        branchId: instrument.branch_id,
+        notes: `Laboratory instrument ${instrument.code}`,
+      });
+
+      await tx.exec('UPDATE lab_instruments SET asset_id = $2 WHERE id = $1', [instrumentId, asset.id]);
+      await this.audit.record(tx, user, {
+        action: 'lab.instrument.finance_linked',
+        entityType: 'lab_instrument',
+        entityId: instrumentId,
+        entityLabel: instrument.code,
+        branchId: instrument.branch_id,
+        after: { assetId: asset.id, purchaseCost: input.purchaseCost, currency: input.currency },
+      });
+      return this.instrumentIn(tx, instrumentId);
+    });
   }
 }
 
@@ -463,6 +528,15 @@ export interface InstrumentInput {
   serialNumber?: string | null;
   calibrationDueAt?: string | null;
   notes?: string | null;
+}
+
+/** Purchase/depreciation data for an instrument (migration 031) — becomes an `assets` row. */
+export interface InstrumentFinanceInput {
+  purchaseCost: number;
+  currency: string;
+  purchaseDate: string;
+  usefulLifeMonths: number;
+  salvageValue?: number;
 }
 
 

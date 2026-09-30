@@ -6,11 +6,12 @@ import type { InvoiceTemplateData } from './types';
 /**
  * Kazakhstan invoice (migration 028_fiscal_compliance.sql). Selected by invoice-pdf.service.ts
  * whenever an invoice carries a fiscal snapshot for jurisdictionCountryCode 'KZ' — every other
- * country keeps rendering through invoice-default.ts, completely unchanged.
+ * invoice (including a legacy KZ one with no snapshot) renders through invoice-generic.ts,
+ * completely unchanged.
  *
  * Renders exactly what the immutable fiscalSnapshot says was charged: seller/buyer BIN/IIN,
  * the tax code actually applied (16% / 0% / без НДС — never a generic "VAT X%"), the supply
- * date, and the legal entity's own bank details instead of the TR/EN template's placeholder.
+ * date, and the legal entity's own bank details instead of the generic template's placeholder.
  * The e-invoice line states the current esfStatus plainly; it is never printed as a registered
  * ЭСФ unless that status really is 'registered' with a registration number set by an operator
  * (see EsfService — nothing here or in the API simulates that).

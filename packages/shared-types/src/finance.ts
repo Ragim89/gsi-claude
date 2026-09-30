@@ -33,6 +33,11 @@ export interface InvoiceLine {
   unitPrice: number;
   amount: number;
   sortOrder: number;
+  /** Set when this line was billed from a priced service (migration 030) — null for ad hoc/
+   *  free-text lines, which keep working exactly as before. */
+  serviceId?: string | null;
+  jobLineId?: string | null;
+  priceSnapshot?: Record<string, unknown> | null;
 }
 
 export interface Invoice {
@@ -273,6 +278,40 @@ export interface FinanceEvent {
   date: string;
   amountBase: number;
   source: string;
+}
+
+// ---------------------------------------------------------------------------
+// Capitalization (docs/03): the group's cash + receivables + net assets − liabilities,
+// read from the same ledger/finance_daily_agg/assets tables the dashboard already
+// aggregates — not a second ledger. Converted totals use the existing consolidation
+// mechanism (fx_rate_on / config.consolidationCurrency); the per-currency breakdown is
+// shown alongside so an HQ view of several countries never silently sums currencies.
+// ---------------------------------------------------------------------------
+
+export interface CapitalizationBreakdownRow {
+  currency: string;
+  amount: number;
+}
+
+export interface CapitalizationLine {
+  key: 'cash' | 'receivable' | 'netAssets' | 'payable' | 'otherLiabilities';
+  amountBase: number;
+  /** Per-branch-currency figures behind the converted total — never summed silently. */
+  byCurrency: CapitalizationBreakdownRow[];
+  /** True only for otherLiabilities today: no ledger account feeds it yet. */
+  tracked: boolean;
+}
+
+export interface CapitalizationSnapshot {
+  baseCurrency: string;
+  asOf: string;
+  cash: CapitalizationLine;
+  receivable: CapitalizationLine;
+  netAssets: CapitalizationLine;
+  payable: CapitalizationLine;
+  otherLiabilities: CapitalizationLine;
+  /** cash + receivable + netAssets − payable − otherLiabilities, consolidation currency. */
+  netPositionBase: number;
 }
 
 // ---------------------------------------------------------------------------

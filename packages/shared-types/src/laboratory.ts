@@ -260,6 +260,17 @@ export interface LabInstrument {
   notes: string | null;
   /** Computed: calibration due date in the past. Warned about, never a block. */
   calibrationOverdue?: boolean;
+  /** The linked `assets` row (migration 031), when purchase/depreciation data has been set.
+   *  Only present for callers with asset.read — RLS on `assets` returns no row for anyone
+   *  else, so these fields are simply absent rather than hidden client-side. */
+  assetId?: string | null;
+  purchaseCost?: number | null;
+  currency?: string | null;
+  purchaseDate?: string | null;
+  usefulLifeMonths?: number | null;
+  salvageValue?: number | null;
+  accumulatedDepreciation?: number | null;
+  netBookValue?: number | null;
 }
 
 /** The method as it was when a result was entered; frozen into the result row. */

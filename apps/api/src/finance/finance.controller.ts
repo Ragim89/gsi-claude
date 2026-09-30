@@ -53,6 +53,7 @@ import { JobFinanceService } from './job-finance.service';
 import { ClientStatementService } from './client-statement.service';
 import { RemindersService } from './reminders.service';
 import { EsfService } from './esf.service';
+import { CapitalizationService } from './capitalization.service';
 
 class InvoiceLineDto {
   @IsString() @MinLength(2) @MaxLength(300) description: string;
@@ -143,12 +144,21 @@ export class FinanceController {
     private readonly clientStatement: ClientStatementService,
     private readonly reminders: RemindersService,
     private readonly esf: EsfService,
+    private readonly capitalization: CapitalizationService,
   ) {}
 
   // ---- dashboard ---------------------------------------------------------------
   @Get('dashboard')
   getDashboard(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
     return this.dashboard.build(user, q.from, q.to, q.branchId);
+  }
+
+  /** Cash + receivables + net assets − payables − other liabilities, with drilldown
+   *  breakdowns per currency (migration 032). */
+  @Get('capitalization')
+  @RequirePermission('capitalization.read')
+  getCapitalization(@CurrentUser() user: AuthUser, @Query() q: PeriodDto) {
+    return this.capitalization.build(user, q.branchId, q.to);
   }
 
   /**
@@ -194,6 +204,13 @@ export class FinanceController {
   @RequirePermission('invoice.create')
   createInvoice(@CurrentUser() user: AuthUser, @Body() dto: CreateInvoiceDto) {
     return this.invoices.create(user, dto);
+  }
+
+  /** "Create Invoice" off a multi-service inspection request — bills its job_lines as-is. */
+  @Post('invoices/from-job/:jobId')
+  @RequirePermission('invoice.create')
+  createInvoiceFromJob(@CurrentUser() user: AuthUser, @Param('jobId', ParseUUIDPipe) jobId: string) {
+    return this.invoices.createFromJob(user, jobId);
   }
 
   @Post('invoices/:id/issue')
