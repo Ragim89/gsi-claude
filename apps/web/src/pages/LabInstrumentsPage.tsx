@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Table } from '@gsi/ui-kit/react';
@@ -25,15 +25,21 @@ const EMPTY = {
  * overdue instrument. The result carries the fact instead, permanently.
  */
 export function LabInstrumentsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { can } = useAuth();
   const qc = useQueryClient();
   const fmt = useFormatDate();
   const manage = can('lab.instrument.manage');
+  // Purchase price/depreciation reuses the Assets module (migration 031) — gated on
+  // asset.create/read, not lab.instrument.manage, so a lab manager can manage the
+  // instrument's identity but not see or set its cost.
+  const canSeeFinance = can('asset.read');
+  const canSetFinance = can('asset.create');
 
   const [laboratoryId, setLaboratoryId] = useState('');
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(EMPTY);
+  const [financeFor, setFinanceFor] = useState<string | null>(null);
 
   const labs = useQuery({
     queryKey: ['laboratories'],
@@ -165,51 +171,138 @@ export function LabInstrumentsPage() {
                 <th>{t('lab.serialNumber')}</th>
                 <th>{t('lab.calibrationDue')}</th>
                 <th>{t('jobs.status')}</th>
+                {canSeeFinance && <th>{t('lab.bookValue')}</th>}
               </tr>
             </thead>
             <tbody>
               {rows.map((x) => (
-                <tr key={x.id} className={x.status === 'retired' ? 'is-muted-row' : ''}>
-                  <td className="mono">{x.code}</td>
-                  <td>{x.name}</td>
-                  <td>{x.laboratoryName ?? '—'}</td>
-                  <td>
-                    {x.manufacturer ?? '—'}
-                    {x.model ? ` ${x.model}` : ''}
-                  </td>
-                  <td className="mono">{x.serialNumber ?? '—'}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    {fmt(x.calibrationDueAt, false)}
-                    {x.calibrationOverdue ? (
-                      <div>
-                        <Badge tone="danger">{t('lab.calibrationOverdue')}</Badge>
-                      </div>
-                    ) : null}
-                  </td>
-                  <td>
-                    {manage ? (
-                      <Select
-                        value={x.status}
-                        onChange={(e) =>
-                          update.mutate({ id: x.id, body: { status: e.target.value as InstrumentStatus } })
-                        }
-                      >
-                        {INSTRUMENT_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {t(`lab.instrumentStatus.${s}`)}
-                          </option>
-                        ))}
-                      </Select>
-                    ) : (
-                      t(`lab.instrumentStatus.${x.status}`)
+                <Fragment key={x.id}>
+                  <tr className={x.status === 'retired' ? 'is-muted-row' : ''}>
+                    <td className="mono">{x.code}</td>
+                    <td>{x.name}</td>
+                    <td>{x.laboratoryName ?? '—'}</td>
+                    <td>
+                      {x.manufacturer ?? '—'}
+                      {x.model ? ` ${x.model}` : ''}
+                    </td>
+                    <td className="mono">{x.serialNumber ?? '—'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      {fmt(x.calibrationDueAt, false)}
+                      {x.calibrationOverdue ? (
+                        <div>
+                          <Badge tone="danger">{t('lab.calibrationOverdue')}</Badge>
+                        </div>
+                      ) : null}
+                    </td>
+                    <td>
+                      {manage ? (
+                        <Select
+                          value={x.status}
+                          onChange={(e) =>
+                            update.mutate({ id: x.id, body: { status: e.target.value as InstrumentStatus } })
+                          }
+                        >
+                          {INSTRUMENT_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {t(`lab.instrumentStatus.${s}`)}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        t(`lab.instrumentStatus.${x.status}`)
+                      )}
+                    </td>
+                    {canSeeFinance && (
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {x.netBookValue != null && x.currency ? (
+                          new Intl.NumberFormat(i18n.language, { style: 'currency', currency: x.currency, maximumFractionDigits: 2 }).format(
+                            x.netBookValue,
+                          )
+                        ) : canSetFinance ? (
+                          <Button size="sm" variant="ghost" onClick={() => setFinanceFor(financeFor === x.id ? null : x.id)}>
+                            {t('lab.setPurchaseData')}
+                          </Button>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                     )}
-                  </td>
-                </tr>
+                  </tr>
+                  {financeFor === x.id && (
+                    <tr>
+                      <td colSpan={canSeeFinance ? 7 : 6}>
+                        <InstrumentFinanceForm
+                          instrumentId={x.id}
+                          onDone={() => {
+                            setFinanceFor(null);
+                            qc.invalidateQueries({ queryKey: ['lab-instruments'] });
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </Table>
         )}
       </Card>
     </div>
+  );
+}
+
+function InstrumentFinanceForm({ instrumentId, onDone }: { instrumentId: string; onDone(): void }) {
+  const { t } = useTranslation();
+  const [purchaseCost, setPurchaseCost] = useState('');
+  const [currency, setCurrency] = useState('EUR');
+  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [usefulLifeMonths, setUsefulLifeMonths] = useState('60');
+  const [salvageValue, setSalvageValue] = useState('0');
+
+  const link = useMutation({
+    mutationFn: () =>
+      api.post(`/lab/instruments/${instrumentId}/finance`, {
+        purchaseCost: Number(purchaseCost),
+        currency,
+        purchaseDate,
+        usefulLifeMonths: Number(usefulLifeMonths),
+        salvageValue: Number(salvageValue) || 0,
+      }),
+    onSuccess: onDone,
+  });
+
+  return (
+    <Card title={t('lab.setPurchaseData')}>
+      <ErrorBox error={link.error} />
+      <div className="form-grid">
+        <Field label={`${t('invoices.unitPrice')} *`}>
+          <Input type="number" min="0" step="0.01" value={purchaseCost} onChange={(e) => setPurchaseCost(e.target.value)} />
+        </Field>
+        <Field label={`${t('common.currency')} *`}>
+          <Input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+        </Field>
+        <Field label={`${t('lab.purchaseDate')} *`}>
+          <Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+        </Field>
+        <Field label={`${t('lab.usefulLifeMonths')} *`}>
+          <Input type="number" min="1" step="1" value={usefulLifeMonths} onChange={(e) => setUsefulLifeMonths(e.target.value)} />
+        </Field>
+        <Field label={t('lab.salvageValue')}>
+          <Input type="number" min="0" step="0.01" value={salvageValue} onChange={(e) => setSalvageValue(e.target.value)} />
+        </Field>
+      </div>
+      <div className="form-actions">
+        <Button type="button" variant="secondary" onClick={onDone}>
+          {t('common.cancel')}
+        </Button>
+        <Button
+          loading={link.isPending}
+          disabled={!(Number(purchaseCost) > 0) || !currency || !purchaseDate || !(Number(usefulLifeMonths) > 0)}
+          onClick={() => link.mutate()}
+        >
+          {t('common.save')}
+        </Button>
+      </div>
+    </Card>
   );
 }

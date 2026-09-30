@@ -15,6 +15,7 @@ export function KpiCard({
   value,
   hint,
   trend,
+  onClick,
 }: {
   icon: ReactNode;
   accent: KpiAccent;
@@ -23,9 +24,11 @@ export function KpiCard({
   hint?: ReactNode;
   /** Real historical values only, oldest first. Omit entirely when there is no comparison data. */
   trend?: number[];
+  /** Opens the KpiDrilldownDrawer for this card — same card, no separate "clickable" variant. */
+  onClick?: () => void;
 }) {
-  return (
-    <div className={`kpi-card kpi-card--${accent}`}>
+  const body = (
+    <>
       <div className="kpi-card__badge">{icon}</div>
       <div className="kpi-card__body">
         <div className="kpi-card__label">{label}</div>
@@ -33,8 +36,16 @@ export function KpiCard({
         {hint ? <div className="kpi-card__hint">{hint}</div> : null}
       </div>
       {trend && trend.length >= 2 ? <Sparkline values={trend} /> : null}
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" className={`kpi-card kpi-card--${accent} kpi-card--clickable`} onClick={onClick}>
+        {body}
+      </button>
+    );
+  }
+  return <div className={`kpi-card kpi-card--${accent}`}>{body}</div>;
 }
 
 function Sparkline({ values }: { values: number[] }) {

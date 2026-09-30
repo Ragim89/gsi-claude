@@ -3,13 +3,14 @@
   "nav": {
     "dashboard": "Дашборд", "analytics": "Аналитика", "myAnalytics": "Моя эффективность", "jobs": "Заявки на инспекцию", "myJobs": "Мои задания", "clients": "Контрагенты",
     "invoices": "Счета", "expenses": "Расходы", "quotes": "Предложения", "payments": "Платежи", "pricing": "Тарифы",
+    "capitalization": "Капитализация",
     "assets": "Активы", "branches": "Филиалы", "import": "Загрузка данных",
     "reports": "Документы", "contracts": "Контракты", "inspections": "Инспекции", "myInspections": "Мои инспекции",
     "samples": "Пробы", "mySamples": "Мои пробы", "laboratories": "Лаборатории",
     "labQueue": "Лаборатория", "myAnalyses": "Мои анализы", "labCatalogue": "Каталог анализов",
     "labSpecifications": "Нормы", "labInstruments": "Приборы",
     "users": "Пользователи", "roles": "Роли", "audit": "Журнал действий", "fiscal": "Налоговые настройки",
-    "logout": "Выйти", "logoutAll": "Выйти везде", "language": "Язык",
+    "logout": "Выйти", "logoutAll": "Выйти везде", "language": "Язык", "account": "Меню профиля",
     "noAccess": "Пока нечего показать", "noAccessHint": "У вашей учётной записи нет прав. Попросите администратора назначить роль.",
     "openMenu": "Открыть меню", "closeMenu": "Закрыть меню", "more": "Ещё",
     "groups": {
@@ -52,7 +53,8 @@
     "search": "Поиск…", "loading": "Загрузка…", "none": "—", "actions": "Действия", "confirmDelete": "Удалить запись? Действие необратимо.",
     "error": "Что-то пошло не так", "required": "Обязательно", "all": "Все", "open": "Открыть", "branch": "Филиал",
     "description": "Описание", "retry": "Повторить", "active": "Активно", "inactive": "Неактивно", "name": "Имя",
-    "yes": "Да", "no": "Нет"
+    "yes": "Да", "no": "Нет", "close": "Закрыть", "noResults": "Нет данных", "currency": "Валюта",
+    "effectiveFrom": "Действует с", "notSet": "Не задано"
   },
   "roleNames": {
     "inspector": "Инспектор", "lab_technician": "Лаборант", "supervisor": "Супервайзер",
@@ -337,6 +339,8 @@
     "noInstruments": "Приборы ещё не заведены",
     "manufacturer": "Производитель", "model": "Модель", "serialNumber": "Серийный номер",
     "calibrationDue": "Срок поверки",
+    "bookValue": "Балансовая стоимость", "setPurchaseData": "Указать данные покупки", "purchaseDate": "Дата покупки",
+    "usefulLifeMonths": "Срок полезного использования, мес.", "salvageValue": "Ликвидационная стоимость",
     "instrumentStatus": {
       "active": "В работе", "maintenance": "Обслуживание", "out_of_service": "Не используется", "retired": "Списан"
     },
@@ -408,6 +412,7 @@
     "assignmentRole": "Роль", "assignedAt": "Назначен", "unassign": "Снять", "selectPerson": "Выберите сотрудника…",
     "noAssignments": "Исполнители не назначены", "inspection": "Полевые работы", "history": "История",
     "timeline": "Хронология статусов", "noHistory": "Записей пока нет", "noInvoices": "Счетов по заявке нет",
+    "createInvoice": "Создать счёт",
     "contact": "Контактное лицо", "contract": "Контракт", "contractTerms": "Отсрочка платежа: {{days}} дн.",
     "contractExpired": "Срок контракта истёк — проверьте перед подтверждением заявки",
     "city": "Город", "objectKind": "Объект инспекции", "containerNo": "Номер контейнера",
@@ -419,6 +424,9 @@
     "createdBy": "Создал", "createdAt": "Создана",
     "sectionClient": "1. Клиент", "sectionService": "2. Услуга", "sectionLocation": "3. Место",
     "sectionSchedule": "4. Сроки и исполнители", "sectionInstructions": "5. Инструкции",
+    "sectionServices": "Услуги с ценами (опционально)", "addServiceLine": "Добавить услугу",
+    "servicesHint": "Добавьте одну или несколько услуг с ценами, чтобы выставить счёт сразу по нескольким услугам вместо одного типа услуги выше.",
+    "selectService": "Выберите услугу", "noPriceConfigured": "Цена не настроена",
     "newHint": "Сохраните черновиком, пока детали уточняются; при подтверждении система проверит полноту",
     "saveDraft": "Сохранить черновик", "createConfirmed": "Создать и подтвердить",
     "heldFrom": "приостановлена, вернётся в «{{status}}»",
@@ -633,6 +641,7 @@
     "greetingMorning": "Доброе утро, {{name}}", "greetingAfternoon": "Добрый день, {{name}}", "greetingEvening": "Добрый вечер, {{name}}",
     "summaryJobs": "{{count}} заявок за период", "summaryInspections": "{{count}} инспекций в работе", "summaryReports": "{{count}} отчётов выпущено",
     "kpiJobs": "Заявки", "kpiInspections": "Инспекции", "kpiSamples": "Образцы / Лаборатория", "kpiReports": "Отчёты", "kpiRevenue": "Выручка",
+    "drill": { "jobs": "Заявки", "inspections": "Инспекции", "samples": "Образцы / Лаборатория", "reports": "Отчёты", "revenue": "Выручка — счета за период" },
     "recentActivity": "Последние события", "recentActivityEmpty": "Пока нет событий.",
     "upcomingTasks": "Ближайшие задачи", "upcomingTasksEmpty": "Срочных задач нет.",
     "inspectionDue": "Инспекция {{number}} запланирована", "reportReview": "Отчёт {{number}} ожидает проверки",
@@ -674,6 +683,7 @@
     "toChase": "Кому напомнить об оплате", "amountDue": "К оплате", "overdueBy": "Просрочка",
     "register": "Журнал счетов", "onlyOverdue": "Только просроченные", "dueDate": "Срок оплаты",
     "cancelInvoice": "Аннулировать счёт", "details": "Реквизиты", "paidAt": "Оплачен", "currency": "Валюта",
+    "drill": { "issued": "Выставленные счета", "received": "Полученные платежи", "unpaid": "Неоплаченные счета", "overdue": "Просроченные счета" },
     "payments": "Платежи", "noPayments": "Платежей пока нет", "registeredBy": "Провёл", "downloadPdf": "Счёт в PDF",
     "remindPrompt": "Заметка к напоминанию (необязательно):", "logReminder": "Записать напоминание",
     "reminders": "Напоминания", "noReminders": "Напоминаний нет", "reminderNote": "Заметка"
@@ -709,6 +719,12 @@
   "paymentDirection": { "inbound": "Получен от клиента", "outbound": "Выплачен поставщику" },
   "paymentMethod": {
     "bank_transfer": "Банковский перевод", "cash": "Наличные", "card": "Карта", "cheque": "Чек", "other": "Другое"
+  },
+  "capitalization": {
+    "title": "Капитализация", "cash": "Денежные средства", "receivable": "Дебиторская задолженность",
+    "netAssets": "Чистые активы (после амортизации)", "payable": "Кредиторская задолженность", "otherLiabilities": "Прочие обязательства",
+    "notTracked": "Не учитывается", "notTrackedHint": "Для этой строки пока нет источника в бухгалтерском учёте — показан ноль, а не оценка.",
+    "netPosition": "Чистая позиция", "netPositionHint": "Денежные средства + Дебиторская задолженность + Чистые активы − Кредиторская задолженность − Прочие обязательства"
   },
   "pricing": {
     "title": "Услуги и тарифы", "services": "Каталог услуг", "prices": "Тарифы",

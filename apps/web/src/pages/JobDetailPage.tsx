@@ -120,6 +120,16 @@ export function JobDetailPage() {
     },
   });
 
+  /** "Create Invoice" off this job's priced service lines (migration 029) — bills them as-is
+   *  through the same invoice-numbering/tax/ledger path as any other invoice. */
+  const createInvoiceFromJob = useMutation({
+    mutationFn: () => api.post<Invoice>(`/finance/invoices/from-job/${id}`),
+    onSuccess: (inv) => {
+      qc.invalidateQueries({ queryKey: ['invoices', 'job', id] });
+      navigate(`/finance/invoices/${inv.id}`);
+    },
+  });
+
   if (job.isLoading) return <Loading />;
   if (!job.data) return <ErrorBox error={job.error} />;
   const j = job.data;
@@ -439,8 +449,17 @@ export function JobDetailPage() {
               )}
             </Card>
           )}
-          <Card title={t('nav.invoices')}>
-          <ErrorBox error={invoices.error} />
+          <Card
+            title={t('nav.invoices')}
+            actions={
+              can('invoice.create') && j.lines && j.lines.length > 0 ? (
+                <Button size="sm" loading={createInvoiceFromJob.isPending} onClick={() => createInvoiceFromJob.mutate()}>
+                  {t('job.createInvoice')}
+                </Button>
+              ) : undefined
+            }
+          >
+          <ErrorBox error={createInvoiceFromJob.error ?? invoices.error} />
           {invoices.isLoading ? (
             <Loading />
           ) : !invoices.data?.length ? (

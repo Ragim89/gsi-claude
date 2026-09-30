@@ -1,15 +1,15 @@
 import { ReactNode, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Button, LogoLockup } from '@gsi/ui-kit/react';
+import { LogoLockup } from '@gsi/ui-kit/react';
 import { useAuth } from '../auth';
 import { useBrand } from '../brand';
 import { BranchSwitcher } from '../branch';
-import { LANGUAGES } from '../i18n';
 import { GlobalSearchBox } from './GlobalSearchBox';
 import { NotificationBell } from './NotificationBell';
 import { OfflineBadge } from './OfflineBadge';
 import { InstallPrompt } from './InstallPrompt';
+import { UserMenu } from './UserMenu';
 import {
   IconBanknote,
   IconBox,
@@ -53,9 +53,9 @@ function loadOpenGroups(): Record<string, boolean> {
 }
 
 export function Layout() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const brand = useBrand();
-  const { user, logout, logoutAll, can } = useAuth();
+  const { user, can } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(loadOpenGroups);
@@ -64,6 +64,12 @@ export function Layout() {
   // is enough for the finance entries to appear, with no change here.
   const finance = can('finance.read');
   const own = user?.scope === 'own';
+
+  // Promoted out of the Finance group to its own top-level entry (same route, same permission,
+  // same icon) so it always leads the sidebar/drawer rather than sitting a click deep in Finance.
+  const dashboardLink: NavItem | null = can('dashboard.read')
+    ? { to: '/finance', end: true, label: t('nav.dashboard'), icon: <IconChart /> }
+    : null;
 
   const groups: NavGroup[] = [
     {
@@ -136,9 +142,6 @@ export function Layout() {
       labelKey: 'nav.groups.finance',
       icon: <IconBanknote />,
       items: [
-        ...(can('dashboard.read')
-          ? [{ to: '/finance', end: true, label: t('nav.dashboard'), icon: <IconChart /> }]
-          : []),
         ...(can('quote.read') ? [{ to: '/finance/quotes', label: t('nav.quotes'), icon: <IconTag /> }] : []),
         ...(finance
           ? [
@@ -150,6 +153,9 @@ export function Layout() {
           ? [{ to: '/finance/payments', label: t('nav.payments'), icon: <IconBanknote /> }]
           : []),
         ...(can('service.read') ? [{ to: '/finance/pricing', label: t('nav.pricing'), icon: <IconTag /> }] : []),
+        ...(can('capitalization.read')
+          ? [{ to: '/finance/capitalization', label: t('nav.capitalization'), icon: <IconBanknote /> }]
+          : []),
       ],
     },
     {
@@ -241,7 +247,10 @@ export function Layout() {
           <span aria-hidden="true">☰</span>
         </button>
         <LogoLockup src={brand?.logoLightUrl} name={brand?.shortName ?? 'ERP'} />
-        <OfflineBadge />
+        <div className="topbar-mobile__end">
+          <OfflineBadge />
+          <UserMenu />
+        </div>
       </div>
 
       {mobileOpen && <div className="sidebar-backdrop" onClick={closeMobile} />}
@@ -260,6 +269,14 @@ export function Layout() {
         </div>
         <BranchSwitcher />
         <nav onClick={closeMobile}>
+          {dashboardLink && (
+            <NavLink to={dashboardLink.to} end={dashboardLink.end}>
+              <span className="nav-icon" aria-hidden="true">
+                {dashboardLink.icon}
+              </span>
+              {dashboardLink.label}
+            </NavLink>
+          )}
           {flat
             ? visibleGroups.flatMap((g) =>
                 g.items.map((item) => (
@@ -310,33 +327,13 @@ export function Layout() {
                 );
               })}
         </nav>
-        <div className="sidebar__footer">
-          <div>
-            <div className="sidebar__user">{user?.fullName}</div>
-            <div className="sidebar__role">{user ? t(`roleNames.${user.role}`) : ''}</div>
-          </div>
-          <select aria-label={t('nav.language')} value={i18n.language} onChange={(e) => i18n.changeLanguage(e.target.value)}>
-            {LANGUAGES.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-          <div className="sidebar__footer-actions">
-            <Button variant="ghost" size="sm" onClick={logout}>
-              {t('nav.logout')}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => void logoutAll()}>
-              {t('nav.logoutAll')}
-            </Button>
-          </div>
-        </div>
       </aside>
       <main className="main">
         <div className="topbar">
           {can('search.read') && <GlobalSearchBox />}
           <OfflineBadge />
           {can('notification.read') && <NotificationBell />}
+          <UserMenu />
         </div>
         <InstallPrompt />
         <Outlet />

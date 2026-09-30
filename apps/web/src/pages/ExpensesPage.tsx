@@ -9,6 +9,7 @@ import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ExportButton } from '../components/ExportButton';
+import { KpiDrilldownDrawer } from '../components/KpiDrilldownDrawer';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 /** Branch costs: analytics first (where the money goes), the register below it. */
@@ -21,6 +22,7 @@ export function ExpensesPage() {
   const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
   const [creating, setCreating] = useState(false);
+  const [drillOpen, setDrillOpen] = useState(false);
   const canWrite = can('expense.create');
 
   // The calendar range and the branch filter scope both the analytics and the register.
@@ -29,6 +31,13 @@ export function ExpensesPage() {
   const summary = useQuery({
     queryKey: ['expense-summary', scope],
     queryFn: () => api.get<ExpenseSummary>(`/finance/expenses-summary?${scope}`),
+  });
+  // Same scope (period + branch) as the KPI total above, deliberately independent of the
+  // register's own category filter below, so the drilldown always matches the tile's number.
+  const drillExpenses = useQuery({
+    queryKey: ['expenses-drill', scope],
+    queryFn: () => api.get<Expense[]>(`/finance/expenses?${scope}`),
+    enabled: drillOpen,
   });
   const expenses = useQuery({
     queryKey: ['expenses', category, scope],
@@ -116,7 +125,12 @@ export function ExpensesPage() {
       ) : (
         <>
           <div className="kpi-row">
-            <StatTile label={t('expenses.total')} value={base(s.totals.amountBase)} hint={t('expenses.records', { count: s.totals.count })} />
+            <StatTile
+              label={t('expenses.total')}
+              value={base(s.totals.amountBase)}
+              hint={t('expenses.records', { count: s.totals.count })}
+              onClick={() => setDrillOpen(true)}
+            />
             <StatTile label={t('expenses.perMonth')} value={base(s.totals.avgPerMonthBase)} />
             <StatTile
               label={t('expenses.costRatio')}
@@ -269,6 +283,38 @@ export function ExpensesPage() {
           )}
         </>
       )}
+
+      <KpiDrilldownDrawer
+        open={drillOpen}
+        onClose={() => setDrillOpen(false)}
+        title={t('expenses.total')}
+        loading={drillExpenses.isLoading}
+        error={drillExpenses.error}
+        empty={!drillExpenses.data?.length}
+      >
+        <Table>
+          <thead>
+            <tr>
+              <th>{t('expenses.date')}</th>
+              <th>{t('expenses.category')}</th>
+              <th>{t('expenses.description')}</th>
+              <th>{t('expenses.supplier')}</th>
+              <th>{t('expenses.amount')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(drillExpenses.data ?? []).map((e) => (
+              <tr key={e.id}>
+                <td>{fmt(e.expenseDate, false)}</td>
+                <td>{catLabel(e.category)}</td>
+                <td>{e.description}</td>
+                <td>{e.supplier ?? '—'}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{local(e.amount, e.currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </KpiDrilldownDrawer>
 
       {creating && (
         <Card title={t('expenses.new')}>

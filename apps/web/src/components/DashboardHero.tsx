@@ -26,7 +26,7 @@ export function DashboardHero({ summary, period }: { summary: ReactNode; period?
   const productName = brand?.productName ?? brand?.shortName ?? t('nav.dashboard');
 
   return (
-    <section className="dash-hero">
+    <section className={`dash-hero ${heroImage ? 'dash-hero--photo' : 'dash-hero--illustration'}`}>
       <div className="dash-hero__art" aria-hidden="true">
         {heroImage ? <img src={heroImage} alt="" /> : <HeroPortArt />}
       </div>

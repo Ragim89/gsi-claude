@@ -1,15 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, Card, Select, Table } from '@gsi/ui-kit/react';
-import { FinanceDashboard, Inspection, Page, Sample, localize, SERVICE_TYPE_LABELS, ServiceType } from '@gsi/shared-types';
+import {
+  FinanceDashboard,
+  Inspection,
+  InspectionJob,
+  Invoice,
+  Page,
+  ReportDocument,
+  Sample,
+  localize,
+  SERVICE_TYPE_LABELS,
+  ServiceType,
+} from '@gsi/shared-types';
 import { api, subscribeFinance } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, FlowColumns, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
-import { ErrorBox, Loading, PageHead } from '../components/common';
+import { KpiDrilldownDrawer } from '../components/KpiDrilldownDrawer';
+import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 import { DashboardHero } from '../components/DashboardHero';
 import { KpiCard } from '../components/KpiCard';
 import { RecentActivityCard } from '../components/RecentActivityCard';
@@ -18,13 +30,18 @@ import { QuickActionsCard } from '../components/QuickActionsCard';
 import { RecentJobsCard } from '../components/RecentJobsCard';
 import { IconBanknote, IconBriefcase, IconClipboardCheck, IconDocument, IconFlask } from '../components/icons';
 
+type HomeDrill = 'jobs' | 'inspections' | 'samples' | 'reports' | 'revenue';
+
 /** Real-time group finance dashboard (docs/03-finance-dashboard.md). */
 export function DashboardPage() {
   const { t, i18n } = useTranslation();
   const { isHq, can } = useAuth();
+  const navigate = useNavigate();
+  const fmt = useFormatDate();
   const qc = useQueryClient();
   const [range, setRange] = useState<Range>(DEFAULT_RANGE);
   const [live, setLive] = useState<{ at: string; count: number } | null>(null);
+  const [drill, setDrill] = useState<HomeDrill | null>(null);
 
   const { branchId, current } = useBranch();
   const query = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
@@ -48,6 +65,37 @@ export function DashboardPage() {
     queryKey: ['dashboard', 'samples-count', query],
     queryFn: () => api.get<Page<Sample>>(`/samples?${query}&limit=1`),
     enabled: canSamples,
+  });
+
+  // Drilldowns for the top KPI row — same period+branch scope, same permission-gated list
+  // endpoints the Jobs/Inspections/Samples/Reports/Invoices screens already use.
+  const canReports = can('report.read');
+  const drillJobsQ = useQuery({
+    queryKey: ['dashboard', 'jobs-drill', query],
+    queryFn: () => api.get<Page<InspectionJob>>(`/jobs?${query}&limit=200`),
+    enabled: drill === 'jobs',
+  });
+  const drillInspectionsQ = useQuery({
+    queryKey: ['dashboard', 'inspections-drill', query],
+    queryFn: () => api.get<Page<Inspection>>(`/inspections?${query}&limit=200`),
+    enabled: drill === 'inspections',
+  });
+  const drillSamplesQ = useQuery({
+    queryKey: ['dashboard', 'samples-drill', query],
+    queryFn: () => api.get<Page<Sample>>(`/samples?${query}&limit=200`),
+    enabled: drill === 'samples',
+  });
+  const drillReportsQ = useQuery({
+    queryKey: ['dashboard', 'reports-drill', query],
+    queryFn: () => api.get<Page<ReportDocument>>(`/reports?${query}&limit=200`),
+    enabled: drill === 'reports',
+  });
+  // GET /finance/invoices has no from/to filter (unlike jobs/inspections/samples/reports) —
+  // branch-scoped only, then filtered client-side to invoices issued in this period.
+  const drillRevenueQ = useQuery({
+    queryKey: ['dashboard', 'revenue-drill', branchId],
+    queryFn: () => api.get<Invoice[]>(`/finance/invoices${branchId ? `?branchId=${branchId}` : ''}`),
+    enabled: drill === 'revenue',
   });
 
   // Event-driven refresh: the API pushes a message whenever a posting lands (no polling).
@@ -93,6 +141,7 @@ export function DashboardPage() {
           icon={<IconBriefcase />}
           label={t('dashboardHome.kpiJobs')}
           value={String(d.kpis.jobsInPeriod)}
+          onClick={() => setDrill('jobs')}
         />
         {canInspections && (
           <KpiCard
@@ -100,6 +149,7 @@ export function DashboardPage() {
             icon={<IconClipboardCheck />}
             label={t('dashboardHome.kpiInspections')}
             value={inspectionsCountQ.isLoading ? '…' : String(inspectionsCountQ.data?.total ?? 0)}
+            onClick={() => setDrill('inspections')}
           />
         )}
         {canSamples && (
@@ -108,14 +158,18 @@ export function DashboardPage() {
             icon={<IconFlask />}
             label={t('dashboardHome.kpiSamples')}
             value={samplesCountQ.isLoading ? '…' : String(samplesCountQ.data?.total ?? 0)}
+            onClick={() => setDrill('samples')}
           />
         )}
-        <KpiCard
-          accent="purple"
-          icon={<IconDocument />}
-          label={t('dashboardHome.kpiReports')}
-          value={String(d.kpis.reportsInPeriod)}
-        />
+        {canReports && (
+          <KpiCard
+            accent="purple"
+            icon={<IconDocument />}
+            label={t('dashboardHome.kpiReports')}
+            value={String(d.kpis.reportsInPeriod)}
+            onClick={() => setDrill('reports')}
+          />
+        )}
         {canFinance && (
           <KpiCard
             accent="amber"
@@ -123,9 +177,103 @@ export function DashboardPage() {
             label={t('dashboardHome.kpiRevenue')}
             value={money(d.totals.revenueBase)}
             trend={revenueTrend}
+            onClick={() => setDrill('revenue')}
           />
         )}
       </div>
+
+      <KpiDrilldownDrawer
+        open={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill ? t(`dashboardHome.drill.${drill}`) : ''}
+        loading={
+          (drill === 'jobs' && drillJobsQ.isLoading) ||
+          (drill === 'inspections' && drillInspectionsQ.isLoading) ||
+          (drill === 'samples' && drillSamplesQ.isLoading) ||
+          (drill === 'reports' && drillReportsQ.isLoading) ||
+          (drill === 'revenue' && drillRevenueQ.isLoading)
+        }
+        error={
+          drill === 'jobs' ? drillJobsQ.error
+          : drill === 'inspections' ? drillInspectionsQ.error
+          : drill === 'samples' ? drillSamplesQ.error
+          : drill === 'reports' ? drillReportsQ.error
+          : drill === 'revenue' ? drillRevenueQ.error
+          : undefined
+        }
+        empty={
+          (drill === 'jobs' && !drillJobsQ.data?.rows.length) ||
+          (drill === 'inspections' && !drillInspectionsQ.data?.rows.length) ||
+          (drill === 'samples' && !drillSamplesQ.data?.rows.length) ||
+          (drill === 'reports' && !drillReportsQ.data?.rows.length) ||
+          (drill === 'revenue' && !revenueInPeriod(drillRevenueQ.data, d.period).length)
+        }
+      >
+        {drill === 'jobs' && (
+          <Table>
+            <thead><tr><th>{t('jobs.number')}</th><th>{t('jobs.client')}</th><th>{t('jobs.status')}</th></tr></thead>
+            <tbody>
+              {(drillJobsQ.data?.rows ?? []).map((j) => (
+                <tr key={j.id} className="link-row" onClick={() => navigate(`/jobs/${j.id}`)}>
+                  <td className="mono">{j.jobNumber}</td><td>{j.clientName}</td><td>{t(`status.${j.status}`)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        {drill === 'inspections' && (
+          <Table>
+            <thead><tr><th>{t('inspections.number')}</th><th>{t('jobs.client')}</th><th>{t('jobs.status')}</th></tr></thead>
+            <tbody>
+              {(drillInspectionsQ.data?.rows ?? []).map((x) => (
+                <tr key={x.id} className="link-row" onClick={() => navigate(`/inspections/${x.id}`)}>
+                  <td className="mono">{x.inspectionNumber}</td><td>{x.clientName}</td><td>{t(`status.${x.status}`)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        {drill === 'samples' && (
+          <Table>
+            <thead><tr><th>{t('samples.number')}</th><th>{t('jobs.client')}</th><th>{t('jobs.status')}</th></tr></thead>
+            <tbody>
+              {(drillSamplesQ.data?.rows ?? []).map((x) => (
+                <tr key={x.id} className="link-row" onClick={() => navigate(`/samples/${x.id}`)}>
+                  <td className="mono">{x.sampleNumber}</td><td>{x.clientName}</td><td>{t(`status.${x.status}`)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        {drill === 'reports' && (
+          <Table>
+            <thead><tr><th>{t('reports.number')}</th><th>{t('jobs.client')}</th><th>{t('invoices.issued')}</th></tr></thead>
+            <tbody>
+              {(drillReportsQ.data?.rows ?? []).map((r) => (
+                <tr key={r.id} className="link-row" onClick={() => navigate(`/reports/${r.id}`)}>
+                  <td className="mono">{r.reportNumber}</td><td>{r.clientName}</td><td>{fmt(r.issuedAt, false)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        {drill === 'revenue' && (
+          <Table>
+            <thead><tr><th>{t('invoices.number')}</th><th>{t('jobs.client')}</th><th>{t('invoices.total')}</th><th>{t('invoices.issued')}</th></tr></thead>
+            <tbody>
+              {revenueInPeriod(drillRevenueQ.data, d.period).map((inv) => (
+                <tr key={inv.id} className="link-row" onClick={() => navigate(`/finance/invoices/${inv.id}`)}>
+                  <td className="mono">{inv.invoiceNumber}</td><td>{inv.clientName}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: inv.currency, maximumFractionDigits: 2 }).format(inv.amountTotal)}
+                  </td>
+                  <td>{fmt(inv.issueDate, false)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </KpiDrilldownDrawer>
 
       <div className="dash-grid">
         <RecentActivityCard />
@@ -391,6 +539,13 @@ export function DashboardPage() {
       </Card>
     </div>
   );
+}
+
+/** GET /finance/invoices has no from/to filter — issued-in-period is applied here instead,
+ *  against the same period the Revenue KPI itself was computed over. */
+function revenueInPeriod(invoices: Invoice[] | undefined, period: { from: string; to: string }): Invoice[] {
+  if (!invoices) return [];
+  return invoices.filter((i) => i.status !== 'draft' && i.issueDate >= period.from && i.issueDate <= period.to);
 }
 
 function breakdownTable(

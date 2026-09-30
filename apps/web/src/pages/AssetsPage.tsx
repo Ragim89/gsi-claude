@@ -19,6 +19,7 @@ import { flag, useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ExportButton } from '../components/ExportButton';
+import { KpiDrilldownDrawer } from '../components/KpiDrilldownDrawer';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
 
 export const ASSET_TONE: Record<AssetStatus, BadgeTone> = {
@@ -43,6 +44,7 @@ export function AssetsPage() {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [drillOpen, setDrillOpen] = useState(false);
   const canWrite = can('asset.create', 'asset.update');
 
   const scope = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
@@ -61,6 +63,12 @@ export function AssetsPage() {
     queryFn: () => api.get<Asset[]>(`/assets?${listParams}`),
   });
   const branches = useQuery({ queryKey: ['branches'], queryFn: () => api.get<Branch[]>('/branches'), enabled: isHq });
+  // Same branch scope as the "count" KPI, independent of the register's own filters below.
+  const drillAssets = useQuery({
+    queryKey: ['assets-drill', branchId],
+    queryFn: () => api.get<Asset[]>(`/assets${branchId ? `?branchId=${branchId}` : ''}`),
+    enabled: drillOpen,
+  });
 
   const [form, setForm] = useState({
     inventoryNo: '',
@@ -158,7 +166,12 @@ export function AssetsPage() {
               value={base(s.totals.netBookValueBase)}
               hint={t('assets.ofCost', { amount: base(s.totals.acquisitionCostBase) })}
             />
-            <StatTile label={t('assets.count')} value={String(s.totals.count)} hint={t('assets.inUse', { count: s.totals.inUse })} />
+            <StatTile
+              label={t('assets.count')}
+              value={String(s.totals.count)}
+              hint={t('assets.inUse', { count: s.totals.inUse })}
+              onClick={() => setDrillOpen(true)}
+            />
             <StatTile label={t('assets.accumulated')} value={base(s.totals.accumulatedBase)} />
             <StatTile
               label={t('assets.monthlyCharge')}
@@ -340,6 +353,40 @@ export function AssetsPage() {
           )}
         </>
       )}
+
+      <KpiDrilldownDrawer
+        open={drillOpen}
+        onClose={() => setDrillOpen(false)}
+        title={t('assets.count')}
+        loading={drillAssets.isLoading}
+        error={drillAssets.error}
+        empty={!drillAssets.data?.length}
+      >
+        <Table>
+          <thead>
+            <tr>
+              <th>{t('assets.inventoryNo')}</th>
+              <th>{t('assets.name')}</th>
+              <th>{t('assets.category')}</th>
+              <th>{t('assets.netBookValue')}</th>
+              <th>{t('jobs.status')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(drillAssets.data ?? []).map((a) => (
+              <tr key={a.id} className="link-row" onClick={() => navigate(`/assets/${a.id}`)}>
+                <td className="mono">{a.inventoryNo}</td>
+                <td>{a.name}</td>
+                <td>{t(`assetCategory.${a.category}`)}</td>
+                <td>{local(a.netBookValue ?? 0, a.currency)}</td>
+                <td>
+                  <Badge tone={ASSET_TONE[a.status]}>{t(`assetStatus.${a.status}`)}</Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </KpiDrilldownDrawer>
 
       {creating && (
         <Card title={t('assets.new')}>

@@ -427,19 +427,30 @@ export function StatTile({
   value,
   hint,
   tone,
+  onClick,
 }: {
   label: string;
   value: string;
   hint?: ReactNode;
   tone?: 'positive' | 'negative' | 'neutral';
+  /** Opens the KpiDrilldownDrawer for this tile — same tile, no separate "clickable" variant. */
+  onClick?: () => void;
 }) {
-  return (
-    <div className="stat">
+  const body = (
+    <>
       <div className="stat__label">{label}</div>
       <div className={`stat__value${tone ? ` stat__value--${tone}` : ''}`}>{value}</div>
       {hint ? <div className="stat__hint">{hint}</div> : null}
-    </div>
+    </>
   );
+  if (onClick) {
+    return (
+      <button type="button" className="stat stat--clickable" onClick={onClick}>
+        {body}
+      </button>
+    );
+  }
+  return <div className="stat">{body}</div>;
 }
 
 function niceTicks(min: number, max: number, count: number): number[] {

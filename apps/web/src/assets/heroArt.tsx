@@ -6,9 +6,10 @@
  *
  * Colour comes from a small set of literal hex values lifted from the validated KPI accent
  * palette (packages/ui-kit/src/tokens.ts `kpi`) rather than `currentColor`, so the illustration
- * reads as a light, modern flat-line drawing with tasteful accents against the hero's brand-blue
- * gradient. The waterline and hull stay on `currentColor` (set by `.dash-hero__art`) so they keep
- * tracking the card's own tint regardless of the organization's brand colours.
+ * reads as a light, modern flat-line drawing with tasteful accents against the hero's soft
+ * sky-to-cream gradient (see `.dash-hero` in styles.css). The waterline and hull stay on
+ * `currentColor` (set by `.dash-hero__art`) so they keep tracking the card's own tint regardless
+ * of the organization's brand colours.
  */
 export function HeroPortArt(props: { className?: string }) {
   return (
@@ -64,7 +65,7 @@ export function HeroPortArt(props: { className?: string }) {
         <rect x="850" y="238" width="36" height="28" rx="2" fill="#1E7A4C" />
         <rect x="890" y="238" width="36" height="28" rx="2" fill="#C2760C" />
         <rect x="850" y="208" width="36" height="26" rx="2" fill="#0E7A88" />
-        <rect x="890" y="208" width="36" height="26" rx="2" fill="#E8F1FB" opacity="0.9" />
+        <rect x="890" y="208" width="36" height="26" rx="2" fill="#5888C0" opacity="0.85" />
         <circle cx="1090" cy="80" r="5" fill="#C2760C" />
         <circle cx="1170" cy="105" r="5" fill="#0E7A88" />
       </g>
@@ -73,14 +74,14 @@ export function HeroPortArt(props: { className?: string }) {
       <g transform="translate(955 220)" opacity="0.98">
         <path
           d="M14 4v22.4L2.4 51a7 7 0 0 0 6.3 10h30.6a7 7 0 0 0 6.3-10L34 26.4V4"
-          fill="#E8F1FB"
-          fillOpacity="0.18"
-          stroke="#E8F1FB"
+          fill="#EAF2FB"
+          fillOpacity="0.55"
+          stroke="#105098"
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <path d="M10 4h28" stroke="#E8F1FB" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M10 4h28" stroke="#105098" strokeWidth="2.2" strokeLinecap="round" />
         <path
           d="M8.5 40h31c1.6 3 2.7 5.2 3.3 7.4a5.6 5.6 0 0 1-5.3 6.6H10.5a5.6 5.6 0 0 1-5.3-6.6c.6-2.2 1.7-4.4 3.3-7.4Z"
           fill="#0E7A88"

@@ -3,13 +3,14 @@
   "nav": {
     "dashboard": "Dashboard", "analytics": "Analytics", "myAnalytics": "My performance", "jobs": "Inspection jobs", "myJobs": "My jobs", "clients": "Clients",
     "invoices": "Invoices", "expenses": "Expenses", "quotes": "Quotes", "payments": "Payments", "pricing": "Pricing",
+    "capitalization": "Capitalization",
     "assets": "Assets", "branches": "Branches", "import": "Data import",
     "reports": "Documents", "contracts": "Contracts", "inspections": "Inspections", "myInspections": "My inspections",
     "samples": "Samples", "mySamples": "My samples", "laboratories": "Laboratories",
     "labQueue": "Laboratory", "myAnalyses": "My analyses", "labCatalogue": "Test catalogue",
     "labSpecifications": "Specifications", "labInstruments": "Instruments",
     "users": "Users", "roles": "Roles", "audit": "Audit log", "fiscal": "Fiscal configuration",
-    "logout": "Sign out", "logoutAll": "Sign out everywhere", "language": "Language",
+    "logout": "Sign out", "logoutAll": "Sign out everywhere", "language": "Language", "account": "Account menu",
     "noAccess": "Nothing to show yet", "noAccessHint": "Your account has no permissions assigned. Ask an administrator to give you a role.",
     "openMenu": "Open menu", "closeMenu": "Close menu", "more": "More",
     "groups": {
@@ -52,7 +53,8 @@
     "search": "Search…", "loading": "Loading…", "none": "—", "actions": "Actions", "confirmDelete": "Delete this record? This cannot be undone.",
     "error": "Something went wrong", "required": "Required", "all": "All", "open": "Open", "branch": "Branch",
     "description": "Description", "retry": "Retry", "active": "Active", "inactive": "Inactive", "name": "Name",
-    "yes": "Yes", "no": "No"
+    "yes": "Yes", "no": "No", "close": "Close", "noResults": "No results", "currency": "Currency",
+    "effectiveFrom": "Effective from", "notSet": "Not set"
   },
   "roleNames": {
     "inspector": "Inspector", "lab_technician": "Lab technician", "supervisor": "Supervisor",
@@ -335,6 +337,8 @@
     "noInstruments": "No instrument recorded yet",
     "manufacturer": "Manufacturer", "model": "Model", "serialNumber": "Serial number",
     "calibrationDue": "Calibration due",
+    "bookValue": "Book value", "setPurchaseData": "Set purchase data", "purchaseDate": "Purchase date",
+    "usefulLifeMonths": "Useful life, months", "salvageValue": "Salvage value",
     "instrumentStatus": {
       "active": "In service", "maintenance": "Maintenance", "out_of_service": "Out of service", "retired": "Retired"
     },
@@ -405,6 +409,7 @@
     "assignmentRole": "Role", "assignedAt": "Assigned", "unassign": "Remove", "selectPerson": "Select person…",
     "noAssignments": "Nobody is assigned yet", "inspection": "Field work", "history": "History",
     "timeline": "Status timeline", "noHistory": "Nothing recorded yet", "noInvoices": "No invoices for this job",
+    "createInvoice": "Create Invoice",
     "contact": "Client contact", "contract": "Contract", "contractTerms": "Payment terms: {{days}} days",
     "contractExpired": "This contract has expired — check before confirming the job",
     "city": "City", "objectKind": "Inspected object", "containerNo": "Container no.",
@@ -416,6 +421,9 @@
     "createdBy": "Created by", "createdAt": "Created",
     "sectionClient": "1. Client", "sectionService": "2. Service", "sectionLocation": "3. Location",
     "sectionSchedule": "4. Schedule and assignment", "sectionInstructions": "5. Instructions",
+    "sectionServices": "Priced services (optional)", "addServiceLine": "Add service",
+    "servicesHint": "Add one or more priced services to bill this request for several services at once, instead of the single service type above.",
+    "selectService": "Select a service", "noPriceConfigured": "No price configured",
     "newHint": "Save as a draft while details are still coming in; confirming checks it is complete",
     "saveDraft": "Save as draft", "createConfirmed": "Create and confirm",
     "heldFrom": "on hold, will return to {{status}}",
@@ -627,6 +635,7 @@
     "greetingMorning": "Good morning, {{name}}", "greetingAfternoon": "Good afternoon, {{name}}", "greetingEvening": "Good evening, {{name}}",
     "summaryJobs": "{{count}} jobs this period", "summaryInspections": "{{count}} inspections active", "summaryReports": "{{count}} reports issued",
     "kpiJobs": "Jobs", "kpiInspections": "Inspections", "kpiSamples": "Samples / Laboratory", "kpiReports": "Reports", "kpiRevenue": "Revenue",
+    "drill": { "jobs": "Jobs", "inspections": "Inspections", "samples": "Samples / Laboratory", "reports": "Reports", "revenue": "Revenue — invoices this period" },
     "recentActivity": "Recent activity", "recentActivityEmpty": "No recent activity.",
     "upcomingTasks": "Upcoming tasks", "upcomingTasksEmpty": "Nothing due right now.",
     "inspectionDue": "Inspection {{number}} scheduled", "reportReview": "Report {{number}} awaiting review",
@@ -668,6 +677,7 @@
     "toChase": "Chase these first", "amountDue": "Outstanding", "overdueBy": "Overdue by",
     "register": "Invoice register", "onlyOverdue": "Overdue only", "dueDate": "Due date",
     "cancelInvoice": "Cancel invoice", "details": "Details", "paidAt": "Paid at", "currency": "Currency",
+    "drill": { "issued": "Issued invoices", "received": "Payments received", "unpaid": "Unpaid invoices", "overdue": "Overdue invoices" },
     "payments": "Payments", "noPayments": "No payments yet", "registeredBy": "Registered by", "downloadPdf": "Invoice PDF",
     "remindPrompt": "Note for this reminder (optional):", "logReminder": "Log reminder",
     "reminders": "Reminders", "noReminders": "No reminders logged", "reminderNote": "Note"
@@ -703,6 +713,12 @@
   "paymentDirection": { "inbound": "Received from client", "outbound": "Paid to supplier" },
   "paymentMethod": {
     "bank_transfer": "Bank transfer", "cash": "Cash", "card": "Card", "cheque": "Cheque", "other": "Other"
+  },
+  "capitalization": {
+    "title": "Capitalization", "cash": "Cash & Bank", "receivable": "Receivables",
+    "netAssets": "Net Assets (after depreciation)", "payable": "Payables", "otherLiabilities": "Other Liabilities",
+    "notTracked": "Not tracked", "notTrackedHint": "No ledger account feeds this yet — reported as zero rather than estimated.",
+    "netPosition": "Net Position", "netPositionHint": "Cash + Receivables + Net Assets − Payables − Other Liabilities"
   },
   "pricing": {
     "title": "Services & pricing", "services": "Service catalogue", "prices": "Prices",

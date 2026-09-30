@@ -25,6 +25,7 @@ import { QuotesPage } from './pages/QuotesPage';
 import { QuoteDetailPage } from './pages/QuoteDetailPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ServicesPricingPage } from './pages/ServicesPricingPage';
+import { CapitalizationPage } from './pages/CapitalizationPage';
 import { BranchesPage } from './pages/BranchesPage';
 import { BranchDetailPage } from './pages/BranchDetailPage';
 import { AssetsPage } from './pages/AssetsPage';
@@ -103,6 +104,7 @@ export function App() {
         <Route path="/finance/quotes/:id" element={<RequireAuth need={['quote.read']}><QuoteDetailPage /></RequireAuth>} />
         <Route path="/finance/payments" element={<RequireAuth need={['payment.read']}><PaymentsPage /></RequireAuth>} />
         <Route path="/finance/pricing" element={<RequireAuth need={['service.read']}><ServicesPricingPage /></RequireAuth>} />
+        <Route path="/finance/capitalization" element={<RequireAuth need={['capitalization.read']}><CapitalizationPage /></RequireAuth>} />
         <Route path="/assets" element={<RequireAuth need={['asset.read']}><AssetsPage /></RequireAuth>} />
         <Route path="/assets/:id" element={<RequireAuth need={['asset.read']}><AssetDetailPage /></RequireAuth>} />
         <Route path="/branches" element={<RequireAuth need={['dashboard.read']}><BranchesPage /></RequireAuth>} />

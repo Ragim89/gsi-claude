@@ -15,7 +15,9 @@ import {
   JobPriority,
   Page,
   Port,
+  Price,
   SERVICE_TYPES,
+  Service,
   ServiceType,
   User,
   localize,
@@ -23,6 +25,12 @@ import {
 import { api, blanksToNull } from '../api';
 import { useAuth } from '../auth';
 import { ErrorBox, fromLocalInput, Loading, PageHead, toLocalInput, useServiceLabel } from '../components/common';
+
+interface JobLineDraft {
+  serviceId: string;
+  description: string;
+  quantity: string;
+}
 
 interface FormState {
   clientId: string;
@@ -97,6 +105,9 @@ export function JobFormPage() {
   const [form, setForm] = useState<FormState>({ ...EMPTY, clientId: search.get('clientId') ?? '' });
   /** The version the form was loaded with, so a concurrent save is caught, not overwritten. */
   const [version, setVersion] = useState<number | undefined>();
+  /** Multi-service line items (migration 029) — only offered when creating a job; each
+   *  price is resolved and snapshotted server-side, never trusted from here. */
+  const [lines, setLines] = useState<JobLineDraft[]>([]);
 
   const existing = useQuery({
     queryKey: ['job', id],
@@ -124,6 +135,13 @@ export function JobFormPage() {
   });
   const commodities = useQuery({ queryKey: ['commodities'], queryFn: () => api.get<Commodity[]>('/reference/commodities'), staleTime: 300_000 });
   const ports = useQuery({ queryKey: ['ports'], queryFn: () => api.get<Port[]>('/reference/ports'), staleTime: 300_000 });
+  const canPriceLines = !isEdit && can('pricing.read');
+  const services = useQuery({
+    queryKey: ['services', 'active'],
+    queryFn: () => api.get<Service[]>('/finance/services'),
+    enabled: canPriceLines,
+    staleTime: 300_000,
+  });
 
   useEffect(() => {
     const j = existing.data;
@@ -192,6 +210,7 @@ export function JobFormPage() {
       };
       const scheduledAt = fromLocalInput(form.scheduledAt);
       if (isEdit) return api.patch<InspectionJob>(`/jobs/${id}`, { ...common, scheduledAt, version });
+      const validLines = lines.filter((l) => l.serviceId && Number(l.quantity) > 0);
       return api.post<InspectionJob>('/jobs', {
         ...common,
         scheduledAt,
@@ -199,6 +218,15 @@ export function JobFormPage() {
         clientId: form.clientId,
         type: form.type,
         assignedInspectorId: form.assignedInspectorId || null,
+        ...(validLines.length
+          ? {
+              lines: validLines.map((l) => ({
+                serviceId: l.serviceId,
+                description: l.description.trim() || undefined,
+                quantity: Number(l.quantity),
+              })),
+            }
+          : {}),
       });
     },
     onSuccess: (job) => {
@@ -341,6 +369,61 @@ export function JobFormPage() {
           </div>
         </Card>
 
+        {canPriceLines && (
+          <Card
+            title={t('job.sectionServices')}
+            actions={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setLines((ls) => [...ls, { serviceId: '', description: '', quantity: '1' }])}
+              >
+                + {t('job.addServiceLine')}
+              </Button>
+            }
+          >
+            {lines.length === 0 ? (
+              <p className="muted">{t('job.servicesHint')}</p>
+            ) : (
+              <div className="stack">
+                {lines.map((l, i) => (
+                  <div key={i} className="invoice-line">
+                    <Field label={t('invoices.lineDescription')}>
+                      <Select value={l.serviceId} onChange={(e) => setLines((ls) => ls.map((x, idx) => (idx === i ? { ...x, serviceId: e.target.value } : x)))}>
+                        <option value="">{t('job.selectService')}</option>
+                        {services.data?.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {localize(s.name, i18n.language)} ({s.code})
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                    <Field label={t('invoices.qty')}>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.001"
+                        value={l.quantity}
+                        onChange={(e) => setLines((ls) => ls.map((x, idx) => (idx === i ? { ...x, quantity: e.target.value } : x)))}
+                      />
+                    </Field>
+                    <JobLinePricePreview
+                      serviceId={l.serviceId}
+                      branchId={selectedClient?.branchId}
+                      clientId={form.clientId}
+                      contractId={form.contractId}
+                    />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setLines((ls) => ls.filter((_, idx) => idx !== i))}>
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
         <Card title={t('job.sectionLocation')}>
           <div className="form-grid">
             <Field label={t('jobs.port')}>
@@ -455,6 +538,47 @@ export function JobFormPage() {
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
+
+/** Live preview of the price a line would resolve to (contract → client → branch default) —
+ *  informational only; the server re-resolves it at save time, this never sends a price. */
+function JobLinePricePreview({
+  serviceId,
+  branchId,
+  clientId,
+  contractId,
+}: {
+  serviceId: string;
+  branchId?: string;
+  clientId?: string;
+  contractId?: string;
+}) {
+  const { t, i18n } = useTranslation();
+  const enabled = Boolean(serviceId && branchId && clientId);
+  const price = useQuery({
+    queryKey: ['price-resolve', serviceId, branchId, clientId, contractId],
+    queryFn: () =>
+      api.get<Price | null>(
+        `/finance/prices/resolve?serviceId=${serviceId}&branchId=${branchId}&clientId=${clientId}${contractId ? `&contractId=${contractId}` : ''}`,
+      ),
+    enabled,
+  });
+  if (!enabled) return <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>—</div>;
+  if (price.isLoading) return <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8 }}>…</div>;
+  if (!price.data) {
+    return (
+      <div className="muted" style={{ alignSelf: 'end', paddingBottom: 8, color: 'var(--gsi-color-danger)' }}>
+        {t('job.noPriceConfigured')}
+      </div>
+    );
+  }
+  return (
+    <div style={{ alignSelf: 'end', paddingBottom: 8 }}>
+      {new Intl.NumberFormat(i18n.language, { style: 'currency', currency: price.data.currency, maximumFractionDigits: 2 }).format(
+        price.data.unitPrice,
+      )}
     </div>
   );
 }

@@ -3,13 +3,14 @@
   "nav": {
     "dashboard": "Gösterge paneli", "analytics": "Analitik", "myAnalytics": "Performansım", "jobs": "Muayene işleri", "myJobs": "İşlerim", "clients": "Müşteriler",
     "invoices": "Faturalar", "expenses": "Giderler", "quotes": "Teklifler", "payments": "Ödemeler", "pricing": "Fiyatlandırma",
+    "capitalization": "Sermayeleştirme",
     "assets": "Varlıklar", "branches": "Şubeler", "import": "Veri yükleme",
     "reports": "Belgeler", "contracts": "Sözleşmeler", "inspections": "Muayeneler", "myInspections": "Muayenelerim",
     "samples": "Numuneler", "mySamples": "Numunelerim", "laboratories": "Laboratuvarlar",
     "labQueue": "Laboratuvar", "myAnalyses": "Analizlerim", "labCatalogue": "Analiz kataloğu",
     "labSpecifications": "Spesifikasyonlar", "labInstruments": "Cihazlar",
     "users": "Kullanıcılar", "roles": "Roller", "audit": "Denetim kaydı", "fiscal": "Mali yapılandırma",
-    "logout": "Çıkış", "logoutAll": "Tüm cihazlardan çıkış", "language": "Dil",
+    "logout": "Çıkış", "logoutAll": "Tüm cihazlardan çıkış", "language": "Dil", "account": "Hesap menüsü",
     "noAccess": "Henüz gösterilecek bir şey yok", "noAccessHint": "Hesabınıza yetki atanmamış. Yöneticinizden bir rol vermesini isteyin.",
     "openMenu": "Menüyü aç", "closeMenu": "Menüyü kapat", "more": "Diğer",
     "groups": {
@@ -52,7 +53,8 @@
     "search": "Ara…", "loading": "Yükleniyor…", "none": "—", "actions": "İşlemler", "confirmDelete": "Bu kayıt silinsin mi? Bu işlem geri alınamaz.",
     "error": "Bir şeyler ters gitti", "required": "Zorunlu", "all": "Tümü", "open": "Aç", "branch": "Şube",
     "description": "Açıklama", "retry": "Tekrar dene", "active": "Etkin", "inactive": "Pasif", "name": "Ad",
-    "yes": "Evet", "no": "Hayır"
+    "yes": "Evet", "no": "Hayır", "close": "Kapat", "noResults": "Sonuç yok", "currency": "Para birimi",
+    "effectiveFrom": "Geçerlilik başlangıcı", "notSet": "Belirtilmedi"
   },
   "roleNames": {
     "inspector": "Eksper", "lab_technician": "Laborant", "supervisor": "Süpervizör",
@@ -336,6 +338,8 @@
     "noInstruments": "Henüz cihaz kaydedilmedi",
     "manufacturer": "Üretici", "model": "Model", "serialNumber": "Seri numarası",
     "calibrationDue": "Kalibrasyon tarihi",
+    "bookValue": "Defter değeri", "setPurchaseData": "Satın alma verisi gir", "purchaseDate": "Satın alma tarihi",
+    "usefulLifeMonths": "Faydalı ömür, ay", "salvageValue": "Hurda değeri",
     "instrumentStatus": {
       "active": "Kullanımda", "maintenance": "Bakımda", "out_of_service": "Devre dışı", "retired": "Kullanımdan kaldırıldı"
     },
@@ -407,6 +411,7 @@
     "assignmentRole": "Rol", "assignedAt": "Atandı", "unassign": "Çıkar", "selectPerson": "Kişi seçin…",
     "noAssignments": "Henüz kimse atanmadı", "inspection": "Saha çalışması", "history": "Geçmiş",
     "timeline": "Durum akışı", "noHistory": "Henüz kayıt yok", "noInvoices": "Bu işe ait fatura yok",
+    "createInvoice": "Fatura Oluştur",
     "contact": "İlgili kişi", "contract": "Sözleşme", "contractTerms": "Ödeme vadesi: {{days}} gün",
     "contractExpired": "Bu sözleşmenin süresi dolmuş — işi onaylamadan kontrol edin",
     "city": "Şehir", "objectKind": "Muayene nesnesi", "containerNo": "Konteyner no.",
@@ -418,6 +423,9 @@
     "createdBy": "Oluşturan", "createdAt": "Oluşturuldu",
     "sectionClient": "1. Müşteri", "sectionService": "2. Hizmet", "sectionLocation": "3. Yer",
     "sectionSchedule": "4. Planlama ve görevlendirme", "sectionInstructions": "5. Talimatlar",
+    "sectionServices": "Fiyatlı hizmetler (opsiyonel)", "addServiceLine": "Hizmet ekle",
+    "servicesHint": "Bu talebi yukarıdaki tek hizmet türü yerine birden fazla hizmet için faturalamak üzere bir veya daha fazla fiyatlı hizmet ekleyin.",
+    "selectService": "Hizmet seçin", "noPriceConfigured": "Fiyat tanımlı değil",
     "newHint": "Ayrıntılar gelirken taslak olarak kaydedin; onaylarken sistem eksikleri kontrol eder",
     "saveDraft": "Taslak olarak kaydet", "createConfirmed": "Oluştur ve onayla",
     "heldFrom": "beklemede, «{{status}}» durumuna dönecek",
@@ -629,6 +637,7 @@
     "greetingMorning": "Günaydın, {{name}}", "greetingAfternoon": "İyi günler, {{name}}", "greetingEvening": "İyi akşamlar, {{name}}",
     "summaryJobs": "bu dönemde {{count}} iş", "summaryInspections": "{{count}} aktif muayene", "summaryReports": "{{count}} rapor düzenlendi",
     "kpiJobs": "İşler", "kpiInspections": "Muayeneler", "kpiSamples": "Numune / Laboratuvar", "kpiReports": "Raporlar", "kpiRevenue": "Ciro",
+    "drill": { "jobs": "İşler", "inspections": "Muayeneler", "samples": "Numune / Laboratuvar", "reports": "Raporlar", "revenue": "Ciro — bu dönemin faturaları" },
     "recentActivity": "Son etkinlikler", "recentActivityEmpty": "Henüz etkinlik yok.",
     "upcomingTasks": "Yaklaşan görevler", "upcomingTasksEmpty": "Şu anda bekleyen görev yok.",
     "inspectionDue": "{{number}} muayenesi planlandı", "reportReview": "{{number}} raporu incelemede",
@@ -670,6 +679,7 @@
     "toChase": "Önce bunları takip edin", "amountDue": "Kalan tutar", "overdueBy": "Gecikme",
     "register": "Fatura defteri", "onlyOverdue": "Sadece vadesi geçen", "dueDate": "Vade tarihi",
     "cancelInvoice": "Faturayı iptal et", "details": "Bilgiler", "paidAt": "Ödendiği tarih", "currency": "Para birimi",
+    "drill": { "issued": "Kesilen faturalar", "received": "Alınan ödemeler", "unpaid": "Ödenmemiş faturalar", "overdue": "Gecikmiş faturalar" },
     "payments": "Ödemeler", "noPayments": "Henüz ödeme yok", "registeredBy": "Kaydeden", "downloadPdf": "Fatura PDF",
     "remindPrompt": "Bu hatırlatma için not (isteğe bağlı):", "logReminder": "Hatırlatma kaydet",
     "reminders": "Hatırlatmalar", "noReminders": "Kayıtlı hatırlatma yok", "reminderNote": "Not"
@@ -705,6 +715,12 @@
   "paymentDirection": { "inbound": "Müşteriden alındı", "outbound": "Tedarikçiye ödendi" },
   "paymentMethod": {
     "bank_transfer": "Banka havalesi", "cash": "Nakit", "card": "Kart", "cheque": "Çek", "other": "Diğer"
+  },
+  "capitalization": {
+    "title": "Sermayeleştirme", "cash": "Nakit ve Banka", "receivable": "Alacaklar",
+    "netAssets": "Net Varlıklar (amortisman sonrası)", "payable": "Borçlar", "otherLiabilities": "Diğer Yükümlülükler",
+    "notTracked": "Takip edilmiyor", "notTrackedHint": "Bunu besleyen bir muhasebe hesabı henüz yok — tahmin yerine sıfır olarak gösterilir.",
+    "netPosition": "Net Pozisyon", "netPositionHint": "Nakit + Alacaklar + Net Varlıklar − Borçlar − Diğer Yükümlülükler"
   },
   "pricing": {
     "title": "Hizmetler ve fiyatlandırma", "services": "Hizmet kataloğu", "prices": "Fiyatlar",

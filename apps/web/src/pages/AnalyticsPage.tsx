@@ -1,25 +1,38 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, Table } from '@gsi/ui-kit/react';
-import { JobsAnalytics, TurnaroundAnalytics, WorkloadAnalytics } from '@gsi/shared-types';
+import { InspectionJob, JobsAnalytics, Page, TurnaroundAnalytics, WorkloadAnalytics } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { useBranch } from '../branch';
 import { BarList, ChartFrame, Columns, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
-import { ErrorBox, Loading, PageHead, useServiceLabel } from '../components/common';
+import { KpiDrilldownDrawer } from '../components/KpiDrilldownDrawer';
+import { ErrorBox, Loading, PageHead, useFormatDate, useServiceLabel } from '../components/common';
 
 /** PHASE 9 — operational analytics: jobs, turnaround, workload. Same page for everyone;
  *  Row-Level Security is what turns it into "my work" for an own-scope role. */
 export function AnalyticsPage() {
   const { t } = useTranslation();
   const { can, user } = useAuth();
+  const navigate = useNavigate();
+  const fmt = useFormatDate();
   const [range, setRange] = useState<Range>(DEFAULT_RANGE);
+  const [drillOpen, setDrillOpen] = useState(false);
   const { branchId } = useBranch();
   const serviceLabel = useServiceLabel();
   const query = [rangeParams(range), branchId ? `branchId=${branchId}` : ''].filter(Boolean).join('&');
   const own = user?.scope === 'own';
+
+  // Same period+branch scope as the "jobsTotal" KPI — the exact GET /jobs list every other
+  // operations screen uses, so RBAC and filters are identical to the tile.
+  const drillJobs = useQuery({
+    queryKey: ['jobs-drill', query],
+    queryFn: () => api.get<Page<InspectionJob>>(`/jobs?${query}&limit=200`),
+    enabled: drillOpen,
+  });
 
   const jobsQ = useQuery({
     queryKey: ['analytics-jobs', query],
@@ -52,7 +65,7 @@ export function AnalyticsPage() {
       />
 
       <div className="kpi-row">
-        <StatTile label={t('analytics.jobsTotal')} value={String(jobs.totals.jobCount)} />
+        <StatTile label={t('analytics.jobsTotal')} value={String(jobs.totals.jobCount)} onClick={() => setDrillOpen(true)} />
         {turnaround.stages.map((s) => (
           <StatTile
             key={s.key}
@@ -62,6 +75,36 @@ export function AnalyticsPage() {
           />
         ))}
       </div>
+
+      <KpiDrilldownDrawer
+        open={drillOpen}
+        onClose={() => setDrillOpen(false)}
+        title={t('analytics.jobsTotal')}
+        loading={drillJobs.isLoading}
+        error={drillJobs.error}
+        empty={!drillJobs.data?.rows.length}
+      >
+        <Table>
+          <thead>
+            <tr>
+              <th>{t('jobs.number')}</th>
+              <th>{t('jobs.client')}</th>
+              <th>{t('invoices.issued')}</th>
+              <th>{t('jobs.status')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(drillJobs.data?.rows ?? []).map((j) => (
+              <tr key={j.id} className="link-row" onClick={() => navigate(`/jobs/${j.id}`)}>
+                <td className="mono">{j.jobNumber}</td>
+                <td>{j.clientName}</td>
+                <td>{fmt(j.createdAt, false)}</td>
+                <td>{t(`status.${j.status}`)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </KpiDrilldownDrawer>
 
       <ChartFrame
         title={t('analytics.jobsByMonth')}

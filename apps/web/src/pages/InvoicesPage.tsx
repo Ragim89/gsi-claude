@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Badge, BadgeTone, Button, Card, EmptyState, Field, Input, Select, Table, TextArea } from '@gsi/ui-kit/react';
-import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus, InvoiceSummary, Page } from '@gsi/shared-types';
+import { Client, INVOICE_STATUSES, Invoice, InvoiceStatus, InvoiceSummary, Page, Payment } from '@gsi/shared-types';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { flag, useBranch } from '../branch';
@@ -11,6 +11,9 @@ import { BarList, ChartFrame, LineChart, StatTile } from '../components/charts';
 import { DEFAULT_RANGE, DateRangeFilter, Range, rangeParams } from '../components/DateRangeFilter';
 import { ExportButton } from '../components/ExportButton';
 import { ErrorBox, Loading, PageHead, useFormatDate } from '../components/common';
+import { KpiDrilldownDrawer } from '../components/KpiDrilldownDrawer';
+
+type InvoiceDrill = 'issued' | 'received' | 'unpaid' | 'overdue';
 
 export const INVOICE_TONE: Record<InvoiceStatus, BadgeTone> = {
   draft: 'neutral',
@@ -19,6 +22,15 @@ export const INVOICE_TONE: Record<InvoiceStatus, BadgeTone> = {
   paid: 'success',
   cancelled: 'danger',
 };
+
+/** Same predicate the KPI's own number represents — issued excludes draft/cancelled, unpaid
+ *  is what still has a balance, overdue is unpaid past its due date. */
+function drillInvoicesFor(drill: InvoiceDrill | null, invoices: Invoice[] | undefined): Invoice[] {
+  if (!invoices || drill === 'received' || drill === null) return [];
+  if (drill === 'issued') return invoices.filter((i) => i.status !== 'draft' && i.status !== 'cancelled');
+  if (drill === 'unpaid') return invoices.filter((i) => i.status === 'issued' || i.status === 'partially_paid');
+  return invoices.filter((i) => (i.daysOverdue ?? 0) > 0);
+}
 
 interface LineDraft {
   description: string;
@@ -38,6 +50,7 @@ export function InvoicesPage() {
   const [status, setStatus] = useState<InvoiceStatus | ''>('');
   const [onlyOverdue, setOnlyOverdue] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [drill, setDrill] = useState<InvoiceDrill | null>(null);
 
   const canWrite = can('invoice.create', 'invoice.issue');
   // The calendar range and the branch filter scope both the analytics and the register.
@@ -53,6 +66,19 @@ export function InvoicesPage() {
       api.get<Invoice[]>(
         `/finance/invoices?${status ? `status=${status}&` : ''}${onlyOverdue ? 'overdue=true&' : ''}${branchId ? `branchId=${branchId}` : ''}`,
       ),
+  });
+
+  // Drilldowns: the same branch-scoped, permission-gated endpoints the register/payments
+  // pages already use — filtered client-side to the KPI's own predicate, never a second query.
+  const drillInvoices = useQuery({
+    queryKey: ['invoices-drill', branchId],
+    queryFn: () => api.get<Invoice[]>(`/finance/invoices?${branchId ? `branchId=${branchId}` : ''}`),
+    enabled: drill === 'issued' || drill === 'unpaid' || drill === 'overdue',
+  });
+  const drillPayments = useQuery({
+    queryKey: ['payments-drill', branchId],
+    queryFn: () => api.get<Payment[]>(`/finance/payments?direction=inbound${branchId ? `&branchId=${branchId}` : ''}`),
+    enabled: drill === 'received' && can('payment.read'),
   });
 
   const s = summary.data;
@@ -104,19 +130,30 @@ export function InvoicesPage() {
               label={t('invoices.issuedTotal')}
               value={base(s.totals.issuedBase)}
               hint={t('invoices.invoiceCount', { count: s.totals.invoiceCount })}
+              onClick={() => setDrill('issued')}
             />
-            <StatTile label={t('invoices.collected')} value={base(s.totals.collectedBase)} tone="positive" />
+            <StatTile
+              label={t('invoices.collected')}
+              value={base(s.totals.collectedBase)}
+              tone="positive"
+              onClick={can('payment.read') ? () => setDrill('received') : undefined}
+            />
             <StatTile
               label={t('invoices.collectionRate')}
               value={s.totals.collectionRatePct === null ? '—' : `${s.totals.collectionRatePct}%`}
               hint={s.totals.avgDaysToPay !== null ? t('invoices.avgDaysToPay', { days: s.totals.avgDaysToPay }) : undefined}
             />
-            <StatTile label={t('invoices.outstanding')} value={base(s.totals.outstandingBase)} />
+            <StatTile
+              label={t('invoices.outstanding')}
+              value={base(s.totals.outstandingBase)}
+              onClick={() => setDrill('unpaid')}
+            />
             <StatTile
               label={t('invoices.overdue')}
               value={base(s.totals.overdueBase)}
               tone={s.totals.overdueBase > 0 ? 'negative' : undefined}
               hint={s.totals.draftCount > 0 ? t('invoices.drafts', { count: s.totals.draftCount }) : undefined}
+              onClick={() => setDrill('overdue')}
             />
           </div>
 
@@ -295,6 +332,73 @@ export function InvoicesPage() {
       )}
 
       {creating && <InvoiceForm onDone={() => setCreating(false)} />}
+
+      <KpiDrilldownDrawer
+        open={drill !== null}
+        onClose={() => setDrill(null)}
+        title={drill ? t(`invoices.drill.${drill}`) : ''}
+        loading={drill === 'received' ? drillPayments.isLoading : drillInvoices.isLoading}
+        error={drill === 'received' ? drillPayments.error : drillInvoices.error}
+        empty={
+          drill === 'received'
+            ? !drillPayments.data?.length
+            : !drillInvoicesFor(drill, drillInvoices.data).length
+        }
+      >
+        {drill === 'received' ? (
+          <Table>
+            <thead>
+              <tr>
+                <th>{t('jobs.client')}</th>
+                <th>{t('invoices.number')}</th>
+                <th>{t('expenses.amount')}</th>
+                <th>{t('invoices.issued')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(drillPayments.data ?? []).map((p) => (
+                <tr key={p.id}>
+                  <td>{p.clientName ?? p.supplier ?? '—'}</td>
+                  <td className="mono">{p.allocations?.map((a) => a.invoiceNumber).filter(Boolean).join(', ') || '—'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{local(p.amount, p.currency)}</td>
+                  <td>{fmt(p.paymentDate, false)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <th>{t('invoices.number')}</th>
+                <th>{t('jobs.client')}</th>
+                <th>{drill === 'unpaid' ? t('invoices.amountDue') : t('invoices.total')}</th>
+                {drill === 'overdue' && <th>{t('invoices.overdueBy')}</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {drillInvoicesFor(drill, drillInvoices.data).map((inv) => (
+                <tr key={inv.id} className="link-row" onClick={() => navigate(`/finance/invoices/${inv.id}`)}>
+                  <td className="mono">
+                    <Link to={`/finance/invoices/${inv.id}`} onClick={(e) => e.stopPropagation()}>
+                      {inv.invoiceNumber}
+                    </Link>
+                  </td>
+                  <td>{inv.clientName}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {local(drill === 'unpaid' ? inv.amountTotal - inv.amountPaid : inv.amountTotal, inv.currency)}
+                  </td>
+                  {drill === 'overdue' && (
+                    <td>
+                      <Badge tone="danger">{t('invoices.overdueDays', { days: inv.daysOverdue ?? 0 })}</Badge>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </KpiDrilldownDrawer>
 
       <Card
         title={t('invoices.register')}

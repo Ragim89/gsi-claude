@@ -80,12 +80,6 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
   border-inline-start-color: var(--gsi-color-accent-light);
   font-weight: var(--gsi-font-weight-medium);
 }
-.sidebar__footer {
-  margin-block-start: auto; padding-inline: var(--gsi-space-5); padding-block-start: var(--gsi-space-3);
-  border-block-start: 1px solid var(--gsi-color-sidebar-border);
-  font-size: var(--gsi-font-size-sm); display: flex; flex-direction: column; gap: var(--gsi-space-2); flex: none;
-}
-
 /* ---- Grouped navigation (PHASE 10.5) ------------------------------------------------ */
 .nav-group { display: flex; flex-direction: column; margin-block-end: 2px; }
 .nav-group__head {
@@ -101,16 +95,11 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .nav-group__chevron { display: inline-block; transition: transform 120ms ease; font-size: 14px; line-height: 1; }
 .nav-group.is-open .nav-group__chevron { transform: rotate(90deg); }
 .nav-group__items { display: flex; flex-direction: column; gap: 2px; padding-block-end: 4px; }
-.sidebar__user { font-weight: var(--gsi-font-weight-medium); color: var(--gsi-color-sidebar-text); }
-.sidebar__role { color: var(--gsi-color-sidebar-text-muted); font-size: var(--gsi-font-size-xs); }
 .sidebar select {
   background: var(--gsi-color-sidebar-hover); color: var(--gsi-color-sidebar-text); border: 1px solid var(--gsi-color-sidebar-border);
   border-radius: var(--gsi-radius-sm); padding: 4px; font-family: inherit;
 }
 .sidebar select option { color: var(--gsi-color-text); }
-.sidebar .gsi-btn--ghost { color: var(--gsi-color-sidebar-text-muted); justify-content: flex-start; padding-inline: 0; }
-.sidebar .gsi-btn--ghost:hover:not(:disabled) { background: transparent; color: var(--gsi-color-sidebar-text); text-decoration: underline; }
-.sidebar__footer-actions { display: flex; flex-direction: column; gap: 2px; }
 
 .main { padding: var(--gsi-space-5) var(--gsi-space-6); min-width: 0; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gsi-space-3); flex-wrap: wrap; margin-block-end: var(--gsi-space-5); }
@@ -210,6 +199,39 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .notif-item--unread { background: var(--gsi-color-info-bg); font-weight: var(--gsi-font-weight-medium); }
 .notif-item__time { display: block; font-size: var(--gsi-font-size-xs); color: var(--gsi-color-text-muted); }
 
+/* User menu: profile, language and sign-out, moved from the sidebar footer into the header
+   (requirement 6) — same button+panel shape as .notif-bell. */
+.user-menu { position: relative; flex: none; }
+.user-menu__button {
+  display: flex; align-items: center; background: transparent; border: 0; padding: 0; cursor: pointer;
+}
+.user-menu__avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--gsi-color-primary); color: var(--gsi-color-on-primary);
+  font-size: 13px; font-weight: var(--gsi-font-weight-bold); letter-spacing: 0.02em;
+}
+.user-menu__avatar--lg { width: 44px; height: 44px; font-size: 15px; flex: none; }
+.user-menu__panel {
+  position: absolute; inset-inline-end: 0; inset-block-start: calc(100% + 4px); width: 260px;
+  background: var(--gsi-color-surface); color: var(--gsi-color-text);
+  border: 1px solid var(--gsi-color-border); border-radius: var(--gsi-radius-sm);
+  box-shadow: var(--gsi-shadow-card); z-index: 20; padding: var(--gsi-space-3);
+  display: flex; flex-direction: column; gap: var(--gsi-space-3);
+}
+.user-menu__head { display: flex; align-items: center; gap: var(--gsi-space-2); }
+.user-menu__name { font-weight: var(--gsi-font-weight-medium); }
+.user-menu__role { color: var(--gsi-color-text-muted); font-size: var(--gsi-font-size-xs); }
+.user-menu__lang {
+  display: flex; flex-direction: column; gap: 4px; font-size: var(--gsi-font-size-xs);
+  color: var(--gsi-color-text-muted); border-block: 1px solid var(--gsi-color-border);
+  padding-block: var(--gsi-space-2);
+}
+.user-menu__actions { display: flex; flex-direction: column; gap: 2px; }
+.user-menu__actions .gsi-btn--ghost { justify-content: flex-start; padding-inline: 0; }
+.topbar-mobile__end { margin-inline-start: auto; display: flex; align-items: center; gap: var(--gsi-space-2); }
+.topbar-mobile .user-menu__panel { color: var(--gsi-color-text); }
+
 /* Mobile top bar with the menu button; hidden on desktop where the sidebar is always visible. */
 .topbar-mobile { display: none; }
 
@@ -223,7 +245,7 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
     padding-inline: var(--gsi-space-4);
     background: var(--gsi-color-sidebar); color: var(--gsi-color-sidebar-text);
   }
-  .topbar-mobile .offline-badge { margin-inline-start: auto; background: transparent; border-color: var(--gsi-color-sidebar-border); color: var(--gsi-color-sidebar-text); }
+  .topbar-mobile .offline-badge { background: transparent; border-color: var(--gsi-color-sidebar-border); color: var(--gsi-color-sidebar-text); }
   .topbar-mobile__menu-btn {
     border: 1px solid var(--gsi-color-sidebar-border); background: transparent; color: var(--gsi-color-sidebar-text);
     border-radius: var(--gsi-radius-sm); width: 40px; height: 40px; font-size: 18px; line-height: 1;
@@ -280,6 +302,28 @@ h1 { font-size: var(--gsi-font-size-2xl); color: var(--gsi-color-primary); margi
 .stat__value--positive { color: var(--gsi-color-success); }
 .stat__value--negative { color: var(--gsi-color-danger); }
 .stat__hint { font-size: var(--gsi-font-size-xs); color: var(--gsi-color-text-muted); margin-block-start: 4px; }
+.stat--clickable { cursor: pointer; text-align: start; width: 100%; font: inherit; transition: border-color 120ms ease, box-shadow 120ms ease; }
+.stat--clickable:hover, .stat--clickable:focus-visible { border-color: var(--gsi-color-primary); box-shadow: var(--gsi-shadow-card), 0 0 0 1px var(--gsi-color-primary); }
+
+/* ---- KPI drilldown drawer: one reusable slide-in panel, reused by every clickable KPI --- */
+.kpi-drawer__overlay {
+  position: fixed; inset: 0; background: rgba(11, 27, 51, 0.45); z-index: 40;
+  display: flex; justify-content: flex-end;
+}
+.kpi-drawer__panel {
+  width: min(720px, 100%); height: 100%; background: var(--gsi-color-surface);
+  box-shadow: var(--gsi-shadow-card); display: flex; flex-direction: column;
+  animation: kpi-drawer-in 160ms ease;
+}
+@keyframes kpi-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.kpi-drawer__head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: var(--gsi-space-3);
+  padding: var(--gsi-space-4); border-block-end: 1px solid var(--gsi-color-border); flex: none;
+}
+.kpi-drawer__body { padding: var(--gsi-space-4); overflow-y: auto; flex: 1; }
+@media (max-width: 480px) {
+  .kpi-drawer__panel { width: 100%; }
+}
 
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: var(--gsi-space-4); }
 .chart-card {
@@ -819,38 +863,66 @@ td.negative { color: var(--gsi-color-danger); }
   min-height: 200px;
   display: flex;
   align-items: flex-end;
-  background: linear-gradient(120deg, var(--gsi-color-primary-deep) 0%, var(--gsi-color-primary) 55%, var(--gsi-color-accent) 130%);
   box-shadow: var(--gsi-shadow-card);
+}
+/* Fallback path (no VITE_DASHBOARD_HERO_IMAGE configured): the built-in abstract port/vessel
+   illustration over a light sky-to-cream gradient — see assets/heroArt.tsx. */
+.dash-hero--illustration {
+  background: linear-gradient(120deg, var(--gsi-color-background) 0%, #EEF4FC 45%, #FBF3E7 100%);
+  border: 1px solid var(--gsi-color-border);
+}
+/* Primary path: a real photo (container vessel approaching a port) set per client profile via
+   VITE_DASHBOARD_HERO_IMAGE (config/clients/<profile>/web.env) — see components/DashboardHero.tsx.
+   The fill colour only shows for a beat while the photo loads. */
+.dash-hero--photo {
+  background: #0A2A4A;
 }
 .dash-hero__art {
   position: absolute; inset: 0;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(16, 80, 152, 0.22);
 }
 .dash-hero__art svg, .dash-hero__art img {
   width: 100%; height: 100%; object-fit: cover; display: block;
 }
 .dash-hero__scrim {
   position: absolute; inset: 0;
-  background: linear-gradient(100deg, rgba(10, 50, 96, 0.92) 0%, rgba(10, 50, 96, 0.72) 42%, rgba(10, 50, 96, 0.25) 100%);
+}
+.dash-hero--illustration .dash-hero__scrim {
+  /* Fades from a near-opaque light wash over the text column to fully transparent past it, so
+     the port/crane/lab illustration stays visible on the right without ever competing with the
+     headline for contrast. */
+  background: linear-gradient(100deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.8) 42%, rgba(255, 255, 255, 0.08) 100%);
+}
+.dash-hero--photo .dash-hero__scrim {
+  /* Darker over the text column (left) for contrast against a bright sky/sunset photo, fully
+     clear past ~60% so the vessel, cranes and terminal stay visible and undimmed on the right —
+     no global brightening or darkening of the photo itself. */
+  background: linear-gradient(100deg, rgba(6, 20, 38, 0.82) 0%, rgba(6, 20, 38, 0.55) 32%, rgba(6, 20, 38, 0.18) 58%, rgba(6, 20, 38, 0) 78%);
 }
 .dash-hero__content {
   position: relative;
   z-index: 1;
   padding: var(--gsi-space-5) var(--gsi-space-6);
-  color: #FFFFFF;
   max-width: 640px;
 }
+.dash-hero--illustration .dash-hero__content { color: var(--gsi-color-text); }
+.dash-hero--photo .dash-hero__content { color: #FFFFFF; }
 .dash-hero__eyebrow {
   font-size: var(--gsi-font-size-xs); text-transform: uppercase; letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.75); font-weight: var(--gsi-font-weight-medium); margin-block-end: 6px;
+  font-weight: var(--gsi-font-weight-medium); margin-block-end: 6px;
 }
-.dash-hero__title { margin: 0; font-size: var(--gsi-font-size-2xl); line-height: 1.2; color: #FFFFFF; }
-.dash-hero__summary { margin: 8px 0 0; font-size: var(--gsi-font-size-md); color: rgba(255, 255, 255, 0.92); }
+.dash-hero--illustration .dash-hero__eyebrow { color: var(--gsi-color-primary); }
+.dash-hero--photo .dash-hero__eyebrow { color: rgba(255, 255, 255, 0.8); }
+.dash-hero__title { margin: 0; font-size: var(--gsi-font-size-2xl); line-height: 1.2; }
+.dash-hero__summary { margin: 8px 0 0; font-size: var(--gsi-font-size-md); }
+.dash-hero--illustration .dash-hero__summary { color: var(--gsi-color-text-muted); }
+.dash-hero--photo .dash-hero__summary { color: rgba(255, 255, 255, 0.92); }
 .dash-hero__period {
   margin-block-start: var(--gsi-space-3); display: inline-flex; align-items: center;
-  font-size: var(--gsi-font-size-xs); color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.14); border-radius: 999px; padding: 4px 12px;
+  font-size: var(--gsi-font-size-xs); border-radius: 999px; padding: 4px 12px;
 }
+.dash-hero--illustration .dash-hero__period { color: var(--gsi-color-primary-deep); background: var(--gsi-color-accent-soft); }
+.dash-hero--photo .dash-hero__period { color: #FFFFFF; background: rgba(255, 255, 255, 0.16); }
 
 .kpi-row--home { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .kpi-card {
@@ -921,6 +993,13 @@ td.negative { color: var(--gsi-color-danger); }
   .dash-hero__content { padding: var(--gsi-space-4); max-width: none; }
   .dash-hero__title { font-size: var(--gsi-font-size-xl); }
   .dash-hero__summary { font-size: var(--gsi-font-size-sm); }
+  /* Below ~900px the text column runs the full card width (max-width: none, above), so on the
+     photo background the summary line can wrap into the bright right-hand side of the image
+     where the desktop scrim is nearly transparent. Darken more evenly across the card here so
+     the wrapped text stays readable without touching the photo itself. */
+  .dash-hero--photo .dash-hero__scrim {
+    background: linear-gradient(180deg, rgba(6, 20, 38, 0.72) 0%, rgba(6, 20, 38, 0.6) 55%, rgba(6, 20, 38, 0.5) 100%);
+  }
   .kpi-row--home { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
   .kpi-card { padding: var(--gsi-space-3); }
   .kpi-card__sparkline { display: none; }

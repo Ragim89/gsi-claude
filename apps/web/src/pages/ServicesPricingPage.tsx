@@ -195,6 +195,7 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
   const [clientId, setClientId] = useState('');
   const [currency, setCurrency] = useState('EUR');
   const [unitPrice, setUnitPrice] = useState('');
+  const [effectiveFrom, setEffectiveFrom] = useState(new Date().toISOString().slice(0, 10));
 
   const clients = useQuery({ queryKey: ['clients', '', null], queryFn: () => api.get<Page<Client>>('/clients?limit=200').then((p) => p.rows) });
 
@@ -206,6 +207,7 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
         clientId: clientId || null,
         currency,
         unitPrice: Number(unitPrice),
+        effectiveFrom,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prices', serviceId] });
@@ -240,6 +242,9 @@ function PriceForm({ serviceId, onDone }: { serviceId: string; onDone(): void })
         </Field>
         <Field label={`${t('invoices.unitPrice')} *`}>
           <Input type="number" required min="0" step="0.01" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
+        </Field>
+        <Field label={`${t('common.effectiveFrom')} *`}>
+          <Input type="date" required value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} />
         </Field>
       </div>
       <div className="form-actions">
